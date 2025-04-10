@@ -8,4 +8,5 @@ dependencies = [
     "streamlit-folium>=0.24.0",
     "streamlit>=1.44.1",
     "pandas>=2.2.3",
+    "trafilatura>=2.0.0",
 ]

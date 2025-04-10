@@ -7,6 +7,7 @@ import time
 
 from utils.api import get_volcano_data, get_volcano_details
 from utils.map_utils import create_volcano_map, create_popup_html
+from utils.web_scraper import get_volcano_additional_info
 
 # Set page config
 st.set_page_config(
@@ -78,6 +79,7 @@ st.sidebar.markdown("""
 ### Data Sources
 - Volcano data: [USGS Volcano Hazards Program](https://www.usgs.gov/programs/VHP)
 - InSAR data: Links to appropriate satellite imagery providers
+- Additional information: [Climate Links - Volcanoes](https://climatelinks.weebly.com/volcanoes.html)
 """)
 
 # Create two columns for the layout
@@ -156,6 +158,23 @@ with col2:
         # USGS link
         usgs_url = f"https://www.usgs.gov/volcanoes/volcanoes-around-the-world/{volcano['name'].lower().replace(' ', '-')}"
         st.markdown(f"[USGS Volcano Information]({usgs_url})")
+        
+        # Climate Links Information
+        st.markdown("### Climate Links Information")
+        with st.expander("View Educational Information", expanded=False):
+            with st.spinner("Loading educational information..."):
+                try:
+                    climate_link_info = get_volcano_additional_info("https://climatelinks.weebly.com/volcanoes.html")
+                    if climate_link_info and climate_link_info['content']:
+                        # Display a subset of the content (first 500 characters) to keep it manageable
+                        content = climate_link_info['content']
+                        preview = content[:500] + "..." if len(content) > 500 else content
+                        st.markdown(preview)
+                        st.markdown(f"[Read more on Climate Links]({climate_link_info['source_url']})")
+                    else:
+                        st.info("No additional educational information available.")
+                except Exception as e:
+                    st.warning(f"Could not load educational information: {str(e)}")
     else:
         st.info("Select a volcano on the map to view details")
 
