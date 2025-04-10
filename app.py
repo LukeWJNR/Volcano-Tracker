@@ -75,13 +75,36 @@ selected_region = st.sidebar.selectbox("Select Region", ["All"] + regions)
 # Name filter
 volcano_name_filter = st.sidebar.text_input("Filter by Volcano Name")
 
+# Track search filters
+if 'last_region' not in st.session_state:
+    st.session_state.last_region = "All"
+    
+if 'last_name_filter' not in st.session_state:
+    st.session_state.last_name_filter = ""
+
 # Apply filters
 filtered_df = volcanos_df.copy()
 if selected_region != "All":
     filtered_df = filtered_df[filtered_df['region'] == selected_region]
+    
+    # Track region change for search history
+    if selected_region != st.session_state.last_region:
+        try:
+            add_search_history(selected_region, "region")
+            st.session_state.last_region = selected_region
+        except Exception as e:
+            st.sidebar.warning(f"Could not save search history: {str(e)}")
 
 if volcano_name_filter:
     filtered_df = filtered_df[filtered_df['name'].str.contains(volcano_name_filter, case=False)]
+    
+    # Track name filter change for search history
+    if volcano_name_filter != st.session_state.last_name_filter:
+        try:
+            add_search_history(volcano_name_filter, "name")
+            st.session_state.last_name_filter = volcano_name_filter
+        except Exception as e:
+            st.sidebar.warning(f"Could not save search history: {str(e)}")
 
 # Display last update time
 if st.session_state.last_update:
@@ -96,6 +119,48 @@ if st.sidebar.button("Refresh Data"):
             st.rerun()
         except Exception as e:
             st.sidebar.error(f"Error refreshing data: {str(e)}")
+
+# Favorite Volcanoes section in sidebar
+st.sidebar.markdown("---")
+st.sidebar.subheader("Your Favorite Volcanoes")
+
+# Display favorites
+if st.session_state.favorites and len(st.session_state.favorites) > 0:
+    for fav in st.session_state.favorites:
+        if st.sidebar.button(f"🌋 {fav['name']}", key=f"fav_{fav['id']}"):
+            # Find the volcano in the dataframe and set as selected
+            selected_row = filtered_df[filtered_df['name'] == fav['name']]
+            if not selected_row.empty:
+                st.session_state.selected_volcano = selected_row.iloc[0].to_dict()
+                st.rerun()
+else:
+    st.sidebar.info("You haven't added any favorites yet. Click on a volcano and use the 'Add to Favorites' button to save it here.")
+
+# Search History section
+if 'show_history' not in st.session_state:
+    st.session_state.show_history = False
+
+# Toggle for search history
+st.sidebar.markdown("---")
+show_history = st.sidebar.checkbox("Show Search History", value=st.session_state.show_history)
+if show_history != st.session_state.show_history:
+    st.session_state.show_history = show_history
+    st.rerun()
+
+if st.session_state.show_history:
+    st.sidebar.subheader("Recent Searches")
+    
+    try:
+        history = get_search_history(limit=5)
+        if history and len(history) > 0:
+            for item in history:
+                st.sidebar.markdown(
+                    f"**{item['search_term']}** ({item['search_type']}) - {item['created_at']}"
+                )
+        else:
+            st.sidebar.info("No search history yet")
+    except Exception as e:
+        st.sidebar.warning(f"Could not load search history: {str(e)}")
 
 # Information about data source
 st.sidebar.markdown("---")
