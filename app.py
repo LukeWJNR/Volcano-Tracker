@@ -4,10 +4,22 @@ import folium
 from streamlit_folium import folium_static
 from datetime import datetime
 import time
+import os
 
 from utils.api import get_volcano_data, get_volcano_details
 from utils.map_utils import create_volcano_map, create_popup_html
 from utils.web_scraper import get_volcano_additional_info
+from utils.db_utils import (
+    add_favorite_volcano, 
+    remove_favorite_volcano, 
+    get_favorite_volcanoes, 
+    is_favorite_volcano,
+    add_search_history,
+    get_search_history,
+    add_user_note,
+    get_user_note,
+    get_all_user_notes
+)
 
 # Set page config
 st.set_page_config(
@@ -30,6 +42,18 @@ if 'selected_volcano' not in st.session_state:
 
 if 'last_update' not in st.session_state:
     st.session_state.last_update = None
+    
+# Initialize other session state variables
+if 'user_note' not in st.session_state:
+    st.session_state.user_note = ""
+    
+if 'favorites' not in st.session_state:
+    # Load favorites from database
+    try:
+        st.session_state.favorites = get_favorite_volcanoes()
+    except Exception as e:
+        st.session_state.favorites = []
+        st.warning(f"Could not load favorites: {str(e)}")
 
 # Sidebar with filters
 st.sidebar.title("Filters")
@@ -104,7 +128,35 @@ with col2:
     if st.session_state.selected_volcano:
         volcano = st.session_state.selected_volcano
         
-        st.markdown(f"### {volcano['name']}")
+        # Favorite button
+        is_favorite = is_favorite_volcano(volcano['id'])
+        col_info, col_fav = st.columns([3, 1])
+        
+        with col_info:
+            st.markdown(f"### {volcano['name']}")
+        
+        with col_fav:
+            if is_favorite:
+                if st.button("❤️ Remove from Favorites"):
+                    try:
+                        remove_favorite_volcano(volcano['id'])
+                        st.success(f"Removed {volcano['name']} from favorites")
+                        # Reload favorites
+                        st.session_state.favorites = get_favorite_volcanoes()
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error removing from favorites: {str(e)}")
+            else:
+                if st.button("🤍 Add to Favorites"):
+                    try:
+                        add_favorite_volcano(volcano)
+                        st.success(f"Added {volcano['name']} to favorites")
+                        # Reload favorites
+                        st.session_state.favorites = get_favorite_volcanoes()
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error adding to favorites: {str(e)}")
+        
         st.markdown(f"**Region:** {volcano['region']}")
         st.markdown(f"**Country:** {volcano['country']}")
         
@@ -143,6 +195,32 @@ with col2:
                     st.markdown(f"**Recent Activity:** {volcano_details['activity']}")
         except Exception as e:
             st.warning(f"Could not load additional details: {str(e)}")
+        
+        # User Notes section
+        st.markdown("### Your Notes")
+        
+        # Get existing note if any
+        existing_note = get_user_note(volcano['id'])
+        note_text = existing_note['note_text'] if existing_note else ""
+        
+        # Note input
+        user_note = st.text_area(
+            "Add your notes about this volcano:",
+            value=note_text,
+            height=100,
+            key=f"note_{volcano['id']}"
+        )
+        
+        # Save note button
+        if st.button("Save Note"):
+            if user_note:
+                try:
+                    add_user_note(volcano['id'], volcano['name'], user_note)
+                    st.success("Note saved successfully!")
+                except Exception as e:
+                    st.error(f"Error saving note: {str(e)}")
+            else:
+                st.warning("Note is empty. Please add some text to save.")
         
         # InSAR Data links
         st.markdown("### InSAR Satellite Data")
