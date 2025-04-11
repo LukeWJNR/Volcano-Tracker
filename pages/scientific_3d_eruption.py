@@ -211,32 +211,66 @@ def app():
     </style>
     """, unsafe_allow_html=True)
     
-    # Controls for the 3D eruption phases
+    # Controls for the 3D eruption phases with more obvious button styling
+    st.markdown("""
+    <style>
+    .phase-button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 5px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 5px;
+        border: none;
+        width: 100%;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
         buildup_btn = st.button("Magma Buildup", key="buildup", use_container_width=True)
+        if buildup_btn:
+            st.session_state['eruption_phase'] = "buildup"
+            st.success("Showing Magma Buildup Phase")
     with col2:
         seismicity_btn = st.button("Seismic Activity", key="seismic", use_container_width=True)
+        if seismicity_btn:
+            st.session_state['eruption_phase'] = "initial"
+            st.success("Showing Seismic Activity Phase")
     with col3:
         initial_btn = st.button("Initial Eruption", key="initial", use_container_width=True)
+        if initial_btn:
+            st.session_state['eruption_phase'] = "initial_eruption"
+            st.success("Showing Initial Eruption Phase")
     with col4:
         main_btn = st.button("Main Eruption", key="main", use_container_width=True)
+        if main_btn:
+            st.session_state['eruption_phase'] = "main_eruption"
+            st.success("Showing Main Eruption Phase")
     with col5:
         waning_btn = st.button("Waning Activity", key="waning", use_container_width=True)
+        if waning_btn:
+            st.session_state['eruption_phase'] = "waning"
+            st.success("Showing Waning Activity Phase")
     
     # Create hidden input to track selected phase for JavaScript
-    if buildup_btn:
-        selected_phase = "buildup"
-    elif seismicity_btn:
-        selected_phase = "initial"
-    elif initial_btn:
-        selected_phase = "initial_eruption"
-    elif main_btn:
-        selected_phase = "main_eruption"
-    elif waning_btn:
-        selected_phase = "waning"
-    else:
-        selected_phase = "buildup"  # Default to start
+    # Initialize the session state if not already set
+    if 'eruption_phase' not in st.session_state:
+        st.session_state['eruption_phase'] = "buildup"  # Default to start
+    
+    selected_phase = st.session_state['eruption_phase']
+    
+    # Display current phase
+    st.markdown(f"""
+    <div style="text-align: center; margin: 10px 0; padding: 10px; background-color: #f0f2f6; border-radius: 5px;">
+        <h3 style="margin: 0;">Current Phase: {selected_phase.replace('_', ' ').title()}</h3>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Pass selected phase to JavaScript
     st.markdown(f"""
@@ -1664,10 +1698,36 @@ def app():
         }});
     }});
     
-    // Check for phase changes - reduced frequency for performance
+    // Check for phase changes immediately and setup a MutationObserver to detect changes
+    const selectedPhaseInput = document.getElementById("selected_phase");
+    
+    // Update immediately on first load
+    if (selectedPhaseInput && selectedPhaseInput.value) {{
+        updatePhase(selectedPhaseInput.value);
+        console.log("Initial phase set to: " + selectedPhaseInput.value);
+    }}
+    
+    // Use MutationObserver for more reliable detection of changes
+    const observer = new MutationObserver((mutations) => {{
+        mutations.forEach((mutation) => {{
+            if (mutation.type === 'attributes' && mutation.attributeName === 'value') {{
+                const newPhase = selectedPhaseInput.value;
+                if (newPhase && newPhase !== currentPhase) {{
+                    console.log("Phase changed to: " + newPhase);
+                    updatePhase(newPhase);
+                }}
+            }}
+        }});
+    }});
+    
+    // Observe the hidden input for value changes
+    observer.observe(selectedPhaseInput, {{ attributes: true }});
+    
+    // Also keep the interval as a backup, but less frequent
     setInterval(() => {{
-        const newPhase = document.getElementById("selected_phase").value;
+        const newPhase = selectedPhaseInput.value;
         if (newPhase && newPhase !== currentPhase) {{
+            console.log("Interval detected phase change to: " + newPhase);
             updatePhase(newPhase);
         }}
     }}, 1000); // Check less frequently
