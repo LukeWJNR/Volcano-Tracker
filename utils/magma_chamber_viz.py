@@ -113,21 +113,56 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
             name="Deep Crustal Reservoir"
         ))
         
-        # Add conduit - shield volcanoes have a central conduit
-        # and may have lateral dikes
+        # Add central conduit from shallow chamber to surface
         r = np.linspace(0, 1, 20)
         theta = np.linspace(0, 2*np.pi, 20)
         R, Theta = np.meshgrid(r, theta)
         X_conduit = 0.5 * R * np.cos(Theta)
         Y_conduit = 0.5 * R * np.sin(Theta)
         Z_top = Z_surface[20, 20]  # Summit
-        Z_conduit = chamber_depth + (Z_top - chamber_depth) * (1 - R)
+        Z_conduit = shallow_chamber_depth + (Z_top - shallow_chamber_depth) * (1 - R)
         
         fig.add_trace(go.Surface(
             x=X_conduit, y=Y_conduit, z=Z_conduit,
             colorscale=[[0, magma_color[0]], [1, magma_color[0]]],
             showscale=False,
-            opacity=0.85
+            opacity=0.85,
+            name="Central Conduit"
+        ))
+        
+        # Add connection between deep reservoir and shallow chamber
+        # Create a slightly curved connecting conduit
+        connecting_points = []
+        for t in np.linspace(0, 1, 15):
+            # Create a slight curve in the connection
+            x_offset = 0.3 * np.sin(t * np.pi)
+            y_offset = 0.2 * np.sin(t * np.pi)
+            z_pos = deep_reservoir_depth + t * (shallow_chamber_depth - deep_reservoir_depth)
+            
+            # Add multiple points at each level for thickness
+            for angle in np.linspace(0, 2*np.pi, 8):
+                radius = 0.5
+                x = x_offset + radius * 0.3 * np.cos(angle)
+                y = y_offset + radius * 0.3 * np.sin(angle)
+                connecting_points.append((x, y, z_pos))
+        
+        # Add connecting conduit points
+        connect_x = [p[0] for p in connecting_points]
+        connect_y = [p[1] for p in connecting_points]
+        connect_z = [p[2] for p in connecting_points]
+        
+        fig.add_trace(go.Scatter3d(
+            x=connect_x,
+            y=connect_y,
+            z=connect_z,
+            mode='markers',
+            marker=dict(
+                size=8,
+                color=magma_color[0],
+                opacity=0.8
+            ),
+            showlegend=False,
+            name="Deep Connection"
         ))
         
         # Add lateral dikes for more active states
@@ -136,7 +171,7 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
             for angle in [0, 2*np.pi/3, 4*np.pi/3]:
                 dike_x = np.linspace(0, 6 * np.cos(angle), 20)
                 dike_y = np.linspace(0, 6 * np.sin(angle), 20)
-                dike_z = np.linspace(chamber_depth, -0.5, 20)
+                dike_z = np.linspace(shallow_chamber_depth, -0.5, 20)
                 for i in range(len(dike_x)):
                     fig.add_trace(go.Scatter3d(
                         x=[dike_x[i]],
@@ -144,7 +179,7 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
                         z=[dike_z[i]],
                         mode='markers',
                         marker=dict(
-                            size=5,
+                            size=8,
                             color=magma_color[0],
                             opacity=0.7
                         ),
@@ -174,7 +209,27 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
             opacity=0.9
         ))
         
-        # Magma chamber - deeper
+        # Stratovolcanoes have vertically-oriented magmatic plumbing systems
+        # with deep and shallow chambers based on research
+        
+        # Deep magma reservoir - larger and deeper
+        deep_reservoir_depth = -10.0
+        deep_reservoir_x = np.linspace(-3.5, 3.5, 30)
+        deep_reservoir_y = np.linspace(-3.5, 3.5, 30)
+        deep_reservoir_X, deep_reservoir_Y = np.meshgrid(deep_reservoir_x, deep_reservoir_y)
+        deep_reservoir_R = np.sqrt(deep_reservoir_X**2 + deep_reservoir_Y**2)
+        deep_reservoir_Z = deep_reservoir_depth - 2.0 * np.exp(-0.1 * deep_reservoir_R**2)
+        
+        # Deep crustal reservoir
+        fig.add_trace(go.Surface(
+            x=deep_reservoir_X, y=deep_reservoir_Y, z=deep_reservoir_Z,
+            colorscale=[[0, 'rgba(255,20,20,0.6)'], [1, 'rgba(255,20,20,0.2)']],
+            showscale=False,
+            opacity=0.7,
+            name="Deep Magma Reservoir"
+        ))
+        
+        # Shallow magma chamber - closer to surface
         chamber_depth = -5.0
         chamber_x = np.linspace(-3, 3, 30)
         chamber_y = np.linspace(-3, 3, 30)
@@ -182,15 +237,16 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
         chamber_R = np.sqrt(chamber_X**2 + chamber_Y**2)
         chamber_Z = chamber_depth - 1.5 * np.exp(-0.15 * chamber_R**2)
         
-        # Magma chamber
+        # Shallow magma chamber
         fig.add_trace(go.Surface(
             x=chamber_X, y=chamber_Y, z=chamber_Z,
             colorscale=[[0, magma_color[0]], [1, magma_color[1]]],
             showscale=False,
-            opacity=0.8
+            opacity=0.8,
+            name="Shallow Magma Chamber"
         ))
         
-        # Add conduit - stratovolcanoes have a central conduit
+        # Add central conduit from shallow chamber to surface
         r = np.linspace(0, 1, 20)
         theta = np.linspace(0, 2*np.pi, 20)
         R, Theta = np.meshgrid(r, theta)
@@ -203,7 +259,40 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
             x=X_conduit, y=Y_conduit, z=Z_conduit,
             colorscale=[[0, magma_color[0]], [1, magma_color[0]]],
             showscale=False,
-            opacity=0.85
+            opacity=0.85,
+            name="Central Conduit"
+        ))
+        
+        # Add connection between deep reservoir and shallow chamber
+        # Create a vertical connecting conduit
+        connecting_points = []
+        for t in np.linspace(0, 1, 15):
+            z_pos = deep_reservoir_depth + t * (chamber_depth - deep_reservoir_depth)
+            
+            # Add multiple points at each level for thickness
+            for angle in np.linspace(0, 2*np.pi, 8):
+                radius = 0.3
+                x = radius * 0.2 * np.cos(angle)
+                y = radius * 0.2 * np.sin(angle)
+                connecting_points.append((x, y, z_pos))
+        
+        # Add connecting conduit points
+        connect_x = [p[0] for p in connecting_points]
+        connect_y = [p[1] for p in connecting_points]
+        connect_z = [p[2] for p in connecting_points]
+        
+        fig.add_trace(go.Scatter3d(
+            x=connect_x,
+            y=connect_y,
+            z=connect_z,
+            mode='markers',
+            marker=dict(
+                size=8,
+                color=magma_color[0],
+                opacity=0.8
+            ),
+            showlegend=False,
+            name="Vertical Connection"
         ))
         
         # Add secondary magma chamber for more complex systems
@@ -263,21 +352,70 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
             opacity=0.9
         ))
         
-        # Large magma reservoir - calderas have large, shallow magma systems
-        chamber_depth = -3.0
+        # Calderas have large-volume, complex magmatic systems with ring-shaped fracture systems
+        
+        # Large shallow magma reservoir 
+        shallow_chamber_depth = -3.0
         chamber_x = np.linspace(-6, 6, 40)
         chamber_y = np.linspace(-6, 6, 40)
         chamber_X, chamber_Y = np.meshgrid(chamber_x, chamber_y)
         chamber_R = np.sqrt(chamber_X**2 + chamber_Y**2)
-        chamber_Z = chamber_depth - 2.0 * np.exp(-0.05 * chamber_R**2)
+        chamber_Z = shallow_chamber_depth - 2.0 * np.exp(-0.05 * chamber_R**2)
         
-        # Main magma reservoir
+        # Main shallow magma reservoir
         fig.add_trace(go.Surface(
             x=chamber_X, y=chamber_Y, z=chamber_Z,
             colorscale=[[0, magma_color[0]], [1, magma_color[1]]],
             showscale=False,
-            opacity=0.7
+            opacity=0.7,
+            name="Shallow Magma Reservoir"
         ))
+        
+        # Add deeper magma reservoir for complex caldera systems
+        deep_reservoir_depth = -8.0
+        deep_reservoir_x = np.linspace(-8, 8, 40) 
+        deep_reservoir_y = np.linspace(-8, 8, 40)
+        deep_reservoir_X, deep_reservoir_Y = np.meshgrid(deep_reservoir_x, deep_reservoir_y)
+        deep_reservoir_R = np.sqrt(deep_reservoir_X**2 + deep_reservoir_Y**2)
+        deep_reservoir_Z = deep_reservoir_depth - 2.5 * np.exp(-0.03 * deep_reservoir_R**2)
+        
+        # Deep reservoir
+        fig.add_trace(go.Surface(
+            x=deep_reservoir_X, y=deep_reservoir_Y, z=deep_reservoir_Z,
+            colorscale=[[0, 'rgba(255,20,20,0.5)'], [1, 'rgba(255,20,20,0.2)']],
+            showscale=False,
+            opacity=0.6,
+            name="Deep Magma Reservoir"
+        ))
+        
+        # Add connecting structure between deep and shallow reservoirs
+        for angle in np.linspace(0, 2*np.pi, 16):
+            if alert_level in ['Normal', 'Advisory'] and angle % (np.pi/4) != 0:
+                continue  # Show fewer connections for lower alert levels
+                
+            radius = 4.0
+            # Create sloped conduit from deep to shallow
+            cond_x = radius * 0.7 * np.cos(angle)
+            cond_y = radius * 0.7 * np.sin(angle)
+            
+            # Get z positions
+            for t in np.linspace(0, 1, 10):
+                z_pos = deep_reservoir_depth + 1 + t * (shallow_chamber_depth - deep_reservoir_depth - 1)
+                
+                # Add point
+                fig.add_trace(go.Scatter3d(
+                    x=[cond_x * (1 + 0.3 * t)],
+                    y=[cond_y * (1 + 0.3 * t)],
+                    z=[z_pos],
+                    mode='markers',
+                    marker=dict(
+                        size=8,
+                        color=magma_color[0],
+                        opacity=0.8
+                    ),
+                    showlegend=False
+                ))
+        
         
         # Add multiple conduits - calderas often have ring fractures
         for angle in np.linspace(0, 2*np.pi, 8):
@@ -298,7 +436,7 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
             idx_y = np.abs(y - y_pos).argmin()
             Z_top = Z_surface[idx_y, idx_x]
             
-            Z_conduit = chamber_depth + (Z_top - chamber_depth) * (1 - R)
+            Z_conduit = shallow_chamber_depth + (Z_top - shallow_chamber_depth) * (1 - R)
             
             # Only show some conduits based on alert level
             if alert_level == 'Normal' and angle % (np.pi/2) != 0:
@@ -390,21 +528,75 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
             opacity=0.9
         ))
         
-        # Small, shallow magma reservoir with high viscosity
-        chamber_depth = -2.0
+        # Lava domes have complex magmatic plumbing featuring multiple interacting reservoirs
+        
+        # Main magma chamber - small shallow reservoir with high viscosity
+        main_chamber_depth = -2.0
         chamber_x = np.linspace(-2, 2, 20)
         chamber_y = np.linspace(-2, 2, 20)
         chamber_X, chamber_Y = np.meshgrid(chamber_x, chamber_y)
         chamber_R = np.sqrt(chamber_X**2 + chamber_Y**2)
-        chamber_Z = chamber_depth - 1.0 * np.exp(-0.3 * chamber_R**2)
+        chamber_Z = main_chamber_depth - 1.0 * np.exp(-0.3 * chamber_R**2)
         
-        # Magma reservoir
+        # Main shallow magma chamber
         fig.add_trace(go.Surface(
             x=chamber_X, y=chamber_Y, z=chamber_Z,
             colorscale=[[0, magma_color[0]], [1, magma_color[1]]],
             showscale=False,
-            opacity=0.8
+            opacity=0.8,
+            name="Main Magma Chamber"
         ))
+        
+        # Secondary magma pockets - lava domes often have multiple storage zones
+        # Create several smaller chambers at different depths and positions
+        for i, position in enumerate([(-1.5, 1.0, -2.8), (1.5, -1.0, -3.5), (0.5, 2.0, -4.2)]):
+            # Only show deeper chambers for higher alert levels
+            if alert_level in ['Normal', 'Advisory'] and i > 0:
+                continue
+                
+            sec_x, sec_y, sec_z = position
+            sec_chamber_x = np.linspace(-0.8, 0.8, 15)
+            sec_chamber_y = np.linspace(-0.8, 0.8, 15)
+            sec_chamber_X, sec_chamber_Y = np.meshgrid(sec_chamber_x, sec_chamber_y)
+            sec_chamber_X = sec_chamber_X + sec_x
+            sec_chamber_Y = sec_chamber_Y + sec_y
+            sec_chamber_R = np.sqrt((sec_chamber_X - sec_x)**2 + (sec_chamber_Y - sec_y)**2)
+            sec_chamber_Z = sec_z - 0.6 * np.exp(-0.5 * sec_chamber_R**2)
+            
+            # Add secondary chamber
+            fig.add_trace(go.Surface(
+                x=sec_chamber_X, y=sec_chamber_Y, z=sec_chamber_Z,
+                colorscale=[[0, 'rgba(255,30,30,0.6)'], [1, 'rgba(255,30,30,0.2)']],
+                showscale=False,
+                opacity=0.7,
+                name=f"Secondary Magma Pocket {i+1}"
+            ))
+            
+            # Add connection to main chamber
+            connect_points = []
+            for t in np.linspace(0, 1, 8):
+                # Calculate connection path
+                cx = sec_x * (1-t)
+                cy = sec_y * (1-t)
+                cz = sec_z + t * (main_chamber_depth - sec_z)
+                
+                connect_points.append((cx, cy, cz))
+            
+            # Plot connection
+            connect_x = [p[0] for p in connect_points]
+            connect_y = [p[1] for p in connect_points]
+            connect_z = [p[2] for p in connect_points]
+            
+            fig.add_trace(go.Scatter3d(
+                x=connect_x, y=connect_y, z=connect_z,
+                mode='markers',
+                marker=dict(
+                    size=6,
+                    color=magma_color[0],
+                    opacity=0.7
+                ),
+                showlegend=False
+            ))
         
         # Add thick conduit - lava domes have a fat conduit with viscous magma
         r = np.linspace(0, 1, 15)
