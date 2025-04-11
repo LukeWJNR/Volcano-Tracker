@@ -230,6 +230,43 @@ with st.spinner("Generating volcanic risk assessment..."):
             use_container_width=True
         )
         
+        # Add ability to run simulations for high-risk volcanoes
+        st.subheader("Simulate Potential Eruptions")
+        st.markdown("""
+        You can run detailed eruption simulations for these high-risk volcanoes to understand 
+        potential hazard scenarios and progression over time.
+        """)
+        
+        # Create clickable buttons for top 5 highest risk volcanoes
+        top5_risk = top_risk.head(5)
+        cols = st.columns(5)
+        
+        for i, (_, volcano) in enumerate(top5_risk.iterrows()):
+            with cols[i]:
+                # Create a card with volcano info
+                st.markdown(f"""
+                <div style="border:1px solid {'red' if volcano['risk_level'] == 'Very High' else 'orange'}; 
+                     border-radius:5px; padding:10px; text-align:center; margin-bottom:10px;">
+                    <h4 style="margin:5px 0; color:{'red' if volcano['risk_level'] == 'Very High' else 'orange'};">
+                        {volcano['name']}
+                    </h4>
+                    <p style="margin:5px 0;">{volcano['country']}</p>
+                    <p style="font-weight:bold; color:{'red' if volcano['risk_level'] == 'Very High' else 'orange'};">
+                        {volcano['risk_level']}
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Add button to simulate eruption
+                if st.button(f"Simulate {volcano['name']}", key=f"sim_{volcano['name']}_btn"):
+                    # Store the volcano id in session state then redirect to simulator
+                    st.session_state['simulator_volcano'] = volcano['name']
+                    st.session_state['simulator_probability'] = int(float(volcano['risk_factor']) * 100)
+                    
+                    # Create a switch to the eruption simulator page
+                    from app import switch_page
+                    switch_page("eruption_simulator")
+        
         # Risk assessment methodology
         with st.expander("Risk Assessment Methodology", expanded=False):
             st.markdown("""
