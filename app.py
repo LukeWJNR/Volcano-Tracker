@@ -1,4 +1,16 @@
 import streamlit as st
+
+# Set page config - MUST be the first Streamlit command
+st.set_page_config(
+    page_title="Volcano Monitoring Dashboard",
+    page_icon="🌋",
+    layout="wide",
+    menu_items={
+        'Get Help': 'https://github.com/openvolcano/data',
+        'About': 'Volcano Monitoring Dashboard providing real-time information about active volcanoes worldwide with InSAR satellite imagery links.'
+    }
+)
+
 import pandas as pd
 import folium
 from streamlit_folium import st_folium
@@ -79,16 +91,7 @@ from utils.db_utils import (
     get_volcano_risk_assessment
 )
 
-# Set page config
-st.set_page_config(
-    page_title="Volcano Monitoring Dashboard",
-    page_icon="🌋",
-    layout="wide",
-    menu_items={
-        'Get Help': 'https://github.com/openvolcano/data',
-        'About': 'Volcano Monitoring Dashboard providing real-time information about active volcanoes worldwide with InSAR satellite imagery links.'
-    }
-)
+# Page config already set at the top of the file
 
 # Custom CSS for iframe embedding
 st.markdown("""
@@ -426,16 +429,20 @@ with col2:
     if st.session_state.selected_volcano:
         volcano = st.session_state.selected_volcano
         
+        # Main info panel with professional styling
+        st.markdown('<div class="info-panel">', unsafe_allow_html=True)
+        
         # Favorite button
         is_favorite = is_favorite_volcano(volcano['id'])
         col_info, col_fav = st.columns([3, 1])
         
         with col_info:
-            st.markdown(f"### {volcano['name']}")
+            st.markdown(f"<h3>{volcano['name']}</h3>", unsafe_allow_html=True)
         
         with col_fav:
             if is_favorite:
-                if st.button("❤️ Remove from Favorites"):
+                favorite_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#FF5A5F" stroke="#FF5A5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>"""
+                if st.button(f"{favorite_icon} Remove from Favorites", help="Remove this volcano from your favorites"):
                     try:
                         remove_favorite_volcano(volcano['id'])
                         st.success(f"Removed {volcano['name']} from favorites")
@@ -445,7 +452,8 @@ with col2:
                     except Exception as e:
                         st.error(f"Error removing from favorites: {str(e)}")
             else:
-                if st.button("🤍 Add to Favorites"):
+                favorite_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>"""
+                if st.button(f"{favorite_icon} Add to Favorites", help="Add this volcano to your favorites"):
                     try:
                         add_favorite_volcano(volcano)
                         st.success(f"Added {volcano['name']} to favorites")
@@ -455,96 +463,290 @@ with col2:
                     except Exception as e:
                         st.error(f"Error adding to favorites: {str(e)}")
         
-        st.markdown(f"**Region:** {volcano['region']}")
-        st.markdown(f"**Country:** {volcano['country']}")
+        # Key statistics in nice cards
+        st.markdown('<div class="stat-container">', unsafe_allow_html=True)
         
-        # Alert level with color coding
+        # Elevation stat
+        elevation = volcano.get('elevation', 'N/A')
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-value">{elevation} m</div>
+            <div class="stat-label">Elevation</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Type stat
+        volcano_type = volcano.get('type', 'Unknown')
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-value">{volcano_type.split()[0]}</div>
+            <div class="stat-label">Type</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Last eruption stat
+        last_eruption = volcano.get('last_eruption', 'Unknown')
+        if last_eruption and len(str(last_eruption)) > 10:
+            last_eruption = str(last_eruption)[:10] + "..."
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-value">{last_eruption}</div>
+            <div class="stat-label">Last Eruption</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)  # Close stat container
+        
+        # Location information
+        st.markdown('<div class="info-section">', unsafe_allow_html=True)
+        st.markdown('<h4>Location</h4>', unsafe_allow_html=True)
+        
+        # Region and country with icons
+        location_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"></circle><path d="M12 2a8 8 0 0 0-8 8c0 1.892.402 3.13 1.5 4.5L12 22l6.5-7.5c1.098-1.37 1.5-2.608 1.5-4.5a8 8 0 0 0-8-8z"></path></svg>"""
+        st.markdown(f"""
+        <p>{location_icon} <strong>Region:</strong> {volcano['region']}</p>
+        <p>{location_icon} <strong>Country:</strong> {volcano['country']}</p>
+        """, unsafe_allow_html=True)
+        
+        # Add coordinates if available
+        if 'latitude' in volcano and 'longitude' in volcano:
+            coord_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>"""
+            st.markdown(f"""
+            <p>{coord_icon} <strong>Coordinates:</strong> {volcano['latitude']:.4f}, {volcano['longitude']:.4f}</p>
+            """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)  # Close info section
+        
+        # Alert level section with color-coded tag
+        st.markdown('<div class="info-section">', unsafe_allow_html=True)
+        st.markdown('<h4>Current Status</h4>', unsafe_allow_html=True)
+        
+        # Alert level with tag styling
         alert_level = volcano.get('alert_level', 'Unknown')
-        alert_color = {
-            'Normal': 'green',
-            'Advisory': 'yellow',
-            'Watch': 'orange',
-            'Warning': 'red',
-            'Unknown': 'gray'
-        }.get(alert_level, 'gray')
+        alert_tag_class = {
+            'Normal': 'tag-normal',
+            'Advisory': 'tag-advisory',
+            'Watch': 'tag-watch',
+            'Warning': 'tag-warning',
+            'Unknown': 'tag-uncertain'
+        }.get(alert_level, 'tag-uncertain')
         
-        st.markdown(f"**Alert Level:** <span style='color:{alert_color};font-weight:bold;'>{alert_level}</span>", unsafe_allow_html=True)
+        status_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 2 1.88 1.88"></path><path d="M14.12 3.88 16 2"></path><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"></path><path d="M12 20h0"></path><path d="m4.93 19.07 2.83-2.83 10.18-10.18c.96-.96.96-2.51 0-3.47-.96-.96-2.51-.96-3.47 0l-10.18 10.18-2.83 2.83c-.76.76-.76 2.01 0 2.83.76.76 2.01.76 2.83 0z"></path><path d="M18 12v4.5"></path><path d="M8.5 21A4.5 4.5 0 0 1 4 16.5V13"></path><path d="M22 16.5A4.5 4.5 0 0 1 17.5 21H13"></path></svg>"""
         
-        st.markdown(f"**Elevation:** {volcano['elevation']} meters")
-        st.markdown(f"**Type:** {volcano['type']}")
+        st.markdown(f"""
+        <p>{status_icon} <strong>Alert Level:</strong> <span class="info-tag {alert_tag_class}">{alert_level}</span></p>
+        """, unsafe_allow_html=True)
         
-        # Last eruption info
-        if 'last_eruption' in volcano and volcano['last_eruption']:
-            st.markdown(f"**Last Known Eruption:** {volcano['last_eruption']}")
-        else:
-            st.markdown("**Last Known Eruption:** Unknown")
+        st.markdown('</div>', unsafe_allow_html=True)  # Close info section
+        st.markdown('</div>', unsafe_allow_html=True)  # Close info panel
         
         # Fetch and display additional details
         try:
             volcano_details = get_volcano_details(volcano['id'])
             
             if volcano_details:
-                st.markdown("### Additional Information")
+                # Additional Info Panel
+                st.markdown('<div class="info-panel">', unsafe_allow_html=True)
+                st.markdown('<h3>Additional Information</h3>', unsafe_allow_html=True)
                 
                 if 'description' in volcano_details and volcano_details['description']:
-                    st.markdown(f"**Description:** {volcano_details['description']}")
+                    st.markdown('<div class="info-section">', unsafe_allow_html=True)
+                    description_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>"""
+                    st.markdown(f'<h4>{description_icon} Description</h4>', unsafe_allow_html=True)
+                    st.markdown(f"<p>{volcano_details['description']}</p>", unsafe_allow_html=True)
+                    st.markdown('</div>', unsafe_allow_html=True)  # Close info section
                 
                 if 'activity' in volcano_details and volcano_details['activity']:
-                    st.markdown(f"**Recent Activity:** {volcano_details['activity']}")
+                    st.markdown('<div class="info-section">', unsafe_allow_html=True)
+                    activity_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path><path d="M14.5 9.5 16 8"></path><path d="M14.5 14.5 16 16"></path><path d="M9.5 14.5 8 16"></path><path d="M9.5 9.5 8 8"></path><path d="m12 6 1.5-1.5"></path><path d="M18 12h1.5"></path><path d="M12 18v1.5"></path><path d="M6 12H4.5"></path></svg>"""
+                    st.markdown(f'<h4>{activity_icon} Recent Activity</h4>', unsafe_allow_html=True)
+                    st.markdown(f"<p>{volcano_details['activity']}</p>", unsafe_allow_html=True)
+                    st.markdown('</div>', unsafe_allow_html=True)  # Close info section
+                
+                st.markdown('</div>', unsafe_allow_html=True)  # Close info panel
         except Exception as e:
             st.warning(f"Could not load additional details: {str(e)}")
         
-        # User Notes section
-        st.markdown("### Your Notes")
+        # User Notes section with styled panel
+        st.markdown('<div class="info-panel">', unsafe_allow_html=True)
+        notes_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>"""
+        st.markdown(f'<h3>{notes_icon} Your Notes</h3>', unsafe_allow_html=True)
         
         # Get existing note if any
         existing_note = get_user_note(volcano['id'])
         note_text = existing_note['note_text'] if existing_note else ""
         
-        # Note input
+        # Note timestamp
+        if existing_note and existing_note.get('created_at'):
+            st.markdown(f'<p class="text-muted"><small>Last updated: {existing_note["created_at"]}</small></p>', unsafe_allow_html=True)
+        
+        # Note input with custom styling
+        st.markdown("""
+        <style>
+        .stTextArea textarea {
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'SF Pro Text', Arial, sans-serif;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+            background-color: #F9FAFB;
+        }
+        .stTextArea textarea:focus {
+            border-color: #FF5A5F;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 90, 95, 0.2);
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
         user_note = st.text_area(
             "Add your notes about this volcano:",
             value=note_text,
-            height=100,
+            height=120,
             key=f"note_{volcano['id']}"
         )
         
-        # Save note button
-        if st.button("Save Note"):
-            if user_note:
-                try:
-                    add_user_note(volcano['id'], volcano['name'], user_note)
-                    st.success("Note saved successfully!")
-                except Exception as e:
-                    st.error(f"Error saving note: {str(e)}")
-            else:
-                st.warning("Note is empty. Please add some text to save.")
+        # Save note button with an icon
+        save_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>"""
         
-        # InSAR Data links
-        st.markdown("### InSAR Satellite Data")
+        col1, col2, col3 = st.columns([3, 3, 6])
+        with col1:
+            if st.button(f"{save_icon} Save Note", type="primary"):
+                if user_note:
+                    try:
+                        add_user_note(volcano['id'], volcano['name'], user_note)
+                        st.success("Note saved successfully!")
+                    except Exception as e:
+                        st.error(f"Error saving note: {str(e)}")
+                else:
+                    st.warning("Note is empty. Please add some text to save.")
+        
+        st.markdown('</div>', unsafe_allow_html=True)  # Close info panel
+        
+        # InSAR Data links with professional panel
+        st.markdown('<div class="info-panel">', unsafe_allow_html=True)
+        satellite_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h18"></path><path d="M5 4.5a9.16 9.16 0 0 1-.5 5.24"></path><path d="M7 4.5a5.89 5.89 0 0 0 .5 5.24"></path><path d="M4.24 10.24a9.45 9.45 0 0 0 7.5 2.75"></path><circle cx="14.5" cy="13" r="4"></circle><path d="m17 15.5 3.5 3.5"></path></svg>"""
+        st.markdown(f'<h3>{satellite_icon} Satellite & InSAR Data</h3>', unsafe_allow_html=True)
+        
+        # Add styled info about InSAR
+        st.markdown("""
+        <p style="margin-bottom: 1rem; color: #555;">
+            <strong>InSAR (Interferometric Synthetic Aperture Radar)</strong> data shows ground deformation 
+            patterns that can indicate magma movement beneath volcanoes. Access current data from the 
+            resources below.
+        </p>
+        """, unsafe_allow_html=True)
+        
+        # Create a grid layout for satellite data links
+        st.markdown('<div class="satellite-links">', unsafe_allow_html=True)
+        
+        # CSS for link cards
+        st.markdown("""
+        <style>
+        .satellite-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .link-card {
+            background-color: #F9FAFB;
+            border-radius: 8px;
+            padding: 12px 15px;
+            border: 1px solid #E5E7EB;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: #111827;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .link-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-color: #FF5A5F;
+            text-decoration: none;
+        }
+        
+        .link-card svg {
+            margin-bottom: 10px;
+            stroke: #FF5A5F;
+        }
+        
+        .link-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        
+        .link-description {
+            font-size: 0.75rem;
+            color: #4B5563;
+        }
+        </style>
+        """, unsafe_allow_html=True)
         
         # Get specific InSAR URL for this volcano if available
         insar_url = get_insar_url_for_volcano(volcano['name'])
         if insar_url:
-            st.markdown(f"[View InSAR Data for {volcano['name']}]({insar_url})")
-            st.markdown("---")
+            insar_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z"></path><circle cx="12" cy="12" r="3"></circle><path d="m12 12 4.24 4.24"></path><path d="m12 12 3-5"></path><path d="m12 12-5-3"></path><path d="m12 12-4.24 4.24"></path></svg>"""
+            st.markdown(f"""
+            <a href="{insar_url}" target="_blank" class="link-card">
+                {insar_icon}
+                <div class="link-title">Dedicated InSAR</div>
+                <div class="link-description">View InSAR data specific to {volcano['name']}</div>
+            </a>
+            """, unsafe_allow_html=True)
         
         # Generate Sentinel Hub URL
         sentinel_hub_url = generate_sentinel_hub_url(volcano['latitude'], volcano['longitude'])
-        st.markdown(f"[View on Sentinel Hub]({sentinel_hub_url})")
+        sentinel_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>"""
+        st.markdown(f"""
+        <a href="{sentinel_hub_url}" target="_blank" class="link-card">
+            {sentinel_icon}
+            <div class="link-title">Sentinel Hub</div>
+            <div class="link-description">View satellite imagery from Sentinel-1/2</div>
+        </a>
+        """, unsafe_allow_html=True)
         
         # Generate ESA Copernicus URL
         copernicus_url = generate_copernicus_url(volcano['latitude'], volcano['longitude'])
-        st.markdown(f"[Search ESA Copernicus Data]({copernicus_url})")
+        copernicus_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m16 12-4-4-4 4"></path><path d="m16 12-4 4-4-4"></path></svg>"""
+        st.markdown(f"""
+        <a href="{copernicus_url}" target="_blank" class="link-card">
+            {copernicus_icon}
+            <div class="link-title">ESA Copernicus</div>
+            <div class="link-description">Search ESA's satellite data archive</div>
+        </a>
+        """, unsafe_allow_html=True)
         
         # USGS link
         usgs_url = f"https://www.usgs.gov/volcanoes/volcanoes-around-the-world/{volcano['name'].lower().replace(' ', '-')}"
-        st.markdown(f"[USGS Volcano Information]({usgs_url})")
+        usgs_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 12 8-2 2-8 2 8 8 2-8 2-2 8-2-8Z"></path></svg>"""
+        st.markdown(f"""
+        <a href="{usgs_url}" target="_blank" class="link-card">
+            {usgs_icon}
+            <div class="link-title">USGS Data</div>
+            <div class="link-description">Official USGS volcano information</div>
+        </a>
+        """, unsafe_allow_html=True)
         
         # ASF SARVIEWS link (if coordinates are available)
         if 'latitude' in volcano and 'longitude' in volcano:
             sarviews_url = f"https://sarviews-hazards.alaska.edu/#{volcano['latitude']},{volcano['longitude']},6"
-            st.markdown(f"[ASF SARVIEWS (SAR Data)]({sarviews_url})")
+            sarviews_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a5 5 0 0 0-6 0 5 5 0 0 0-6 0"></path><path d="M12 8v7"></path><path d="M18 11a3 3 0 0 0-6 0 3 3 0 0 0-6 0"></path><path d="M18 14a1 1 0 0 0-2 0 1 1 0 0 0-2 0 1 1 0 0 0-2 0 1 1 0 0 0-2 0"></path><path d="M18 5a7 7 0 0 0-12 0"></path></svg>"""
+            st.markdown(f"""
+            <a href="{sarviews_url}" target="_blank" class="link-card">
+                {sarviews_icon}
+                <div class="link-title">ASF SARVIEWS</div>
+                <div class="link-description">Interactive SAR data visualization</div>
+            </a>
+            """, unsafe_allow_html=True)
             
         # COMET Volcano Portal link
         location = {
@@ -552,49 +754,218 @@ with col2:
             'longitude': volcano.get('longitude')
         }
         comet_url = get_comet_url_for_volcano(volcano['name'], location)
-        if comet_url:
-            st.markdown(f"[COMET Volcano Portal (SAR Animations)]({comet_url})")
-        else:
-            st.markdown("[COMET Volcano Portal](https://comet.nerc.ac.uk/comet-volcano-portal/)")
+        comet_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"></path></svg>"""
+        comet_portal_url = comet_url if comet_url else "https://comet.nerc.ac.uk/comet-volcano-portal/"
+        st.markdown(f"""
+        <a href="{comet_portal_url}" target="_blank" class="link-card">
+            {comet_icon}
+            <div class="link-title">COMET Portal</div>
+            <div class="link-description">SAR animations and time series</div>
+        </a>
+        """, unsafe_allow_html=True)
         
-        # Risk Assessment Information
-        st.markdown("### Risk Assessment")
+        st.markdown('</div>', unsafe_allow_html=True)  # Close satellite links grid
+        st.markdown('</div>', unsafe_allow_html=True)  # Close info panel
+        
+        # Risk Assessment Information with professional styling
+        st.markdown('<div class="info-panel">', unsafe_allow_html=True)
+        risk_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>"""
+        st.markdown(f'<h3>{risk_icon} Risk Assessment</h3>', unsafe_allow_html=True)
+        
         try:
             # Get risk assessment data for this volcano
             risk_data = get_volcano_risk_assessment(volcano['id'])
             
             if risk_data:
                 # Set color based on risk level
-                risk_colors = {
-                    'Low': 'blue',
-                    'Moderate': 'green',
-                    'High': 'orange',
-                    'Very High': 'red'
+                risk_levels = {
+                    'Low': {
+                        'color': '#3498db',
+                        'tag_class': 'tag-normal',
+                        'icon': """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>"""
+                    },
+                    'Moderate': {
+                        'color': '#2ecc71',
+                        'tag_class': 'tag-advisory',
+                        'icon': """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>"""
+                    },
+                    'High': {
+                        'color': '#e67e22',
+                        'tag_class': 'tag-watch',
+                        'icon': """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8.5 14.5 2-2-2-2"></path><path d="m13.5 14.5 2-2-2-2"></path><circle cx="12" cy="12" r="10"></circle></svg>"""
+                    },
+                    'Very High': {
+                        'color': '#e74c3c',
+                        'tag_class': 'tag-warning',
+                        'icon': """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>"""
+                    }
                 }
-                risk_color = risk_colors.get(risk_data['risk_level'], 'gray')
                 
-                # Display the risk factor and level
-                st.markdown(f"**Risk Level:** <span style='color:{risk_color};font-weight:bold;'>{risk_data['risk_level']}</span> ({risk_data['risk_factor']:.2f})", unsafe_allow_html=True)
+                risk_level = risk_data['risk_level']
+                risk_info = risk_levels.get(risk_level, {
+                    'color': '#7f8c8d',
+                    'tag_class': 'tag-uncertain',
+                    'icon': """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v.01"></path><path d="M12 8a2 2 0 0 0-2 2v2a2 2 0 0 0 4 0v-2a2 2 0 0 0-2-2Z"></path></svg>"""
+                })
                 
-                # Create expandable section for detailed risk factors
-                with st.expander("Detailed Risk Factors", expanded=False):
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        if risk_data['eruption_risk_score']:
-                            st.markdown(f"**Eruption Risk:** {risk_data['eruption_risk_score']:.2f}")
-                        if risk_data['type_risk_score']:
-                            st.markdown(f"**Type Risk:** {risk_data['type_risk_score']:.2f}")
-                    with col2:
-                        if risk_data['monitoring_risk_score']:
-                            st.markdown(f"**Monitoring Risk:** {risk_data['monitoring_risk_score']:.2f}")
-                        if risk_data['regional_risk_score']:
-                            st.markdown(f"**Regional Risk:** {risk_data['regional_risk_score']:.2f}")
+                # Main risk information display
+                st.markdown(f"""
+                <div class="info-section">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                        <span class="info-tag {risk_info['tag_class']}">{risk_info['icon']} {risk_level} Risk</span>
+                        <span style="font-size: 0.9rem; color: #666;">Risk Factor: {risk_data['risk_factor']:.2f}</span>
+                    </div>
                     
-                    st.markdown(f"*Last updated: {risk_data['last_updated']}*")
+                    <p style="margin-top: 0.5rem; color: #555; font-size: 0.9rem;">
+                        This risk assessment is based on factors like eruption history, volcano type, 
+                        monitoring capability, and regional vulnerability. A higher risk factor indicates 
+                        a volcano that may pose greater hazards.
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Create a professional gauge visualization
+                st.markdown("""
+                <style>
+                .risk-gauge-container {
+                    width: 100%;
+                    height: 20px;
+                    background-color: #f1f1f1;
+                    border-radius: 10px;
+                    margin: 15px 0;
+                    overflow: hidden;
+                    position: relative;
+                }
+                
+                .risk-gauge-fill {
+                    height: 100%;
+                    border-radius: 10px;
+                    background: linear-gradient(90deg, #3498db 0%, #2ecc71 30%, #e67e22 60%, #e74c3c 100%);
+                    transition: width 0.5s ease;
+                }
+                
+                .risk-gauge-marker {
+                    position: absolute;
+                    top: -8px;
+                    width: 5px;
+                    height: 35px;
+                    background-color: rgba(0, 0, 0, 0.7);
+                    transform: translateX(-50%);
+                }
+                
+                .risk-factor-label {
+                    margin-top: 8px;
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 0.8rem;
+                    color: #666;
+                }
+                </style>
+                """, unsafe_allow_html=True)
+                
+                # Calculate the position of the marker (0-100%)
+                # Assuming risk factor is on a scale of 0-10
+                scale_max = 10.0
+                marker_position = min(100, max(0, (risk_data['risk_factor'] / scale_max) * 100))
+                
+                st.markdown(f"""
+                <div class="info-section">
+                    <h4>Risk Factor</h4>
+                    <div class="risk-gauge-container">
+                        <div class="risk-gauge-fill" style="width: 100%;"></div>
+                        <div class="risk-gauge-marker" style="left: {marker_position}%;"></div>
+                    </div>
+                    <div class="risk-factor-label">
+                        <span>Low</span>
+                        <span>Moderate</span>
+                        <span>High</span>
+                        <span>Very High</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Risk factor breakdown
+                st.markdown('<div class="info-section">', unsafe_allow_html=True)
+                st.markdown('<h4>Risk Factor Breakdown</h4>', unsafe_allow_html=True)
+                
+                # Create 2x2 grid of factor cards
+                st.markdown('<div class="stat-container">', unsafe_allow_html=True)
+                
+                # Eruption Risk
+                eruption_score = risk_data.get('eruption_risk_score', 0)
+                st.markdown(f"""
+                <div class="stat-card">
+                    <div class="stat-value">{eruption_score:.1f}</div>
+                    <div class="stat-label">Eruption History</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Type Risk
+                type_score = risk_data.get('type_risk_score', 0)
+                st.markdown(f"""
+                <div class="stat-card">
+                    <div class="stat-value">{type_score:.1f}</div>
+                    <div class="stat-label">Volcano Type</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Monitoring Risk
+                monitoring_score = risk_data.get('monitoring_risk_score', 0)
+                st.markdown(f"""
+                <div class="stat-card">
+                    <div class="stat-value">{monitoring_score:.1f}</div>
+                    <div class="stat-label">Monitoring</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Regional Risk
+                regional_score = risk_data.get('regional_risk_score', 0)
+                st.markdown(f"""
+                <div class="stat-card">
+                    <div class="stat-value">{regional_score:.1f}</div>
+                    <div class="stat-label">Regional</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.markdown('</div>', unsafe_allow_html=True)  # Close stat container
+                
+                # Display last updated
+                st.markdown(f"""
+                <p style="margin-top: 15px; font-size: 0.8rem; color: #666; text-align: right;">
+                    <em>Last updated: {risk_data['last_updated']}</em>
+                </p>
+                """, unsafe_allow_html=True)
+                
+                st.markdown('</div>', unsafe_allow_html=True)  # Close info section
+                
+                # Link to Risk Map
+                st.markdown("""
+                <div style="margin-top: 10px;">
+                    <a href="/pages/risk_map.py" target="_self" style="display: inline-flex; align-items: center; gap: 5px; text-decoration: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        View Global Risk Heat Map
+                    </a>
+                </div>
+                """, unsafe_allow_html=True)
+                
             else:
-                st.info("No risk assessment data available for this volcano. Visit the Risk Heat Map page to generate risk assessments.")
+                # No risk data
+                no_data_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M7.91 3h8.18a2 2 0 0 1 1.63.87l2.88 3.86a2 2 0 0 1 0 2.48l-9 12.01a2 2 0 0 1-3.24 0l-9-12.01a2 2 0 0 1 0-2.48l2.88-3.86A2 2 0 0 1 7.91 3Z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>"""
+                
+                st.markdown(f"""
+                <div style="text-align: center; padding: 2rem 1rem;">
+                    {no_data_icon}
+                    <p style="margin-top: 1rem; color: #666;">No risk assessment data available for this volcano.</p>
+                    <a href="/pages/risk_map.py" target="_self" style="display: inline-flex; align-items: center; gap: 5px; margin-top: 1rem; text-decoration: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        Visit Risk Heat Map
+                    </a>
+                </div>
+                """, unsafe_allow_html=True)
         except Exception as e:
             st.warning(f"Could not load risk assessment data: {str(e)}")
+            
+        st.markdown('</div>', unsafe_allow_html=True)  # Close info panel
         
         # Volcano Characteristics Section
         st.markdown("### Detailed Characteristics")
