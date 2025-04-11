@@ -782,7 +782,7 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
                     x=conduit_x, y=conduit_y, z=conduit_z,
                     mode='markers',
                     marker=dict(
-                        size=5,
+                        size=8,  # Increased conduit magma marker size
                         color=magma_color,
                         opacity=0.9
                     ),
@@ -913,7 +913,7 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
                         x=col_x, y=col_y, z=col_z,
                         mode='markers',
                         marker=dict(
-                            size=8,
+                            size=12,  # Increased marker size for eruption column
                             color=colors,
                             opacity=0.8
                         ),
@@ -1281,7 +1281,7 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
                         x=flow_x, y=flow_y, z=flow_z,
                         mode='markers',
                         marker=dict(
-                            size=8,
+                            size=10,  # Increased marker size
                             color=flow_colors,
                             opacity=0.9
                         ),
@@ -1351,8 +1351,8 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
     fig.update_layout(
         title=f"{volcano_name} ({volcano_type.replace('_', ' ').title()}) Eruption Animation",
         autosize=True,
-        width=900,
-        height=700,
+        width=1200,  # Increased width
+        height=900,  # Increased height
         scene=dict(
             xaxis=dict(range=x_range, autorange=False),
             yaxis=dict(range=y_range, autorange=False),
