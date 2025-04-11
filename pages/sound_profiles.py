@@ -9,7 +9,12 @@ import streamlit as st
 import pandas as pd
 from utils.api import get_known_volcano_data, get_volcano_details, get_volcano_by_name
 from utils.sound_utils import get_volcano_sound_player
-from utils.db_utils import add_volcano_sound_preference, get_user_sound_preferences
+from utils.db_utils import (
+    add_volcano_sound_preference, 
+    get_user_sound_preferences,
+    remove_sound_preference,
+    is_sound_preference
+)
 
 def app():
     st.title("Volcano Sound Profiles")
@@ -75,13 +80,26 @@ def app():
                     st.markdown(f"**Region:** {volcano.get('region', 'Unknown')}")
                     st.markdown(f"**Alert Level:** {volcano.get('alert_level', 'Unknown')}")
                     
-                    # Add button to save this sound to preferences
-                    if st.button("Save to My Sound Preferences"):
-                        try:
-                            add_volcano_sound_preference(volcano['id'], volcano['name'])
-                            st.success(f"Added {volcano['name']} to your sound preferences!")
-                        except Exception as e:
-                            st.error(f"Error saving preference: {str(e)}")
+                    # Check if already in preferences
+                    is_preferred = is_sound_preference(volcano['id'])
+                    
+                    # Add button to save/remove this sound to preferences
+                    if is_preferred:
+                        if st.button("🗑️ Remove from My Sound Preferences"):
+                            try:
+                                remove_sound_preference(volcano['id'])
+                                st.success(f"Removed {volcano['name']} from your sound preferences!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error removing preference: {str(e)}")
+                    else:
+                        if st.button("💾 Save to My Sound Preferences"):
+                            try:
+                                add_volcano_sound_preference(volcano['id'], volcano['name'])
+                                st.success(f"Added {volcano['name']} to your sound preferences!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error saving preference: {str(e)}")
                 
                 with col2:
                     # Display volcano location
@@ -218,9 +236,23 @@ def app():
                         volcano_details = get_volcano_details(pref['volcano_id'])
                         
                         if volcano_details:
-                            # Basic volcano info
-                            st.markdown(f"**Type:** {volcano_details.get('type', 'Unknown')}")
-                            st.markdown(f"**Alert Level:** {volcano_details.get('alert_level', 'Unknown')}")
+                            # Create columns for info and action buttons
+                            info_col, action_col = st.columns([3, 1])
+                            
+                            with info_col:
+                                # Basic volcano info
+                                st.markdown(f"**Type:** {volcano_details.get('type', 'Unknown')}")
+                                st.markdown(f"**Alert Level:** {volcano_details.get('alert_level', 'Unknown')}")
+                            
+                            with action_col:
+                                # Add remove button
+                                if st.button("🗑️ Remove", key=f"remove_{pref['volcano_id']}"):
+                                    try:
+                                        remove_sound_preference(pref['volcano_id'])
+                                        st.success(f"Removed {pref['volcano_name']} from sound preferences")
+                                        st.rerun()
+                                    except Exception as e:
+                                        st.error(f"Error removing preference: {str(e)}")
                             
                             # Generate and display sound profile
                             sound_html = get_volcano_sound_player(volcano_details, include_waveform=True)
