@@ -35,7 +35,7 @@ def app():
     
     with col1:
         st.markdown("##### Before Collapse (July 2018)")
-        st.image("https://www.gsi.go.jp/cais/topic181225-Index-e-j.html.jpg", 
+        st.image("https://www.researchgate.net/profile/Thomas-Walter-5/publication/335176329/figure/fig1/AS:793194842722304@1566181631436/Anak-Krakatau-and-its-location-a-true-colour-PlanetScope-satellite-image-acquired-on-11.png", 
                  caption="Anak Krakatau before the collapse", use_column_width=True)
         st.markdown("""
         Before the collapse, Anak Krakatau was a symmetrical cone that had 
@@ -45,7 +45,7 @@ def app():
     
     with col2:
         st.markdown("##### After Collapse (December 29, 2018)")
-        st.image("https://www.gsi.go.jp/cais/topic181225-image03-e.jpg", 
+        st.image("https://www.researchgate.net/profile/Thomas-Walter-5/publication/335176329/figure/fig3/AS:793194842726401@1566181631646/Pre-and-post-collapse-comparison-of-Anak-Krakatau-a-shows-the-volcano-before-the.png", 
                  caption="Anak Krakatau after the collapse", use_column_width=True)
         st.markdown("""
         After the collapse, approximately two-thirds of the volcano's height above sea level
@@ -357,17 +357,19 @@ def app():
                             help="Move the slider to see how the tsunami propagated over time")
     
     # Simple map of Sunda Strait with tsunami propagation circles
-    st.markdown("""
+    tsunami_circle_size = tsunami_stage * 11
+    
+    st.markdown(f"""
     <style>
-    .tsunami-map {
+    .tsunami-map {{
         position: relative;
         width: 700px;
         height: 500px;
         background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Sunda_Strait_map.png/800px-Sunda_Strait_map.png');
         background-size: cover;
         margin: 0 auto;
-    }
-    .tsunami-circle {
+    }}
+    .tsunami-circle {{
         position: absolute;
         top: 50%;
         left: 50%;
@@ -375,16 +377,16 @@ def app():
         border-radius: 50%;
         border: 2px solid rgba(0, 100, 255, 0.7);
         background: rgba(0, 100, 255, 0.3);
-    }
-    .tsunami-marker {
+    }}
+    .tsunami-marker {{
         position: absolute;
         width: 10px;
         height: 10px;
         background: red;
         border-radius: 50%;
         transform: translate(-50%, -50%);
-    }
-    .tsunami-label {
+    }}
+    .tsunami-label {{
         position: absolute;
         color: white;
         background: rgba(0,0,0,0.7);
@@ -393,7 +395,7 @@ def app():
         font-size: 12px;
         transform: translate(-50%, -100%);
         white-space: nowrap;
-    }
+    }}
     </style>
     
     <div class="tsunami-map">
@@ -413,11 +415,11 @@ def app():
         <div class="tsunami-label" style="top: 35%; left: 40%;">Lampung (Sumatra)</div>
         
         <!-- Tsunami wave circles based on current time -->
-        <div class="tsunami-circle" style="width: ${tsunami_stage * 11}px; height: ${tsunami_stage * 11}px;"></div>
+        <div class="tsunami-circle" style="width: {tsunami_circle_size}px; height: {tsunami_circle_size}px;"></div>
     </div>
     
     <div style="text-align: center; margin-top: 10px;">
-        <b>Tsunami propagation at T+${tsunami_stage} minutes</b><br>
+        <b>Tsunami propagation at T+{tsunami_stage} minutes</b><br>
         Wave speed: ~200 km/h in open water
     </div>
     """, unsafe_allow_html=True)
