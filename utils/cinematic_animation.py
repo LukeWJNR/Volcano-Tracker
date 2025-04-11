@@ -1263,16 +1263,16 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
                     dist = np.sqrt(flow_x[i]**2 + flow_y[i]**2) / flow_length
                     
                     # Parse the RGB components from the lava color
-                    base_color = lava_color.strip('rgb(').strip(')').split(',')
-                    r = int(base_color[0])
-                    g = int(base_color[1])
-                    b = int(base_color[2])
+                    base_color = lava_color.replace('rgb(', '').replace(')', '').split(',')
+                    r = int(base_color[0].strip())
+                    g = int(base_color[1].strip())
+                    b = int(base_color[2].strip())
                     
                     # Darken with distance (cooling lava)
-                    cooling_factor = 1.0 - 0.5 * dist
-                    r_cooled = int(r * cooling_factor)
-                    g_cooled = int(g * cooling_factor)
-                    b_cooled = int(b * cooling_factor)
+                    cooling_factor = max(0.2, 1.0 - 0.5 * dist)  # Ensure minimum brightness
+                    r_cooled = max(0, min(255, int(r * cooling_factor)))  # Clamp between 0-255
+                    g_cooled = max(0, min(255, int(g * cooling_factor)))  # Clamp between 0-255
+                    b_cooled = max(0, min(255, int(b * cooling_factor)))  # Clamp between 0-255
                     
                     flow_colors.append(f'rgb({r_cooled}, {g_cooled}, {b_cooled})')
                 
