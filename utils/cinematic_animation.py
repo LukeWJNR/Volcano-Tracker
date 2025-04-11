@@ -15,6 +15,55 @@ import math
 
 from utils.animation_utils import determine_volcano_type, VOLCANO_TYPES, ALERT_LEVELS
 
+def validate_rgb(r: int, g: int, b: int) -> Tuple[int, int, int]:
+    """
+    Ensure RGB values are within 0-255 range
+    
+    Args:
+        r (int): Red value
+        g (int): Green value
+        b (int): Blue value
+    
+    Returns:
+        Tuple[int, int, int]: Validated RGB values
+    """
+    return max(0, min(r, 255)), max(0, min(g, 255)), max(0, min(b, 255))
+
+def ensure_valid_color(color: Any) -> str:
+    """
+    Ensures that a color value is in a valid format for Plotly.
+    
+    Args:
+        color: Color value as string ('rgb(r,g,b)') or tuple/list of RGB values
+        
+    Returns:
+        str: Validated color string in 'rgb(r,g,b)' format
+    """
+    # If already a valid RGB string, check and validate the values
+    if isinstance(color, str) and color.startswith('rgb(') and color.endswith(')'):
+        try:
+            # Extract the RGB values
+            import re
+            rgb_values = re.findall(r'\d+', color)
+            if len(rgb_values) == 3:
+                r, g, b = map(int, rgb_values)
+                r, g, b = validate_rgb(r, g, b)
+                return f'rgb({r}, {g}, {b})'
+        except Exception:
+            pass
+    
+    # If a tuple or list of RGB values
+    elif isinstance(color, (tuple, list)) and len(color) == 3:
+        try:
+            r, g, b = map(int, color)
+            r, g, b = validate_rgb(r, g, b)
+            return f'rgb({r}, {g}, {b})'
+        except Exception:
+            pass
+    
+    # Default to a safe color if validation fails
+    return 'rgb(128, 128, 128)'  # Default gray
+
 def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
     """
     Generate a cinematic animation of a volcanic eruption from magma buildup to ash cloud.
@@ -574,33 +623,33 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
     animation_frames = []
     
     # Colors for different elements - based on scientific references
-    ground_color = 'rgb(120, 108, 89)'  # Brown for ground
+    ground_color = ensure_valid_color('rgb(120, 108, 89)')  # Brown for ground
     
     # Magma colors vary with depth and composition
-    deep_magma_color = 'rgb(200, 0, 0)'     # Deeper red for deep magma
-    magma_color = 'rgb(255, 69, 0)'     # Orange-red for main chamber magma
-    shallow_magma_color = 'rgb(255, 100, 0)'  # Brighter orange for shallow magma
+    deep_magma_color = ensure_valid_color('rgb(200, 0, 0)')     # Deeper red for deep magma
+    magma_color = ensure_valid_color('rgb(255, 69, 0)')     # Orange-red for main chamber magma
+    shallow_magma_color = ensure_valid_color('rgb(255, 100, 0)')  # Brighter orange for shallow magma
     
     # Lava colors vary by temperature and composition (Basaltic vs. Rhyolitic)
     # From Wikipedia: Lava temperatures can range from 800 °C (1,470 °F) to 1,200 °C (2,190 °F)
     if volcano_type == 'shield':
         # Shield volcanoes like Hawaii typically have basaltic lava (higher temperature)
         # Basaltic lavas are more fluid with temperatures of 1,100 to 1,200 °C
-        lava_color = 'rgb(255, 30, 0)'  # Brighter red-orange for hot basaltic lava
+        lava_color = ensure_valid_color('rgb(255, 30, 0)')  # Brighter red-orange for hot basaltic lava
         lava_flow_type = "pahoehoe_to_aa"  # Pahoehoe (smooth) to A'a (rough) transition
     elif volcano_type in ['stratovolcano', 'caldera']:
         # Stratovolcanoes often have more viscous andesitic to dacitic lava
         # With temperatures of 800 to 1,000 °C
-        lava_color = 'rgb(220, 20, 0)'  # Darker red for cooler, more viscous lava
+        lava_color = ensure_valid_color('rgb(220, 20, 0)')  # Darker red for cooler, more viscous lava
         lava_flow_type = "blocky"  # Blocky or A'a flows
     elif volcano_type == 'lava_dome':
         # Lava domes have extremely viscous rhyolitic or dacitic lava
         # With lower temperatures around 800 °C
-        lava_color = 'rgb(180, 10, 0)'  # Darker red for cooler, highly viscous lava
+        lava_color = ensure_valid_color('rgb(180, 10, 0)')  # Darker red for cooler, highly viscous lava
         lava_flow_type = "viscous_dome"  # Slow-moving, thick flows forming a dome
     else:  # cinder_cone or other
         # Cinder cones often have basaltic to andesitic lava
-        lava_color = 'rgb(230, 25, 0)'  # Intermediate red color
+        lava_color = ensure_valid_color('rgb(230, 25, 0)')  # Intermediate red color
         lava_flow_type = "aa"  # A'a flows (rough, blocky surface)
     
     # Eruption column colors
