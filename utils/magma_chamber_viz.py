@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 import random
 
 from utils.animation_utils import VOLCANO_TYPES, ALERT_LEVELS, determine_volcano_type
+from utils.cinematic_animation import ensure_valid_color
 
 def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
     """
