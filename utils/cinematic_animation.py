@@ -550,9 +550,9 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
                     'label': 'Play',
                     'method': 'animate',
                     'args': [None, {
-                        'frame': {'duration': 100, 'redraw': True},
+                        'frame': {'duration': 350, 'redraw': True},  # Much slower - 350ms per frame
                         'fromcurrent': True,
-                        'transition': {'duration': 50}
+                        'transition': {'duration': 150}  # Smoother transitions
                     }]
                 },
                 {
