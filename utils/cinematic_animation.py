@@ -111,38 +111,143 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
         # Default - generic volcano shape
         Z_surface = 5 * np.exp(-0.1 * R**2)
     
-    # Generate magma chamber with realistic dimensions
+    # Generate comprehensive volcanic plumbing system with realistic dimensions
+    # Based on research from "Volcanic and igneous plumbing systems"
+    
+    # Initialize default values for all parameters to avoid any unbound variables
+    chamber_depth = -5  
+    chamber_width = 6   
+    chamber_height = 2  
+    has_deep_reservoir = False
+    deep_reservoir_depth = -10
+    deep_reservoir_width = 8
+    deep_reservoir_height = 3
+    has_shallow_chamber = False
+    shallow_chamber_depth = -2
+    shallow_chamber_width = 4
+    shallow_chamber_height = 1
+    conduit_complexity = "simple"
+    
+    # Then set specific values based on volcano type
     if volcano_type == 'stratovolcano':
-        # Stratovolcano magma chambers are typically deep (5-10km) and ellipsoidal
-        # Scale down for visualization purposes
+        # Stratovolcano plumbing systems typically have:
+        # 1. Deep crustal reservoir (magma generation zone)
+        # 2. Mid-crustal storage zone (main magma chamber)
+        # 3. Shallow holding area (subsidiary chamber)
+        # 4. Complex conduit system
+        
+        # Main magma chamber (mid-crustal)
         chamber_depth = -8  # Deep magma chamber
         chamber_width = 7   # Wide chamber but not as wide as shield volcanoes
         chamber_height = 3  # Tall chamber for rising magma bodies
+        
+        # Secondary features
+        has_deep_reservoir = True
+        deep_reservoir_depth = -15
+        deep_reservoir_width = 12
+        deep_reservoir_height = 4
+        
+        has_shallow_chamber = True
+        shallow_chamber_depth = -3
+        shallow_chamber_width = 3
+        shallow_chamber_height = 1
+        
+        conduit_complexity = "complex"  # Can be "simple", "complex", or "network"
+        
     elif volcano_type == 'shield':
-        # Shield volcano magma chambers are typically shallow, wide, and sill-like
+        # Shield volcano plumbing systems typically have:
+        # 1. Deeper primary magma reservoir
+        # 2. Shallow, laterally extensive sill-like chamber
+        # 3. Rift zones (lateral magma movement)
+        
+        # Main shallow, sill-like chamber
         chamber_depth = -4  # Shallow magma chamber for shield volcanoes
         chamber_width = 15  # Very wide, horizontally extensive chamber
         chamber_height = 2  # Relatively flat chamber (high width to height ratio)
+        
+        # Secondary features
+        has_deep_reservoir = True
+        deep_reservoir_depth = -12
+        deep_reservoir_width = 10
+        deep_reservoir_height = 3
+        
+        has_shallow_chamber = False  # Shield volcanoes often lack distinct shallow chambers
+        shallow_chamber_depth = -2  # Initialize even if not used
+        shallow_chamber_width = 3
+        shallow_chamber_height = 1
+        
+        conduit_complexity = "network"  # Shield volcanoes often have complex rift zone systems
+        
     elif volcano_type == 'caldera':
-        # Caldera systems have large, shallow magma chambers
+        # Caldera systems have:
+        # 1. Large, shallow magma chambers
+        # 2. Often multiple interconnected chambers
+        # 3. Ring fracture systems
+        
+        # Main large, shallow chamber
         chamber_depth = -5  # Moderate depth for calderas
         chamber_width = 14  # Very wide chamber system
         chamber_height = 4  # Substantial vertical extent
+        
+        # Secondary features
+        has_deep_reservoir = True
+        deep_reservoir_depth = -14
+        deep_reservoir_width = 18
+        deep_reservoir_height = 5
+        
+        has_shallow_chamber = True
+        shallow_chamber_depth = -2
+        shallow_chamber_width = 8
+        shallow_chamber_height = 2
+        
+        conduit_complexity = "network"  # Ring fractures with multiple paths
+        
     elif volcano_type == 'cinder_cone':
-        # Cinder cones typically have small, shallow magma chambers
+        # Cinder cones have:
+        # 1. Small, shallow magma source
+        # 2. Simple, direct conduit
+        # 3. Often monogenetic (single eruption history)
+        
+        # Small, shallow chamber
         chamber_depth = -3  # Very shallow for cinder cones
         chamber_width = 2   # Small chamber for cinder cones
         chamber_height = 1  # Small vertical extent
+        
+        # Secondary features
+        has_deep_reservoir = False  # Cinder cones often lack deep reservoirs
+        deep_reservoir_depth = -6   # Initialize even if not used
+        deep_reservoir_width = 3
+        deep_reservoir_height = 1
+        
+        has_shallow_chamber = False  # Single simple chamber is sufficient
+        shallow_chamber_depth = -1.5  # Initialize even if not used
+        shallow_chamber_width = 1
+        shallow_chamber_height = 0.5
+        
+        conduit_complexity = "simple"  # Direct path from chamber to surface
+        
     elif volcano_type == 'lava_dome':
-        # Lava dome complexes often have smaller, moderately deep chambers
+        # Lava dome plumbing systems have:
+        # 1. Moderately deep, viscous magma source
+        # 2. Often complex conduit system with multiple branches
+        
+        # Moderately deep chamber
         chamber_depth = -6  # Moderately deep for lava domes
         chamber_width = 4   # Medium width chamber
         chamber_height = 2  # Medium height
-    else:
-        # Default values
-        chamber_depth = -5  # Default
-        chamber_width = 6   # Default
-        chamber_height = 2  # Default
+        
+        # Secondary features
+        has_deep_reservoir = True
+        deep_reservoir_depth = -12
+        deep_reservoir_width = 6
+        deep_reservoir_height = 3
+        
+        has_shallow_chamber = True
+        shallow_chamber_depth = -2
+        shallow_chamber_width = 2
+        shallow_chamber_height = 1
+        
+        conduit_complexity = "complex"  # Often has multiple branches
     
     # Create a detailed magma chamber with more points for better visibility
     chamber_x = np.linspace(-chamber_width, chamber_width, 40)
@@ -176,18 +281,132 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
     # Get the summit height
     summit_height = np.max(Z_surface)
     
-    # Generate conduit between magma chamber and surface
-    theta = np.linspace(0, 2*np.pi, 20)
-    conduit_heights = np.linspace(chamber_depth, summit_height, 30)
+    # Generate conduit system between magma chamber(s) and surface
+    # The conduit complexity varies by volcano type and plumbing system
     conduit_coords = []
-    for h in conduit_heights:
-        # Conduit radius varies with height (wider near chamber, narrower near surface)
-        radius_factor = (h - chamber_depth) / (summit_height - chamber_depth)
-        r = conduit_radius * (1 - 0.5 * radius_factor)
-        for t in theta:
-            x = r * np.cos(t)
-            y = r * np.sin(t)
-            conduit_coords.append((x, y, h))
+    
+    # Main conduit from magma chamber to surface
+    if conduit_complexity == "simple":
+        # Simple, straight conduit
+        theta = np.linspace(0, 2*np.pi, 15)
+        conduit_heights = np.linspace(chamber_depth, summit_height, 25)
+        
+        for h in conduit_heights:
+            # Conduit radius varies with height (wider near chamber, narrower near surface)
+            radius_factor = (h - chamber_depth) / (summit_height - chamber_depth)
+            r = conduit_radius * (1 - 0.5 * radius_factor)
+            for t in theta:
+                x = r * np.cos(t)
+                y = r * np.sin(t)
+                conduit_coords.append((x, y, h))
+    
+    elif conduit_complexity == "complex":
+        # Complex conduit with some bends and variations
+        theta = np.linspace(0, 2*np.pi, 15)
+        conduit_heights = np.linspace(chamber_depth, summit_height, 30)
+        
+        # Main conduit with slight sinusoidal offset
+        for h_idx, h in enumerate(conduit_heights):
+            # Add horizontal offset that varies with height
+            height_fraction = h_idx / len(conduit_heights)
+            offset_x = 0.6 * np.sin(height_fraction * 3 * np.pi) * (1 - height_fraction)
+            offset_y = 0.3 * np.cos(height_fraction * 2 * np.pi) * (1 - height_fraction)
+            
+            # Conduit radius varies with height
+            radius_factor = (h - chamber_depth) / (summit_height - chamber_depth)
+            r = conduit_radius * (1 - 0.3 * radius_factor)
+            
+            for t in theta:
+                x = offset_x + r * np.cos(t)
+                y = offset_y + r * np.sin(t)
+                conduit_coords.append((x, y, h))
+        
+        # Add a secondary branch if the volcano has a shallow chamber
+        if has_shallow_chamber:
+            # Get the midpoint of the main conduit
+            mid_height_idx = len(conduit_heights) // 2
+            mid_height = conduit_heights[mid_height_idx]
+            
+            # Create branch from midpoint to shallow chamber
+            branch_heights = np.linspace(mid_height, shallow_chamber_depth, 10)
+            
+            for h_idx, h in enumerate(branch_heights):
+                # Calculate horizontal offset for the branch
+                branch_progress = h_idx / len(branch_heights)
+                branch_x = 1.0 * branch_progress
+                branch_y = 0.5 * branch_progress
+                
+                # Branch radius
+                r = conduit_radius * 0.7
+                
+                for t in theta:
+                    x = branch_x + r * np.cos(t)
+                    y = branch_y + r * np.sin(t)
+                    conduit_coords.append((x, y, h))
+    
+    elif conduit_complexity == "network":
+        # Network of conduits with multiple branches (for shield volcanoes and calderas)
+        theta = np.linspace(0, 2*np.pi, 12)
+        conduit_heights = np.linspace(chamber_depth, summit_height, 25)
+        
+        # Main central conduit
+        for h in conduit_heights:
+            radius_factor = (h - chamber_depth) / (summit_height - chamber_depth)
+            r = conduit_radius * (1 - 0.5 * radius_factor)
+            for t in theta:
+                x = r * np.cos(t)
+                y = r * np.sin(t)
+                conduit_coords.append((x, y, h))
+        
+        # Add lateral rift zones/dikes (especially for shield volcanoes)
+        if volcano_type == 'shield':
+            # Create two main rift zones in opposite directions
+            for direction in [0, np.pi]:
+                # Heights for the rift zone
+                rift_heights = np.linspace(chamber_depth + 1, chamber_depth + 2, 8)
+                
+                for h in rift_heights:
+                    # Distance ranges along the rift
+                    distances = np.linspace(1, chamber_width * 0.7, 10)
+                    
+                    for dist in distances:
+                        # Create a tube-like structure along the rift
+                        for t in np.linspace(0, 2*np.pi, 10):
+                            small_r = conduit_radius * 0.4
+                            x = dist * np.cos(direction) + small_r * np.cos(t)
+                            y = dist * np.sin(direction) + small_r * np.sin(t)
+                            conduit_coords.append((x, y, h))
+        
+        # For calderas, add ring dike structures
+        elif volcano_type == 'caldera':
+            # Create ring dike at a distance from center
+            ring_radius = chamber_width * 0.4
+            ring_heights = np.linspace(chamber_depth, chamber_depth + 3, 10)
+            
+            for h in ring_heights:
+                for angle in np.linspace(0, 2*np.pi, 40):
+                    x = ring_radius * np.cos(angle)
+                    y = ring_radius * np.sin(angle)
+                    
+                    # Add some points to create thickness
+                    for r_offset in np.linspace(-0.3, 0.3, 3):
+                        adjusted_r = ring_radius + r_offset
+                        x = adjusted_r * np.cos(angle)
+                        y = adjusted_r * np.sin(angle)
+                        conduit_coords.append((x, y, h))
+    
+    else:
+        # Fallback to simple conduit
+        theta = np.linspace(0, 2*np.pi, 15)
+        conduit_heights = np.linspace(chamber_depth, summit_height, 25)
+        
+        for h in conduit_heights:
+            radius_factor = (h - chamber_depth) / (summit_height - chamber_depth)
+            r = conduit_radius * (1 - 0.5 * radius_factor)
+            for t in theta:
+                x = r * np.cos(t)
+                y = r * np.sin(t)
+                conduit_coords.append((x, y, h))
     
     # Define frames for the animation sequence
     # Each frame needs to show changes in the volcano state
@@ -381,7 +600,67 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
             )
         )
         
-        # 2. Magma chamber (constant through animation)
+        # 2. Deep magma reservoir (if present)
+        if has_deep_reservoir:
+            # Create deep reservoir - larger and deeper
+            deep_res_x = np.linspace(-deep_reservoir_width, deep_reservoir_width, 40)
+            deep_res_y = np.linspace(-deep_reservoir_width, deep_reservoir_width, 40)
+            deep_res_X, deep_res_Y = np.meshgrid(deep_res_x, deep_res_y)
+            deep_res_R = np.sqrt(deep_res_X**2 + deep_res_Y**2)
+            
+            # Calculate deep reservoir surface
+            deep_res_Z = deep_reservoir_depth - deep_reservoir_height * np.exp(-0.15 * (deep_res_R**2) / (deep_reservoir_width*0.5))
+            
+            # Deep reservoir is shown more translucent
+            frame_data.append(
+                go.Surface(
+                    x=deep_res_X, y=deep_res_Y, z=deep_res_Z,
+                    colorscale=[[0, 'rgb(255, 30, 0)'], [1, 'rgb(255, 30, 0)']],  # Deeper red for deep magma
+                    showscale=False,
+                    opacity=0.6  # More translucent
+                )
+            )
+            
+            # Add connection between deep reservoir and main chamber
+            if phase != 'initial' or np.random.random() < 0.3:  # Show connections more prominently during active phases
+                connection_x = []
+                connection_y = []
+                connection_z = []
+                
+                # Create connection points
+                connection_points = 15
+                for i in range(connection_points):
+                    # Interpolate position between deep reservoir and main chamber
+                    t = i / (connection_points - 1)
+                    
+                    # Random offset to make it look more natural
+                    rand_offset_x = np.random.uniform(-0.5, 0.5)
+                    rand_offset_y = np.random.uniform(-0.5, 0.5)
+                    
+                    # Position
+                    x = rand_offset_x
+                    y = rand_offset_y
+                    z = deep_reservoir_depth * (1 - t) + chamber_depth * t
+                    
+                    connection_x.append(x)
+                    connection_y.append(y)
+                    connection_z.append(z)
+                
+                # Add the connection as a scatter3d
+                frame_data.append(
+                    go.Scatter3d(
+                        x=connection_x, y=connection_y, z=connection_z,
+                        mode='markers',
+                        marker=dict(
+                            size=8,
+                            color=magma_color,
+                            opacity=0.7
+                        ),
+                        showlegend=False
+                    )
+                )
+        
+        # 3. Main magma chamber (constant through animation)
         frame_data.append(
             go.Surface(
                 x=chamber_X, y=chamber_Y, z=chamber_Z,
@@ -390,6 +669,65 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
                 opacity=0.8
             )
         )
+        
+        # 4. Shallow subsidiary chamber (if present)
+        if has_shallow_chamber:
+            # Create shallow chamber - smaller and near surface
+            shallow_x = np.linspace(-shallow_chamber_width, shallow_chamber_width, 30)
+            shallow_y = np.linspace(-shallow_chamber_width, shallow_chamber_width, 30)
+            shallow_X, shallow_Y = np.meshgrid(shallow_x, shallow_y)
+            shallow_R = np.sqrt(shallow_X**2 + shallow_Y**2)
+            
+            # Calculate shallow chamber surface
+            shallow_Z = shallow_chamber_depth - shallow_chamber_height * np.exp(-0.2 * (shallow_R**2) / (shallow_chamber_width*0.4))
+            
+            # Shallow chamber is brighter
+            frame_data.append(
+                go.Surface(
+                    x=shallow_X, y=shallow_Y, z=shallow_Z,
+                    colorscale=[[0, 'rgb(255, 100, 0)'], [1, 'rgb(255, 100, 0)']],  # Brighter orange for shallow magma
+                    showscale=False,
+                    opacity=0.75
+                )
+            )
+            
+            # Add connection between main chamber and shallow chamber
+            connection2_x = []
+            connection2_y = []
+            connection2_z = []
+            
+            # Create connection points
+            connection_points = 10
+            for i in range(connection_points):
+                # Interpolate position
+                t = i / (connection_points - 1)
+                
+                # Small random offset
+                rand_offset_x = np.random.uniform(-0.3, 0.3)
+                rand_offset_y = np.random.uniform(-0.3, 0.3)
+                
+                # Position
+                x = rand_offset_x
+                y = rand_offset_y
+                z = chamber_depth * (1 - t) + shallow_chamber_depth * t
+                
+                connection2_x.append(x)
+                connection2_y.append(y)
+                connection2_z.append(z)
+            
+            # Add the connection as a scatter3d
+            frame_data.append(
+                go.Scatter3d(
+                    x=connection2_x, y=connection2_y, z=connection2_z,
+                    mode='markers',
+                    marker=dict(
+                        size=6,
+                        color=magma_color,
+                        opacity=0.8
+                    ),
+                    showlegend=False
+                )
+            )
         
         # 3. Magma in conduit up to current magma level
         # Filter conduit points up to current level
