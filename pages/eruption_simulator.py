@@ -409,7 +409,10 @@ def run_eruption_simulation(volcano, eruption_probability, simulation_days, max_
         "ground_deformation": ground_deformation,
         "vei": vei,
         "alert_levels": alert_levels,
-        "eruption_occurred": eruption_occurs
+        "eruption_occurred": eruption_occurs,
+        "volcano_type": volcano_type,
+        "volcano_name": volcano_name,
+        "volcano_country": volcano_country
     }
 
 def display_simulation_results(results, scenario):
@@ -631,12 +634,16 @@ def display_simulation_results(results, scenario):
         and composition often precede eruptions and can provide crucial insights into magma movement.
         """)
         
-        # Simulate detailed gas emission data based on the scenario
+        # Get volcano type from the simulation results or use default
+        volcano_type = results.get("volcano_type", "stratovolcano")
+        
+        # Simulate detailed gas emission data based on the scenario and volcano type
         gas_data = simulate_gas_emissions(
             simulation_days=len(days),
             eruption_probability=100 if results["eruption_occurred"] else 0,
             eruption_days=eruption_days,
-            scenario=scenario
+            scenario=scenario,
+            volcano_type=volcano_type
         )
         
         # Create and display the gas emissions chart
