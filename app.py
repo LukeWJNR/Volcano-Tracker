@@ -244,7 +244,7 @@ with col1:
     m = create_volcano_map(filtered_df)
     
     # Display the map with responsive size for iframe
-    folium_static(m, width="100%", height=450)
+    folium_static(m, width=800, height=450)
 
 with col2:
     st.subheader("Volcano Information")

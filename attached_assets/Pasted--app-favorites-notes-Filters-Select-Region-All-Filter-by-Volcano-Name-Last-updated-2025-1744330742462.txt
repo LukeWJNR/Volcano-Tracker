@@ -1,0 +1,55 @@
+
+app
+favorites
+notes
+Filters
+Select Region
+
+All
+Filter by Volcano Name
+
+Last updated: 2025-04-11 00:16:20
+
+
+Your Favorite Volcanoes
+You haven't added any favorites yet. Click on a volcano and use the 'Add to Favorites' button to save it here.
+
+
+Data Sources
+Volcano data: USGS Volcano Hazards Program
+InSAR data: Links to appropriate satellite imagery providers
+Additional information: Climate Links - Volcanoes
+🌋 Volcano Monitoring Dashboard
+This dashboard displays real-time data about active volcanoes around the world, sourced from the USGS Volcano Hazards Program. You can explore the map, filter volcanoes, and access InSAR satellite imagery data for research and monitoring purposes.
+
+🌋
+🏠 Main Dashboard
+
+❤️
+❤️ Your Favorites
+
+📝
+📝 Your Notes
+
+Active Volcano Map
+Showing 10 volcanos
+
+TypeError: must be real number, not str
+Traceback:
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 121, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 640, in code_to_exec
+    exec(code, module.__dict__)
+File "/home/runner/workspace/app.py", line 247, in <module>
+    folium_static(m, width="100%", height=450)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit_folium/__init__.py", line 99, in folium_static
+    return components.html(
+           ^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/metrics_util.py", line 410, in wrapped_func
+    result = non_optional_func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/elements/iframe.py", line 129, in _html
+    marshall(
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/elements/iframe.py", line 183, in marshall
+    proto.width = width
