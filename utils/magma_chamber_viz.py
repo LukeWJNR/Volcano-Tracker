@@ -605,7 +605,7 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
         X_conduit = 0.7 * R * np.cos(Theta)
         Y_conduit = 0.7 * R * np.sin(Theta)
         Z_top = Z_surface[15, 15]  # Summit
-        Z_conduit = chamber_depth + (Z_top - chamber_depth) * (1 - R)
+        Z_conduit = main_chamber_depth + (Z_top - main_chamber_depth) * (1 - R)
         
         fig.add_trace(go.Surface(
             x=X_conduit, y=Y_conduit, z=Z_conduit,
