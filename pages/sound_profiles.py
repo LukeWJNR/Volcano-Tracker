@@ -84,7 +84,17 @@ def app():
                     volcano_region = getattr(volcano, 'region', 'Unknown')
                     volcano_alert_level = getattr(volcano, 'alert_level', 'Unknown')
                     
-                volcano_details = get_volcano_details(volcano_id)
+                # Check if volcano_id is valid before calling get_volcano_details
+                if volcano_id:
+                    volcano_details = get_volcano_details(volcano_id)
+                else:
+                    # Create a basic details dict if id is missing
+                    volcano_details = {
+                        "name": volcano_name,
+                        "type": volcano_type,
+                        "region": volcano_region,
+                        "alert_level": volcano_alert_level
+                    }
                 
                 # Display volcano information
                 col1, col2 = st.columns([1, 1])
@@ -95,26 +105,29 @@ def app():
                     st.markdown(f"**Region:** {volcano_region}")
                     st.markdown(f"**Alert Level:** {volcano_alert_level}")
                     
-                    # Check if already in preferences
-                    is_preferred = is_sound_preference(volcano_id)
-                    
-                    # Add button to save/remove this sound to preferences
-                    if is_preferred:
-                        if st.button("🗑️ Remove from My Sound Preferences"):
-                            try:
-                                remove_sound_preference(volcano_id)
-                                st.success(f"Removed {volcano_name} from your sound preferences!")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error removing preference: {str(e)}")
+                    # Check if already in preferences (only if we have a valid ID)
+                    if volcano_id:
+                        is_preferred = is_sound_preference(volcano_id)
+                        
+                        # Add button to save/remove this sound to preferences
+                        if is_preferred:
+                            if st.button("🗑️ Remove from My Sound Preferences"):
+                                try:
+                                    remove_sound_preference(volcano_id)
+                                    st.success(f"Removed {volcano_name} from your sound preferences!")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Error removing preference: {str(e)}")
+                        else:
+                            if st.button("💾 Save to My Sound Preferences"):
+                                try:
+                                    add_volcano_sound_preference(volcano_id, volcano_name)
+                                    st.success(f"Added {volcano_name} to your sound preferences!")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Error saving preference: {str(e)}")
                     else:
-                        if st.button("💾 Save to My Sound Preferences"):
-                            try:
-                                add_volcano_sound_preference(volcano_id, volcano_name)
-                                st.success(f"Added {volcano_name} to your sound preferences!")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error saving preference: {str(e)}")
+                        st.info("This volcano cannot be saved to preferences due to missing ID.")
                 
                 with col2:
                     # Display volcano location
