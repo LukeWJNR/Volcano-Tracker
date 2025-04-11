@@ -157,6 +157,19 @@ class EruptionEvent(Base):
     def __repr__(self):
         return f"<EruptionEvent(id={self.id}, volcano_name={self.volcano_name}, eruption_start_date={self.eruption_start_date})>"
 
+class VolcanoSoundPreference(Base):
+    """Model for storing user's volcano sound preferences"""
+    __tablename__ = "volcano_sound_preferences"
+    
+    id = Column(Integer, primary_key=True)
+    volcano_id = Column(String, nullable=False)
+    volcano_name = Column(String, nullable=False)
+    user_notes = Column(Text, nullable=True)
+    saved_date = Column(DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<VolcanoSoundPreference(id={self.id}, volcano_name={self.volcano_name})>"
+
 # Create all tables in the database
 Base.metadata.create_all(engine)
 
