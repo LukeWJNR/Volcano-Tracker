@@ -24,42 +24,62 @@ from utils.comet_utils import (
     display_comet_sar_animation
 )
 
-# Constants for different volcano types
+# Constants for different volcano types - Updated based on scientific research
 VOLCANO_TYPES = {
     "shield": {
-        "description": "Broad, gently sloping volcanoes built by fluid lava flows",
+        "description": "Broad, gently sloping volcanoes built by fluid lava flows, with extensive volcanic plumbing systems featuring connected shallow and deep magma reservoirs",
         "examples": ["Mauna Loa", "Kilauea", "Fernandina"],
         "magma_viscosity": "low",
         "eruption_style": "effusive",
-        "deformation_pattern": "radial expansion"
+        "deformation_pattern": "radial expansion",
+        "chamber_depth": "5-7 km (shallow chamber), 15-20 km (deep reservoir)",
+        "conduit_type": "Complex network with central and lateral dikes",
+        "plumbing_system": "Deep crustal reservoir feeding a shallow magma chamber, with complex dike networks allowing lateral magma transport",
+        "secondary_features": "Rift zones with lateral dike swarms"
     },
     "stratovolcano": {
-        "description": "Steep-sided, symmetrical cones built by alternating layers of lava flows, ash, and blocks",
+        "description": "Steep-sided, symmetrical cones built by alternating layers of lava flows, ash, and blocks, with vertically-oriented magmatic plumbing systems",
         "examples": ["Mount Fuji", "Mount St. Helens", "Mount Vesuvius"],
         "magma_viscosity": "high",
         "eruption_style": "explosive",
-        "deformation_pattern": "asymmetric inflation"
+        "deformation_pattern": "asymmetric inflation",
+        "chamber_depth": "5-10 km (shallow chamber), 15-25 km (deep reservoir)",
+        "conduit_type": "Central conduit with potential satellite dykes",
+        "plumbing_system": "Deep magma reservoir feeding into a shallow chamber with complex internal structure; vertical transport dominates",
+        "secondary_features": "Potential sills and secondary vents on flanks"
     },
     "caldera": {
-        "description": "Circular depression formed by collapse of the surface into an emptied magma chamber",
+        "description": "Circular depression formed by collapse of the surface into an emptied magma chamber, with large-volume, complex magmatic systems",
         "examples": ["Yellowstone", "Santorini", "Crater Lake"],
         "magma_viscosity": "variable",
         "eruption_style": "highly explosive",
-        "deformation_pattern": "complex uplift/subsidence"
+        "deformation_pattern": "complex uplift/subsidence",
+        "chamber_depth": "3-5 km (shallow chamber), 10-15 km (deep reservoir)",
+        "conduit_type": "Ring fracture system with multiple vents",
+        "plumbing_system": "Large, extensive magma reservoir with ring-shaped fracture system and multiple pathways",
+        "secondary_features": "Ring dikes, cone sheets, and satellite vents"
     },
     "cinder_cone": {
-        "description": "Small, steep-sided cones built from ejected lava fragments",
+        "description": "Small, steep-sided cones built from ejected lava fragments, typically with simple, short-lived plumbing systems",
         "examples": ["Paricutin", "Cerro Negro", "SP Crater"],
         "magma_viscosity": "moderate",
         "eruption_style": "strombolian",
-        "deformation_pattern": "localized uplift"
+        "deformation_pattern": "localized uplift",
+        "chamber_depth": "2-5 km (typically shallow system)",
+        "conduit_type": "Single central conduit",
+        "plumbing_system": "Simple direct connection to a shallow magma pocket, often as an offshoot from a larger system",
+        "secondary_features": "Limited satellite vents possible"
     },
     "lava_dome": {
-        "description": "Rounded, steep-sided mass of viscous lava extruded from a volcanic vent",
+        "description": "Rounded, steep-sided mass of viscous lava extruded from a volcanic vent, with complex magmatic plumbing featuring multiple interacting reservoirs",
         "examples": ["Mount St. Helens dome", "Soufriere Hills", "Santiaguito"],
         "magma_viscosity": "very high",
         "eruption_style": "effusive to explosive",
-        "deformation_pattern": "localized uplift with radial fracturing"
+        "deformation_pattern": "localized uplift with radial fracturing",
+        "chamber_depth": "4-7 km (main chamber), with potential deeper reservoirs",
+        "conduit_type": "Narrow, often partly crystallized conduit",
+        "plumbing_system": "Complex system with magma storage at multiple levels and potential gas accumulation beneath solidified plugs",
+        "secondary_features": "Spine formations, internal dykes, and gas pocket development"
     }
 }
 

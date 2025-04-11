@@ -77,20 +77,40 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
             opacity=0.9
         ))
         
-        # Magma chamber - relatively close to surface, broad
-        chamber_depth = -1.5
-        chamber_x = np.linspace(-4, 4, 30)
-        chamber_y = np.linspace(-4, 4, 30)
-        chamber_X, chamber_Y = np.meshgrid(chamber_x, chamber_y)
-        chamber_R = np.sqrt(chamber_X**2 + chamber_Y**2)
-        chamber_Z = chamber_depth - 1.0 * np.exp(-0.1 * chamber_R**2)
+        # Shield volcanoes have both shallow and deep magma reservoirs based on research
         
-        # Magma chamber
+        # Shallow magma chamber - relatively close to surface, broad
+        shallow_chamber_depth = -1.5
+        shallow_chamber_x = np.linspace(-4, 4, 30)
+        shallow_chamber_y = np.linspace(-4, 4, 30)
+        shallow_chamber_X, shallow_chamber_Y = np.meshgrid(shallow_chamber_x, shallow_chamber_y)
+        shallow_chamber_R = np.sqrt(shallow_chamber_X**2 + shallow_chamber_Y**2)
+        shallow_chamber_Z = shallow_chamber_depth - 1.0 * np.exp(-0.1 * shallow_chamber_R**2)
+        
+        # Shallow magma chamber
         fig.add_trace(go.Surface(
-            x=chamber_X, y=chamber_Y, z=chamber_Z,
+            x=shallow_chamber_X, y=shallow_chamber_Y, z=shallow_chamber_Z,
             colorscale=[[0, magma_color[0]], [1, magma_color[1]]],
             showscale=False,
-            opacity=0.8
+            opacity=0.8,
+            name="Shallow Magma Chamber"
+        ))
+        
+        # Deep crustal reservoir - larger and deeper
+        deep_reservoir_depth = -5.0
+        deep_reservoir_x = np.linspace(-6, 6, 30)
+        deep_reservoir_y = np.linspace(-6, 6, 30)
+        deep_reservoir_X, deep_reservoir_Y = np.meshgrid(deep_reservoir_x, deep_reservoir_y)
+        deep_reservoir_R = np.sqrt(deep_reservoir_X**2 + deep_reservoir_Y**2)
+        deep_reservoir_Z = deep_reservoir_depth - 1.5 * np.exp(-0.05 * deep_reservoir_R**2)
+        
+        # Deep crustal reservoir
+        fig.add_trace(go.Surface(
+            x=deep_reservoir_X, y=deep_reservoir_Y, z=deep_reservoir_Z,
+            colorscale=[[0, 'rgba(255,30,30,0.6)'], [1, 'rgba(255,30,30,0.2)']],
+            showscale=False,
+            opacity=0.7,
+            name="Deep Crustal Reservoir"
         ))
         
         # Add conduit - shield volcanoes have a central conduit
