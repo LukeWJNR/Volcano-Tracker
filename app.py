@@ -26,7 +26,15 @@ from utils.db_utils import (
     get_search_history,
     add_user_note,
     get_user_note,
-    get_all_user_notes
+    get_all_user_notes,
+    # New database functions
+    get_volcano_characteristics,
+    save_volcano_characteristics,
+    get_volcano_eruption_history,
+    add_eruption_event,
+    get_volcano_satellite_images,
+    add_satellite_image,
+    get_volcano_risk_assessment
 )
 
 # Set page config

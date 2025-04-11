@@ -848,3 +848,313 @@ def get_volcano_characteristics(volcano_id):
         raise e
     finally:
         session.close()
+
+# Satellite Imagery Functions
+def add_satellite_image(volcano_id, volcano_name, image_type, image_url, 
+                       provider=None, capture_date=None, description=None):
+    """
+    Add a satellite image link for a volcano
+    
+    Args:
+        volcano_id (str): ID of the volcano
+        volcano_name (str): Name of the volcano
+        image_type (str): Type of image ('InSAR', 'Thermal', 'VIS', etc.)
+        image_url (str): URL to the satellite image
+        provider (str, optional): Provider of the image (Sentinel, Landsat, etc.)
+        capture_date (date, optional): Date the image was captured
+        description (str, optional): Description of the image
+        
+    Returns:
+        VolcanoSatelliteImagery: The created satellite image object
+    """
+    session = SessionFactory()
+    try:
+        # Check if identical image already exists
+        existing = session.query(VolcanoSatelliteImagery).filter_by(
+            volcano_id=volcano_id,
+            image_type=image_type,
+            image_url=image_url
+        ).first()
+        
+        if existing:
+            # Update existing image if needed
+            if provider is not None:
+                existing.provider = provider
+            if capture_date is not None:
+                existing.capture_date = capture_date
+            if description is not None:
+                existing.description = description
+                
+            session.commit()
+            return existing
+        
+        # Create new satellite image
+        satellite_image = VolcanoSatelliteImagery(
+            volcano_id=volcano_id,
+            volcano_name=volcano_name,
+            image_type=image_type,
+            image_url=image_url,
+            provider=provider,
+            capture_date=capture_date,
+            description=description
+        )
+        
+        session.add(satellite_image)
+        session.commit()
+        return satellite_image
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+def get_volcano_satellite_images(volcano_id):
+    """
+    Get all satellite images for a specific volcano
+    
+    Args:
+        volcano_id (str): ID of the volcano
+        
+    Returns:
+        list: List of satellite images
+    """
+    session = SessionFactory()
+    try:
+        images = session.query(VolcanoSatelliteImagery).filter_by(
+            volcano_id=volcano_id
+        ).order_by(VolcanoSatelliteImagery.image_type).all()
+        
+        result = []
+        for img in images:
+            result.append({
+                'id': img.id,
+                'volcano_id': img.volcano_id,
+                'volcano_name': img.volcano_name,
+                'image_type': img.image_type,
+                'provider': img.provider,
+                'image_url': img.image_url,
+                'capture_date': img.capture_date.strftime('%Y-%m-%d') if img.capture_date else None,
+                'description': img.description,
+                'added_at': img.added_at.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        
+        return result
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
+
+def get_satellite_images_by_type(image_type, limit=20):
+    """
+    Get satellite images of a specific type across all volcanoes
+    
+    Args:
+        image_type (str): Type of image to get ('InSAR', 'Thermal', etc.)
+        limit (int): Maximum number of results to return
+        
+    Returns:
+        list: List of satellite images
+    """
+    session = SessionFactory()
+    try:
+        images = session.query(VolcanoSatelliteImagery).filter_by(
+            image_type=image_type
+        ).order_by(VolcanoSatelliteImagery.added_at.desc()).limit(limit).all()
+        
+        result = []
+        for img in images:
+            result.append({
+                'id': img.id,
+                'volcano_id': img.volcano_id,
+                'volcano_name': img.volcano_name,
+                'image_type': img.image_type,
+                'provider': img.provider,
+                'image_url': img.image_url,
+                'capture_date': img.capture_date.strftime('%Y-%m-%d') if img.capture_date else None,
+                'description': img.description
+            })
+        
+        return result
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
+
+# Eruption Event Functions
+def add_eruption_event(volcano_id, volcano_name, eruption_start_date, eruption_data=None):
+    """
+    Add an eruption event for a volcano
+    
+    Args:
+        volcano_id (str): ID of the volcano
+        volcano_name (str): Name of the volcano
+        eruption_start_date (date): Start date of the eruption
+        eruption_data (dict, optional): Additional eruption data
+            - eruption_end_date (date): End date of the eruption
+            - vei (int): Volcanic Explosivity Index
+            - eruption_type (str): Type of eruption
+            - max_plume_height_km (float): Maximum plume height in km
+            - lava_flow_area_km2 (float): Lava flow area in km²
+            - ashfall_area_km2 (float): Ashfall area in km²
+            - fatalities (int): Number of fatalities
+            - injuries (int): Number of injuries
+            - economic_damage_usd (int): Economic damage in USD
+            - event_description (str): Description of the event
+            - data_source (str): Source of the eruption data
+            
+    Returns:
+        EruptionEvent: The created eruption event object
+    """
+    session = SessionFactory()
+    try:
+        # Check if an event already exists for this volcano on this date
+        existing = session.query(EruptionEvent).filter_by(
+            volcano_id=volcano_id,
+            eruption_start_date=eruption_start_date
+        ).first()
+        
+        if existing:
+            # Update existing event if needed
+            if eruption_data:
+                for key, value in eruption_data.items():
+                    if hasattr(existing, key) and value is not None:
+                        setattr(existing, key, value)
+                
+            session.commit()
+            return existing
+        
+        # Create new eruption event
+        event_data = {
+            'volcano_id': volcano_id,
+            'volcano_name': volcano_name,
+            'eruption_start_date': eruption_start_date
+        }
+        
+        # Add additional data if provided
+        if eruption_data:
+            for key, value in eruption_data.items():
+                if value is not None:
+                    event_data[key] = value
+        
+        eruption_event = EruptionEvent(**event_data)
+        
+        session.add(eruption_event)
+        session.commit()
+        return eruption_event
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+def get_volcano_eruption_history(volcano_id):
+    """
+    Get eruption history for a specific volcano
+    
+    Args:
+        volcano_id (str): ID of the volcano
+        
+    Returns:
+        list: List of eruption events
+    """
+    session = SessionFactory()
+    try:
+        events = session.query(EruptionEvent).filter_by(
+            volcano_id=volcano_id
+        ).order_by(EruptionEvent.eruption_start_date.desc()).all()
+        
+        result = []
+        for event in events:
+            event_dict = {
+                'id': event.id,
+                'volcano_id': event.volcano_id,
+                'volcano_name': event.volcano_name,
+                'eruption_start_date': event.eruption_start_date.strftime('%Y-%m-%d'),
+                'eruption_end_date': event.eruption_end_date.strftime('%Y-%m-%d') if event.eruption_end_date else None,
+                'vei': event.vei,
+                'eruption_type': event.eruption_type,
+                'max_plume_height_km': event.max_plume_height_km,
+                'lava_flow_area_km2': event.lava_flow_area_km2,
+                'ashfall_area_km2': event.ashfall_area_km2,
+                'fatalities': event.fatalities,
+                'injuries': event.injuries,
+                'economic_damage_usd': event.economic_damage_usd,
+                'event_description': event.event_description,
+                'data_source': event.data_source
+            }
+            result.append(event_dict)
+        
+        return result
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
+
+def get_recent_eruptions(limit=10):
+    """
+    Get recent eruption events across all volcanoes
+    
+    Args:
+        limit (int): Maximum number of results to return
+        
+    Returns:
+        list: List of recent eruption events
+    """
+    session = SessionFactory()
+    try:
+        events = session.query(EruptionEvent).order_by(
+            EruptionEvent.eruption_start_date.desc()
+        ).limit(limit).all()
+        
+        result = []
+        for event in events:
+            result.append({
+                'volcano_id': event.volcano_id,
+                'volcano_name': event.volcano_name,
+                'eruption_start_date': event.eruption_start_date.strftime('%Y-%m-%d'),
+                'eruption_end_date': event.eruption_end_date.strftime('%Y-%m-%d') if event.eruption_end_date else 'Ongoing',
+                'vei': event.vei,
+                'eruption_type': event.eruption_type,
+                'fatalities': event.fatalities,
+                'event_description': event.event_description
+            })
+        
+        return result
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
+
+def get_significant_eruptions(min_vei=4):
+    """
+    Get significant eruption events (with high VEI)
+    
+    Args:
+        min_vei (int): Minimum VEI to consider a significant eruption
+        
+    Returns:
+        list: List of significant eruption events
+    """
+    session = SessionFactory()
+    try:
+        events = session.query(EruptionEvent).filter(
+            EruptionEvent.vei >= min_vei
+        ).order_by(EruptionEvent.vei.desc()).all()
+        
+        result = []
+        for event in events:
+            result.append({
+                'volcano_id': event.volcano_id,
+                'volcano_name': event.volcano_name,
+                'eruption_start_date': event.eruption_start_date.strftime('%Y-%m-%d'),
+                'vei': event.vei,
+                'eruption_type': event.eruption_type,
+                'fatalities': event.fatalities,
+                'event_description': event.event_description
+            })
+        
+        return result
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
