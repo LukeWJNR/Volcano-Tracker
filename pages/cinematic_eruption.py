@@ -61,9 +61,9 @@ def app():
         "Animation Speed",
         min_value=50,
         max_value=500,
-        value=100,
+        value=200,  # Default to a slower animation
         step=50,
-        help="Higher values = faster animation"
+        help="Higher values = faster animation (larger numbers = slower playback)"
     )
     
     frame_count = st.sidebar.slider(
@@ -213,6 +213,77 @@ def app():
             )
             
             st.plotly_chart(eruption_animation['figure'], use_container_width=True)
+            
+            # Add phase indicators to show where in the eruption process we are
+            anim_data = eruption_animation['animation_data']
+            unique_phases = list(dict.fromkeys(anim_data['phase']))
+            
+            # Create a progress bar / timeline visualization to show eruption phases
+            st.markdown("### Eruption Phase Timeline")
+            st.write("This timeline shows the progression through different phases of the eruption:")
+            
+            # Determine colors for phases
+            phase_colors = {
+                'initial': "#3366CC",       # Blue - calm state
+                'buildup': "#FF9900",       # Orange - increasing pressure
+                'initial_eruption': "#FF6600",  # Darker orange - initial eruption
+                'main_eruption': "#CC0000",     # Red - main eruption
+                'waning': "#9966CC"         # Purple - declining activity
+            }
+            
+            # Count frames in each phase
+            phase_counts = {}
+            for phase in unique_phases:
+                phase_counts[phase] = anim_data['phase'].count(phase)
+            
+            # Calculate percentages for visualization
+            total_frames = len(anim_data['phase'])
+            phase_percentages = {phase: count/total_frames*100 for phase, count in phase_counts.items()}
+            
+            # Display the timeline
+            cols = st.columns(len(unique_phases))
+            for i, (col, phase) in enumerate(zip(cols, unique_phases)):
+                with col:
+                    # Display the phase name and percentage
+                    st.markdown(f"**{phase.replace('_', ' ').title()}**")
+                    st.markdown(f"{phase_percentages[phase]:.1f}% of animation")
+                    
+                    # Create a colored box showing the phase
+                    html_color = f"""
+                    <div style="
+                        background-color: {phase_colors.get(phase, '#888888')};
+                        width: 100%;
+                        height: 20px;
+                        border-radius: 5px;
+                    "></div>
+                    """
+                    st.markdown(html_color, unsafe_allow_html=True)
+            
+            # Add a slider to manually control the animation (for exploring specific phases)
+            st.markdown("### Animation Control")
+            selected_frame = st.slider(
+                "Manually explore the eruption process:",
+                min_value=0,
+                max_value=frame_count-1,
+                value=0,
+                help="Drag to see a specific point in the eruption process"
+            )
+            
+            # Display the current phase info
+            current_phase = anim_data['phase'][selected_frame]
+            st.markdown(f"**Current Phase:** {current_phase.replace('_', ' ').title()}")
+            
+            # Show phase-specific descriptions
+            if current_phase == 'initial':
+                st.markdown("The volcano is in its initial state. Magma is deep within the chamber with minimal surface activity.")
+            elif current_phase == 'buildup':
+                st.markdown("Pressure is building as magma rises. The ground is deforming and seismic activity is increasing.")
+            elif current_phase == 'initial_eruption':
+                st.markdown("The initial eruption has begun. Magma has reached the surface and eruptive activity is starting.")
+            elif current_phase == 'main_eruption':
+                st.markdown("The main eruption phase is underway with significant eruptive activity, characteristic of this volcano type.")
+            elif current_phase == 'waning':
+                st.markdown("The eruption is waning as pressure decreases and magma supply diminishes.")
     
     # Timeline of volcanic processes
     st.subheader("Understanding the Eruption Timeline")
