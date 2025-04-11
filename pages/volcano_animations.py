@@ -22,6 +22,10 @@ from utils.animation_utils import (
     VOLCANO_TYPES,
     ALERT_LEVELS
 )
+from utils.magma_chamber_viz import (
+    generate_3d_magma_chamber,
+    generate_animated_magma_flow
+)
 from utils.comet_utils import (
     get_matching_comet_volcano,
     get_comet_volcano_sar_data,
@@ -157,65 +161,75 @@ def app():
         monitoring data patterns observed at active volcanoes around the world.
         """)
         
-        col1, col2 = st.columns([1, 2])
+        # Create subtabs for different magma chamber visualizations
+        subtab1, subtab2, subtab3 = st.tabs([
+            "Time Series Data", 
+            "3D Magma Chamber Model", 
+            "Animated Magma Flow"
+        ])
         
-        with col1:
-            # Volcano type selection
-            volcano_type_options = list(VOLCANO_TYPES.keys())
-            selected_volcano_type = st.selectbox(
-                "Select volcano type:",
-                options=volcano_type_options,
-                format_func=lambda x: x.replace('_', ' ').title(),
-                key="chamber_type_selector"
-            )
-            
-            # Alert level selection
-            alert_level = st.selectbox(
-                "Select alert level:",
-                options=list(ALERT_LEVELS.keys()),
-                key="chamber_alert_selector"
-            )
-            
-            # Time period for simulation
-            time_period = st.slider(
-                "Simulation period (days):",
-                min_value=7,
-                max_value=90,
-                value=30,
-                step=1,
-                key="chamber_time_slider"
-            )
-            
-            # Information about selected volcano type
-            with st.expander("Volcano Type Information", expanded=False):
-                st.markdown(f"""
-                **{selected_volcano_type.replace('_', ' ').title()} Volcanoes**
-                
-                {VOLCANO_TYPES[selected_volcano_type]['description']}
-                
-                **Examples:** {', '.join(VOLCANO_TYPES[selected_volcano_type]['examples'])}
-                
-                **Magma Viscosity:** {VOLCANO_TYPES[selected_volcano_type]['magma_viscosity']}
-                
-                **Typical Eruption Style:** {VOLCANO_TYPES[selected_volcano_type]['eruption_style']}
-                
-                **Characteristic Deformation:** {VOLCANO_TYPES[selected_volcano_type]['deformation_pattern']}
-                """)
-            
-            # Information about selected alert level
-            with st.expander("Alert Level Information", expanded=False):
-                alert_info = ALERT_LEVELS[alert_level]
-                st.markdown(f"""
-                **{alert_level} Alert Level**
-                
-                {alert_info['description']}
-                
-                **Expected Deformation Rate:** {alert_info['deformation_rate']}
-                
-                **Activity Level:** {alert_info['activity']}
-                """)
+        # Sidebar controls for all tabs
+        st.sidebar.markdown("### Magma Chamber Parameters")
         
-        with col2:
+        # Volcano type selection
+        volcano_type_options = list(VOLCANO_TYPES.keys())
+        selected_volcano_type = st.sidebar.selectbox(
+            "Select volcano type:",
+            options=volcano_type_options,
+            format_func=lambda x: x.replace('_', ' ').title(),
+            key="chamber_type_selector"
+        )
+        
+        # Alert level selection
+        alert_level = st.sidebar.selectbox(
+            "Select alert level:",
+            options=list(ALERT_LEVELS.keys()),
+            key="chamber_alert_selector"
+        )
+        
+        # Time period for simulation
+        time_period = st.sidebar.slider(
+            "Simulation period (days):",
+            min_value=7,
+            max_value=90,
+            value=30,
+            step=1,
+            key="chamber_time_slider"
+        )
+        
+        # Information about selected volcano type
+        with st.sidebar.expander("Volcano Type Information", expanded=False):
+            st.markdown(f"""
+            **{selected_volcano_type.replace('_', ' ').title()} Volcanoes**
+            
+            {VOLCANO_TYPES[selected_volcano_type]['description']}
+            
+            **Examples:** {', '.join(VOLCANO_TYPES[selected_volcano_type]['examples'])}
+            
+            **Magma Viscosity:** {VOLCANO_TYPES[selected_volcano_type]['magma_viscosity']}
+            
+            **Typical Eruption Style:** {VOLCANO_TYPES[selected_volcano_type]['eruption_style']}
+            
+            **Characteristic Deformation:** {VOLCANO_TYPES[selected_volcano_type]['deformation_pattern']}
+            """)
+        
+        # Information about selected alert level
+        with st.sidebar.expander("Alert Level Information", expanded=False):
+            alert_info = ALERT_LEVELS[alert_level]
+            st.markdown(f"""
+            **{alert_level} Alert Level**
+            
+            {alert_info['description']}
+            
+            **Expected Deformation Rate:** {alert_info['deformation_rate']}
+            
+            **Activity Level:** {alert_info['activity']}
+            """)
+        
+        # Time Series Animation Tab
+        with subtab1:
+            st.subheader("Magma Chamber Time Series")
+            
             # Generate and display magma chamber animation
             magma_animation = generate_magma_chamber_animation(
                 selected_volcano_type, 
@@ -223,7 +237,7 @@ def app():
                 time_period_days=time_period
             )
             
-            st.plotly_chart(magma_animation['figure'], use_container_width=True)
+            st.plotly_chart(magma_animation['figure'], use_container_width=True, key="magma_time_series")
             
             st.markdown("""
             **How to interpret:**
@@ -233,6 +247,83 @@ def app():
             
             *Click Play to start the animation*
             """)
+        
+        # 3D Magma Chamber Model Tab
+        with subtab2:
+            st.subheader("3D Magma Chamber Model")
+            
+            st.markdown("""
+            This 3D model shows the internal structure of the volcano's magmatic system based on 
+            its type and current alert level. The visualization depicts:
+            
+            - **Surface morphology:** The characteristic shape of this volcano type
+            - **Magma chamber:** The subsurface reservoir where magma accumulates
+            - **Conduit system:** Pathways that magma follows to reach the surface
+            
+            *Drag to rotate, zoom, and pan the 3D model for different perspectives*
+            """)
+            
+            # Generate 3D magma chamber model
+            chamber_3d_fig = generate_3d_magma_chamber(selected_volcano_type, alert_level)
+            st.plotly_chart(chamber_3d_fig, use_container_width=True, key="magma_chamber_3d")
+            
+            # Additional information about the volcano structure
+            with st.expander("Structure Details", expanded=False):
+                st.markdown(f"""
+                **{selected_volcano_type.replace('_', ' ').title()} Structure Characteristics**
+                
+                - **Chamber Depth:** {VOLCANO_TYPES[selected_volcano_type].get('chamber_depth', 'Variable')}
+                - **Conduit System:** {VOLCANO_TYPES[selected_volcano_type].get('conduit_type', 'Simple vertical')}
+                - **Secondary Features:** {VOLCANO_TYPES[selected_volcano_type].get('secondary_features', 'None')}
+                
+                The coloration represents the thermal state of the magma, with warmer colors
+                indicating higher temperatures or more active/mobile magma regions. The alert level
+                affects both the volume and activity level of the displayed magma system.
+                """)
+        
+        # Animated Magma Flow Tab
+        with subtab3:
+            st.subheader("Animated Magma Flow")
+            
+            st.markdown("""
+            This animation shows the flow of magma through the volcano's plumbing system.
+            The particles represent packets of magma moving through the system based on:
+            
+            - The physical properties of the volcano type
+            - Current alert level (affects flow rate and pathways)
+            - Pressure conditions in the magmatic system
+            
+            *Click Play to start the animation. Note how flow patterns differ with volcano type and alert level.*
+            """)
+            
+            # Generate animated magma flow visualization
+            flow_animation = generate_animated_magma_flow(selected_volcano_type, alert_level, frames=60)
+            st.plotly_chart(flow_animation, use_container_width=True, key="magma_flow_animation")
+            
+            st.markdown("""
+            **How to interpret:**
+            - Moving particles represent magma flow through the system
+            - Flow rate increases with higher alert levels
+            - Different volcano types show characteristic flow patterns:
+              - Shield volcanoes may show lateral flow through dikes
+              - Stratovolcanoes typically have more focused vertical flow
+              - Calderas may display complex, distributed flow patterns
+              - Lava domes show slow, viscous movement in the upper conduit
+            """)
+            
+            # Technical details
+            with st.expander("Flow Physics", expanded=False):
+                st.markdown(f"""
+                **Magma Flow Properties**
+                
+                - **Viscosity:** {VOLCANO_TYPES[selected_volcano_type]['magma_viscosity']}
+                - **Temperature Range:** {VOLCANO_TYPES[selected_volcano_type].get('temperature', '700-1200°C')}
+                - **Gas Content:** {VOLCANO_TYPES[selected_volcano_type].get('gas_content', 'Variable')}
+                - **Flow Rate ({alert_level}):** {ALERT_LEVELS[alert_level].get('flow_rate', 'Variable')}
+                
+                The animation models key aspects of magma rheology and flow dynamics in a simplified form,
+                focusing on the most distinctive and educationally relevant behaviors.
+                """)
     
     with tab3:
         st.header("Eruption Sequence Animation")
@@ -414,7 +505,7 @@ def app():
                 deformation_data = generate_deformation_plot(selected_volcano, alert_level)
                 
                 # Display 2D InSAR-like visualization
-                st.plotly_chart(deformation_data['2d_figure'], use_container_width=True, height=400)
+                st.plotly_chart(deformation_data['2d_figure'], use_container_width=True, key="deform_2d_plot")
                 
                 # If real COMET data is available, show it for comparison
                 if 'comet_volcano' in locals() and 'selected_dataset' in locals():
