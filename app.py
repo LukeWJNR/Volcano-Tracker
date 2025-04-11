@@ -329,6 +329,11 @@ if st.session_state.show_history:
 st.sidebar.markdown("---")
 st.sidebar.subheader("Navigation")
 
+# Early Warning System page link
+warning_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 21H8l-4-7H2v-2h2.7l4 7h1.1l2.5-7.5c1-3 2.1-3.5 6.7-3.5v2c-3.7 0-4 .2-4.5 1.6L11 18l-0.7 3Z"></path><path d="M17 8v12"></path><path d="M13 8h8"></path></svg>"""
+if st.sidebar.button(f"{warning_icon} Early Warning System", help="Subscribe to volcano alert notifications"):
+    switch_page("early_warning")
+
 # Sound Profiles page link
 sound_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14l.001 7a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-7"></path><path d="M8 9v-.956a6 6 0 0 1 2.671-4.972L12 2l1.329 1.072A6 6 0 0 1 16 8.044V9"></path><path d="M18 9h-12a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1a2 2 0 0 0-2-2z"></path></svg>"""
 if st.sidebar.button(f"{sound_icon} Volcano Sound Profiles", help="Explore volcanic acoustic signatures"):
