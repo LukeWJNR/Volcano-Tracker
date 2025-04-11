@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 import numpy as np
 from plotly.subplots import make_subplots
 import pandas as pd
-from typing import Dict, Tuple, List, Optional, Any
+from typing import Dict, Tuple, List, Optional, Any, Union
 import math
 from datetime import datetime, timedelta
 import random
@@ -19,13 +19,14 @@ from utils.animation_utils import VOLCANO_TYPES, ALERT_LEVELS, determine_volcano
 def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
     """
     Generate a 3D model of a volcano's magma chamber and plumbing system
+    with metrics for chamber size and magma volume
     
     Args:
         volcano_type (str): Type of volcano
         alert_level (str): Current alert level
         
     Returns:
-        go.Figure: Interactive 3D visualization
+        go.Figure: Interactive 3D visualization with metrics
     """
     # Get type-specific parameters
     v_params = VOLCANO_TYPES.get(volcano_type, VOLCANO_TYPES['stratovolcano'])
@@ -442,6 +443,189 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
         height=500,
     )
     
+    # Calculate magma chamber metrics
+    chamber_metrics = {}
+    
+    # Calculate chamber size and magma volume based on volcano type
+    if volcano_type == 'shield':
+        # Shield volcano: broader, shallower chamber
+        chamber_metrics['chamber_depth'] = 1.5  # km
+        chamber_metrics['chamber_width'] = 8.0  # km
+        chamber_metrics['chamber_height'] = 1.0  # km
+        
+        # Base magma volume calculation
+        base_volume = 25.0  # km³
+        # Adjust based on alert level
+        volume_multipliers = {
+            'Normal': 0.3,
+            'Advisory': 0.6,
+            'Watch': 0.8,
+            'Warning': 1.0
+        }
+        volume_multiplier = volume_multipliers.get(alert_level, 0.3)
+        chamber_metrics['magma_volume'] = base_volume * volume_multiplier
+        
+        # Lava accumulation rate varies by alert level
+        accumulation_rates = {
+            'Normal': 0.05,
+            'Advisory': 0.2,
+            'Watch': 0.5,
+            'Warning': 1.2
+        }
+        chamber_metrics['accumulation_rate'] = accumulation_rates.get(alert_level, 0.05)  # km³/month
+        
+    elif volcano_type == 'stratovolcano':
+        # Stratovolcano: deeper, more compact chamber
+        chamber_metrics['chamber_depth'] = 5.0  # km
+        chamber_metrics['chamber_width'] = 6.0  # km
+        chamber_metrics['chamber_height'] = 1.5  # km
+        
+        # Base magma volume calculation
+        base_volume = 15.0  # km³
+        # Adjust based on alert level
+        volume_multipliers = {
+            'Normal': 0.25,
+            'Advisory': 0.5,
+            'Watch': 0.8,
+            'Warning': 1.0
+        }
+        volume_multiplier = volume_multipliers.get(alert_level, 0.25)
+        chamber_metrics['magma_volume'] = base_volume * volume_multiplier
+        
+        # Lava accumulation rate varies by alert level
+        accumulation_rates = {
+            'Normal': 0.03,
+            'Advisory': 0.15,
+            'Watch': 0.4,
+            'Warning': 0.9
+        }
+        chamber_metrics['accumulation_rate'] = accumulation_rates.get(alert_level, 0.03)  # km³/month
+        
+        # Add secondary chamber volume for higher alert levels
+        if alert_level in ['Watch', 'Warning']:
+            sec_chamber_volume = 5.0 * volume_multiplier
+            chamber_metrics['magma_volume'] += sec_chamber_volume
+            chamber_metrics['secondary_chamber'] = True
+        else:
+            chamber_metrics['secondary_chamber'] = False
+            
+    elif volcano_type == 'caldera':
+        # Caldera: very large, complex magma system
+        chamber_metrics['chamber_depth'] = 3.0  # km
+        chamber_metrics['chamber_width'] = 12.0  # km
+        chamber_metrics['chamber_height'] = 2.0  # km
+        
+        # Base magma volume calculation
+        base_volume = 75.0  # km³
+        # Adjust based on alert level
+        volume_multipliers = {
+            'Normal': 0.4,
+            'Advisory': 0.6,
+            'Watch': 0.8,
+            'Warning': 1.0
+        }
+        volume_multiplier = volume_multipliers.get(alert_level, 0.4)
+        chamber_metrics['magma_volume'] = base_volume * volume_multiplier
+        
+        # Lava accumulation rate varies by alert level
+        accumulation_rates = {
+            'Normal': 0.1,
+            'Advisory': 0.3,
+            'Watch': 0.7,
+            'Warning': 1.5
+        }
+        chamber_metrics['accumulation_rate'] = accumulation_rates.get(alert_level, 0.1)  # km³/month
+        
+        # Calculate number of active conduits
+        if alert_level == 'Normal':
+            chamber_metrics['active_conduits'] = 2
+        elif alert_level == 'Advisory':
+            chamber_metrics['active_conduits'] = 4
+        else:
+            chamber_metrics['active_conduits'] = 8
+            
+    elif volcano_type == 'cinder_cone':
+        # Cinder cone: small, simple magma system
+        chamber_metrics['chamber_depth'] = 1.0  # km
+        chamber_metrics['chamber_width'] = 3.0  # km
+        chamber_metrics['chamber_height'] = 0.8  # km
+        
+        # Base magma volume calculation
+        base_volume = 3.0  # km³
+        # Adjust based on alert level
+        volume_multipliers = {
+            'Normal': 0.2,
+            'Advisory': 0.5,
+            'Watch': 0.8,
+            'Warning': 1.0
+        }
+        volume_multiplier = volume_multipliers.get(alert_level, 0.2)
+        chamber_metrics['magma_volume'] = base_volume * volume_multiplier
+        
+        # Lava accumulation rate varies by alert level
+        accumulation_rates = {
+            'Normal': 0.01,
+            'Advisory': 0.08,
+            'Watch': 0.2,
+            'Warning': 0.5
+        }
+        chamber_metrics['accumulation_rate'] = accumulation_rates.get(alert_level, 0.01)  # km³/month
+        
+    elif volcano_type == 'lava_dome':
+        # Lava dome: small chamber but high viscosity
+        chamber_metrics['chamber_depth'] = 2.0  # km
+        chamber_metrics['chamber_width'] = 4.0  # km
+        chamber_metrics['chamber_height'] = 1.0  # km
+        
+        # Base magma volume calculation
+        base_volume = 5.0  # km³
+        # Adjust based on alert level
+        volume_multipliers = {
+            'Normal': 0.3,
+            'Advisory': 0.6,
+            'Watch': 0.8,
+            'Warning': 1.0
+        }
+        volume_multiplier = volume_multipliers.get(alert_level, 0.3)
+        chamber_metrics['magma_volume'] = base_volume * volume_multiplier
+        
+        # Lava accumulation rate varies by alert level
+        accumulation_rates = {
+            'Normal': 0.02,
+            'Advisory': 0.1,
+            'Watch': 0.25,
+            'Warning': 0.6
+        }
+        chamber_metrics['accumulation_rate'] = accumulation_rates.get(alert_level, 0.02)  # km³/month
+        
+        # Extrusion amount for higher alert levels
+        if alert_level in ['Watch', 'Warning']:
+            chamber_metrics['extrusion_volume'] = 0.5 * volume_multiplier  # km³
+        else:
+            chamber_metrics['extrusion_volume'] = 0.0  # km³
+    
+    # Default values for any other type
+    else:
+        chamber_metrics['chamber_depth'] = 3.0  # km
+        chamber_metrics['chamber_width'] = 5.0  # km
+        chamber_metrics['chamber_height'] = 1.0  # km
+        chamber_metrics['magma_volume'] = 10.0 * deformation_rate  # km³
+        chamber_metrics['accumulation_rate'] = 0.1 * deformation_rate  # km³/month
+    
+    # Add potential eruption metrics based on alert level
+    if alert_level == 'Normal':
+        chamber_metrics['eruption_probability'] = '< 5%'
+        chamber_metrics['est_vei_range'] = 'N/A'
+    elif alert_level == 'Advisory':
+        chamber_metrics['eruption_probability'] = '5-25%'
+        chamber_metrics['est_vei_range'] = '1-2'
+    elif alert_level == 'Watch':
+        chamber_metrics['eruption_probability'] = '25-50%'
+        chamber_metrics['est_vei_range'] = '2-3'
+    elif alert_level == 'Warning':
+        chamber_metrics['eruption_probability'] = '> 50%'
+        chamber_metrics['est_vei_range'] = '3-4+'
+    
     # Update scene for better 3D visualization
     fig.update_layout(
         scene=dict(
@@ -457,11 +641,13 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
         )
     )
     
-    return fig
+    # Return both the figure and the calculated metrics
+    return fig, chamber_metrics
 
-def generate_animated_magma_flow(volcano_type: str, alert_level: str, frames: int = 60) -> go.Figure:
+def generate_animated_magma_flow(volcano_type: str, alert_level: str, frames: int = 60) -> Tuple[go.Figure, Dict[str, Any]]:
     """
     Generate an animated visualization of magma flow within the volcano's plumbing system
+    and return metrics about the chamber size and magma volume
     
     Args:
         volcano_type (str): Type of volcano
@@ -469,10 +655,12 @@ def generate_animated_magma_flow(volcano_type: str, alert_level: str, frames: in
         frames (int): Number of animation frames
         
     Returns:
-        go.Figure: Animated figure of magma flow
+        Tuple[go.Figure, Dict[str, Any]]: 
+            - Animated figure of magma flow
+            - Dictionary with chamber metrics (size, volume, accumulation rate)
     """
-    # Get base 3D model
-    fig = generate_3d_magma_chamber(volcano_type, alert_level)
+    # Get base 3D model and chamber metrics
+    fig, chamber_metrics = generate_3d_magma_chamber(volcano_type, alert_level)
     
     # Animation frames will vary by volcano type
     animation_frames = []
@@ -858,4 +1046,4 @@ def generate_animated_magma_flow(volcano_type: str, alert_level: str, frames: in
         }]
     )
     
-    return fig
+    return fig, chamber_metrics
