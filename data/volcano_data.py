@@ -18,7 +18,9 @@ VOLCANO_DATA = [
         "last_eruption": "2022",
         "alert_level": "Normal",
         "description": "Mauna Loa is the largest active volcano on Earth and one of five volcanoes that form the Island of Hawaii. Mauna Loa has erupted 33 times since its first well-documented historical eruption in 1843.",
-        "activity": "Most recent eruption began on November 27, 2022, and ended on December 10, 2022."
+        "activity": "Most recent eruption began on November 27, 2022, and ended on December 10, 2022.",
+        "population_5km": 0,
+        "population_100km": 214000
     },
     {
         "id": "kilauea",
@@ -32,7 +34,9 @@ VOLCANO_DATA = [
         "last_eruption": "Active",
         "alert_level": "Watch",
         "description": "Kilauea is the youngest and most active volcano on the island of Hawaii. It is a shield volcano, which means it is a gently sloping mountain produced from a large number of generally very fluid lava flows.",
-        "activity": "Ongoing eruptions and lava lake activity in the summit crater."
+        "activity": "Ongoing eruptions and lava lake activity in the summit crater.",
+        "population_5km": 500,
+        "population_100km": 212000
     },
     {
         "id": "mount_st_helens",
@@ -46,7 +50,9 @@ VOLCANO_DATA = [
         "last_eruption": "2008",
         "alert_level": "Normal",
         "description": "Mount St. Helens is an active stratovolcano located in Washington State, in the Pacific Northwest region of the United States. It is famous for its catastrophic eruption on May 18, 1980.",
-        "activity": "Periodic dome-building eruptions, most recently from 2004 to 2008."
+        "activity": "Periodic dome-building eruptions, most recently from 2004 to 2008.",
+        "population_5km": 0,
+        "population_100km": 1500000
     },
     {
         "id": "etna",
@@ -60,7 +66,9 @@ VOLCANO_DATA = [
         "last_eruption": "Active",
         "alert_level": "Advisory",
         "description": "Mount Etna is an active stratovolcano on the east coast of Sicily, Italy. It is the highest active volcano in Europe outside the Caucasus and the highest peak in Italy south of the Alps.",
-        "activity": "Frequent eruptions and explosive events, with ongoing activity."
+        "activity": "Frequent eruptions and explosive events, with ongoing activity.",
+        "population_5km": 20000,
+        "population_100km": 1200000
     },
     {
         "id": "mount_fuji",
@@ -74,7 +82,9 @@ VOLCANO_DATA = [
         "last_eruption": "1707-1708",
         "alert_level": "Normal",
         "description": "Mount Fuji is the highest mountain in Japan, standing at 3,776 meters. It is an active stratovolcano that last erupted in 1707–1708. Mount Fuji is one of Japan's 'Three Holy Mountains'.",
-        "activity": "No recent activity, but considered active and potentially hazardous."
+        "activity": "No recent activity, but considered active and potentially hazardous.",
+        "population_5km": 4000,
+        "population_100km": 25000000
     },
     {
         "id": "mount_vesuvius",
@@ -88,7 +98,9 @@ VOLCANO_DATA = [
         "last_eruption": "1944",
         "alert_level": "Normal",
         "description": "Mount Vesuvius is a somma-stratovolcano located on the Gulf of Naples, about 9 km east of Naples. It is known for its eruption in 79 CE that led to the burying and destruction of the Roman cities of Pompeii and Herculaneum.",
-        "activity": "No current activity, but closely monitored due to population density in the area."
+        "activity": "No current activity, but closely monitored due to population density in the area.",
+        "population_5km": 340000,
+        "population_100km": 3000000
     },
     {
         "id": "mount_erebus",
@@ -102,7 +114,9 @@ VOLCANO_DATA = [
         "last_eruption": "Active",
         "alert_level": "Normal",
         "description": "Mount Erebus is the second-highest volcano in Antarctica and the southernmost active volcano on Earth. It is the 6th-highest ultra mountain on an island.",
-        "activity": "Persistent lava lake activity and minor explosive eruptions."
+        "activity": "Persistent lava lake activity and minor explosive eruptions.",
+        "population_5km": 0,
+        "population_100km": 0
     },
     {
         "id": "yellowstone_caldera",
@@ -116,7 +130,9 @@ VOLCANO_DATA = [
         "last_eruption": "70,000 years ago",
         "alert_level": "Normal",
         "description": "The Yellowstone Caldera is a volcanic caldera and supervolcano in Yellowstone National Park in the Western United States. The caldera is located in the northwest corner of Wyoming.",
-        "activity": "Hydrothermal features, continuous ground deformation, and seismic activity."
+        "activity": "Hydrothermal features, continuous ground deformation, and seismic activity.",
+        "population_5km": 100,
+        "population_100km": 70000
     },
     {
         "id": "krakatoa",
@@ -130,7 +146,9 @@ VOLCANO_DATA = [
         "last_eruption": "2020",
         "alert_level": "Watch",
         "description": "Krakatoa is a caldera in the Sunda Strait between the islands of Java and Sumatra. It is famous for its catastrophic eruption in 1883, which was one of the deadliest and most destructive volcanic events in recorded history.",
-        "activity": "Continuing dome growth and explosive activity."
+        "activity": "Continuing dome growth and explosive activity.",
+        "population_5km": 0,
+        "population_100km": 8000000
     },
     {
         "id": "popocatepetl",
@@ -144,6 +162,300 @@ VOLCANO_DATA = [
         "last_eruption": "Active",
         "alert_level": "Yellow Phase 2",
         "description": "Popocatépetl is an active stratovolcano located in the states of Puebla, Mexico, and Morelos, in Central Mexico. It is the second-highest peak in Mexico after Citlaltépetl.",
-        "activity": "Frequent ash emissions and occasional explosive events."
+        "activity": "Frequent ash emissions and occasional explosive events.",
+        "population_5km": 6000,
+        "population_100km": 20000000
+    },
+    
+    # Icelandic volcanoes
+    {
+        "id": "fagradalsfjall",
+        "name": "Fagradalsfjall",
+        "country": "Iceland",
+        "region": "Reykjanes Peninsula",
+        "latitude": 63.8959,
+        "longitude": -22.2695,
+        "elevation": 385,
+        "type": "Shield volcano",
+        "last_eruption": "2023",
+        "alert_level": "Warning",
+        "description": "Fagradalsfjall is a shield volcano on the Reykjanes Peninsula. After being dormant for about 6,000 years, it erupted in March 2021, and has had several eruptions since, including in 2022 and 2023.",
+        "activity": "Recent fissure eruptions in 2021, 2022, and 2023. Currently showing elevated seismic activity.",
+        "population_5km": 100,
+        "population_100km": 234000
+    },
+    {
+        "id": "grimsvötn",
+        "name": "Grímsvötn",
+        "country": "Iceland",
+        "region": "Vatnajökull",
+        "latitude": 64.4163,
+        "longitude": -17.3306,
+        "elevation": 1725,
+        "type": "Subglacial volcano",
+        "last_eruption": "2011",
+        "alert_level": "Advisory",
+        "description": "Grímsvötn is Iceland's most active volcano and is almost completely covered by the Vatnajökull ice cap. It has a large caldera with a subglacial lake that occasionally triggers jökulhlaups (glacial outburst floods).",
+        "activity": "Frequent sub-glacial eruptions, with major events in 2011, 2004, and 1998.",
+        "population_5km": 0,
+        "population_100km": 10000
+    },
+    {
+        "id": "hekla",
+        "name": "Hekla",
+        "country": "Iceland",
+        "region": "South Iceland",
+        "latitude": 63.9833,
+        "longitude": -19.7000,
+        "elevation": 1491,
+        "type": "Stratovolcano",
+        "last_eruption": "2000",
+        "alert_level": "Normal",
+        "description": "Hekla is one of Iceland's most active volcanoes with over 20 eruptions since 874 AD. Known as the 'Gateway to Hell' during the Middle Ages, it produces dangerous eruptions with little warning.",
+        "activity": "Periodic eruptions approximately every 10 years during the 20th century, with the last occurring in 2000.",
+        "population_5km": 0,
+        "population_100km": 150000
+    },
+    {
+        "id": "eyjafjallajokull",
+        "name": "Eyjafjallajökull",
+        "country": "Iceland",
+        "region": "South Iceland",
+        "latitude": 63.6300,
+        "longitude": -19.6200,
+        "elevation": 1666,
+        "type": "Stratovolcano",
+        "last_eruption": "2010",
+        "alert_level": "Normal",
+        "description": "Eyjafjallajökull became famous when its 2010 eruption sent ash clouds across Europe, disrupting air travel for weeks. The volcano is covered by an ice cap and has erupted relatively infrequently.",
+        "activity": "Major explosive eruption in 2010 that created widespread disruption to air travel across Europe.",
+        "population_5km": 200,
+        "population_100km": 120000
+    },
+    {
+        "id": "katla",
+        "name": "Katla",
+        "country": "Iceland",
+        "region": "South Iceland",
+        "latitude": 63.6299,
+        "longitude": -19.0511,
+        "elevation": 1512,
+        "type": "Subglacial volcano",
+        "last_eruption": "1918",
+        "alert_level": "Advisory",
+        "description": "Katla is a large volcano in southern Iceland that is partially covered by the Mýrdalsjökull glacier. It's considered one of Iceland's most dangerous volcanoes due to its history of large eruptions and jökulhlaups.",
+        "activity": "Increased seismic activity and inflation since 2011, with concern about a potential major eruption.",
+        "population_5km": 0,
+        "population_100km": 130000
+    },
+    {
+        "id": "bardarbunga",
+        "name": "Bárðarbunga",
+        "country": "Iceland",
+        "region": "Vatnajökull",
+        "latitude": 64.6405,
+        "longitude": -17.5347,
+        "elevation": 2009,
+        "type": "Stratovolcano",
+        "last_eruption": "2015",
+        "alert_level": "Normal",
+        "description": "Bárðarbunga is a large central volcano located under the Vatnajökull ice cap. The 2014-2015 eruption was Iceland's largest basaltic lava flow since the Laki eruption in 1783-1784.",
+        "activity": "Major fissure eruption from 2014-2015 that produced extensive lava flows at Holuhraun.",
+        "population_5km": 0,
+        "population_100km": 8000
+    },
+    {
+        "id": "reykjanes",
+        "name": "Reykjanes",
+        "country": "Iceland",
+        "region": "Reykjanes Peninsula",
+        "latitude": 63.8750,
+        "longitude": -22.4717,
+        "elevation": 140,
+        "type": "Volcanic system",
+        "last_eruption": "2024",
+        "alert_level": "Erupting",
+        "description": "The Reykjanes volcanic system comprises multiple volcanic fissures and cones on the Reykjanes Peninsula. After nearly 800 years of dormancy, it began a new eruptive phase in 2021 that continues today.",
+        "activity": "Currently erupting with multiple fissure eruptions on the peninsula since 2021, and a significant eruption near Grindavík in 2024.",
+        "population_5km": 3500,
+        "population_100km": 240000
+    },
+    {
+        "id": "askja",
+        "name": "Askja",
+        "country": "Iceland",
+        "region": "Central Highlands",
+        "latitude": 65.0317,
+        "longitude": -16.7553,
+        "elevation": 1516,
+        "type": "Caldera",
+        "last_eruption": "1961",
+        "alert_level": "Normal",
+        "description": "Askja is a caldera in the central highlands of Iceland. Its 1875 eruption was one of Iceland's largest explosive events in recent history, and it features a stunning crater lake called Víti ('Hell').",
+        "activity": "Last major eruption in 1961, with recent reports of ground uplift and increased geothermal activity.",
+        "population_5km": 0,
+        "population_100km": 2000
+    },
+    {
+        "id": "krafla",
+        "name": "Krafla",
+        "country": "Iceland",
+        "region": "Northeast Iceland",
+        "latitude": 65.7303,
+        "longitude": -16.7592,
+        "elevation": 818,
+        "type": "Caldera",
+        "last_eruption": "1984",
+        "alert_level": "Normal",
+        "description": "Krafla is a caldera and volcanic system in northeast Iceland, containing the famous Víti crater. The area is known for its geothermal activity and power plant.",
+        "activity": "Series of eruptions known as the 'Krafla Fires' from 1975-1984, with current geothermal exploitation.",
+        "population_5km": 500,
+        "population_100km": 30000
+    },
+    
+    # Major active volcanoes around the world
+    {
+        "id": "stromboli",
+        "name": "Stromboli",
+        "country": "Italy",
+        "region": "Aeolian Islands",
+        "latitude": 38.7892,
+        "longitude": 15.2131,
+        "elevation": 924,
+        "type": "Stratovolcano",
+        "last_eruption": "Active",
+        "alert_level": "Advisory",
+        "description": "Stromboli is an island volcano off the coast of Sicily, known as the 'Lighthouse of the Mediterranean' due to its almost continuous eruption for the past 2,000 years. It has frequent small explosions that are visible at night.",
+        "activity": "Persistent Strombolian eruptions with occasional larger paroxysmal events.",
+        "population_5km": 500,
+        "population_100km": 300000
+    },
+    {
+        "id": "fuego",
+        "name": "Fuego",
+        "country": "Guatemala",
+        "region": "Central America",
+        "latitude": 14.4747,
+        "longitude": -90.8806,
+        "elevation": 3763,
+        "type": "Stratovolcano",
+        "last_eruption": "Active",
+        "alert_level": "Warning",
+        "description": "Fuego ('Fire' in Spanish) is one of Central America's most active volcanoes. It produces frequent explosive eruptions and pyroclastic flows that have caused casualties in recent years.",
+        "activity": "Frequent explosive eruptions, with a deadly eruption in 2018 that killed hundreds.",
+        "population_5km": 1000,
+        "population_100km": 7000000
+    },
+    {
+        "id": "anak_krakatau",
+        "name": "Anak Krakatau",
+        "country": "Indonesia",
+        "region": "Sunda Strait",
+        "latitude": -6.1021,
+        "longitude": 105.4230,
+        "elevation": 157,
+        "type": "Stratovolcano",
+        "last_eruption": "Active",
+        "alert_level": "Watch",
+        "description": "Anak Krakatau ('Child of Krakatau') emerged from the caldera formed by the catastrophic 1883 eruption of Krakatau. A partial collapse in 2018 triggered a deadly tsunami.",
+        "activity": "Ongoing strombolian eruptions with occasional larger explosive events.",
+        "population_5km": 0,
+        "population_100km": 8000000
+    },
+    {
+        "id": "merapi",
+        "name": "Merapi",
+        "country": "Indonesia",
+        "region": "Java",
+        "latitude": -7.5407,
+        "longitude": 110.4457,
+        "elevation": 2911,
+        "type": "Stratovolcano",
+        "last_eruption": "Active",
+        "alert_level": "Warning",
+        "description": "Merapi, meaning 'Mountain of Fire', is the most active volcano in Indonesia and has been in almost continuous eruption since 1548. It regularly produces dangerous pyroclastic flows.",
+        "activity": "Ongoing dome growth and collapse with pyroclastic flows and lahars.",
+        "population_5km": 20000,
+        "population_100km": 25000000
+    },
+    {
+        "id": "etna",
+        "name": "Etna",
+        "country": "Italy",
+        "region": "Sicily",
+        "latitude": 37.7510,
+        "longitude": 14.9934,
+        "elevation": 3329,
+        "type": "Stratovolcano",
+        "last_eruption": "Active",
+        "alert_level": "Warning",
+        "description": "Mount Etna is an active stratovolcano on the east coast of Sicily, Italy. It is the highest active volcano in Europe outside the Caucasus and the highest peak in Italy south of the Alps.",
+        "activity": "Frequent paroxysmal eruptions, with ongoing activity from summit and flank vents.",
+        "population_5km": 20000,
+        "population_100km": 1200000
+    },
+    {
+        "id": "nyiragongo",
+        "name": "Nyiragongo",
+        "country": "Democratic Republic of Congo",
+        "region": "Africa",
+        "latitude": -1.5207,
+        "longitude": 29.2500,
+        "elevation": 3470,
+        "type": "Stratovolcano",
+        "last_eruption": "2021",
+        "alert_level": "Watch",
+        "description": "Nyiragongo contains one of the world's most active and fluid lava lakes. Its eruptions are particularly dangerous as the extremely fluid lava can flow at speeds up to 60 mph.",
+        "activity": "Persistent lava lake activity with occasional flank eruptions, most recently in 2021.",
+        "population_5km": 60000,
+        "population_100km": 2000000
+    },
+    {
+        "id": "kilauea",
+        "name": "Kilauea",
+        "country": "United States",
+        "region": "Hawaii",
+        "latitude": 19.4069,
+        "longitude": -155.2834,
+        "elevation": 1222,
+        "type": "Shield volcano",
+        "last_eruption": "Active",
+        "alert_level": "Watch",
+        "description": "Kilauea is one of the world's most active volcanoes and has been erupting continuously from 1983 to 2018. After a pause, it resumed eruption in December 2020.",
+        "activity": "Ongoing summit eruptions in Halemaʻumaʻu crater with lava lake formation.",
+        "population_5km": 500,
+        "population_100km": 212000
+    },
+    {
+        "id": "sangay",
+        "name": "Sangay",
+        "country": "Ecuador",
+        "region": "South America",
+        "latitude": -2.0056,
+        "longitude": -78.3411,
+        "elevation": 5286,
+        "type": "Stratovolcano",
+        "last_eruption": "Active",
+        "alert_level": "Orange",
+        "description": "Sangay is one of Ecuador's most active volcanoes with near-constant eruptions since 1934. Its remote location means eruptions rarely affect populated areas.",
+        "activity": "Ongoing explosive eruptions with ash plumes and occasional pyroclastic flows.",
+        "population_5km": 0,
+        "population_100km": 500000
+    },
+    {
+        "id": "sabancaya",
+        "name": "Sabancaya",
+        "country": "Peru",
+        "region": "South America",
+        "latitude": -15.7867,
+        "longitude": -71.8561,
+        "elevation": 5976,
+        "type": "Stratovolcano",
+        "last_eruption": "Active",
+        "alert_level": "Orange",
+        "description": "Sabancaya ('Tongue of Fire' in Quechua) is Peru's most active volcano. Its current eruptive period began in 2016 and has continued with regular explosive events.",
+        "activity": "Persistent explosive eruptions with ash plumes reaching 10,000+ feet above the summit.",
+        "population_5km": 0,
+        "population_100km": 300000
     }
 ]
