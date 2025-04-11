@@ -296,9 +296,51 @@ def app():
             *Click Play to start the animation. Note how flow patterns differ with volcano type and alert level.*
             """)
             
-            # Generate animated magma flow visualization
-            flow_animation = generate_animated_magma_flow(selected_volcano_type, alert_level, frames=60)
+            # Generate animated magma flow visualization and get chamber metrics
+            flow_animation, chamber_metrics = generate_animated_magma_flow(selected_volcano_type, alert_level, frames=60)
             st.plotly_chart(flow_animation, use_container_width=True, key="magma_flow_animation")
+            
+            # Display chamber metrics
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("Magma Chamber Properties")
+                metrics_table = {
+                    "Property": ["Chamber Width", "Chamber Height", "Chamber Depth", "Magma Volume", "Accumulation Rate"],
+                    "Value": [
+                        f"{chamber_metrics['chamber_width']:.1f} km",
+                        f"{chamber_metrics['chamber_height']:.1f} km",
+                        f"{chamber_metrics['chamber_depth']:.1f} km",
+                        f"{chamber_metrics['magma_volume']:.1f} km³",
+                        f"{chamber_metrics['accumulation_rate']:.2f} km³/month"
+                    ]
+                }
+                st.dataframe(metrics_table, use_container_width=True, hide_index=True)
+            
+            with col2:
+                st.subheader("Eruption Potential")
+                # Display probability and other risk metrics
+                st.markdown(f"""
+                - **Probability:** {chamber_metrics['eruption_probability']}
+                - **Potential VEI Range:** {chamber_metrics['est_vei_range']}
+                - **Fill State:** {100 * float(chamber_metrics['magma_volume']) / (chamber_metrics['chamber_width'] * chamber_metrics['chamber_height'] * 2):.1f}%
+                """)
+                
+                # Add volcano-specific details based on type
+                if selected_volcano_type == 'shield':
+                    st.markdown("**System characteristics:** Broad, shallow chamber with potential lateral dike intrusions")
+                elif selected_volcano_type == 'stratovolcano':
+                    if chamber_metrics.get('secondary_chamber', False):
+                        st.markdown("**System characteristics:** Deep primary chamber with active secondary chamber")
+                    else:
+                        st.markdown("**System characteristics:** Deep primary chamber with simple plumbing")
+                elif selected_volcano_type == 'caldera':
+                    st.markdown(f"**System characteristics:** Large reservoir with {chamber_metrics.get('active_conduits', 2)} active conduits")
+                elif selected_volcano_type == 'lava_dome':
+                    if chamber_metrics.get('extrusion_volume', 0) > 0:
+                        st.markdown(f"**System characteristics:** Viscous magma with active extrusion ({chamber_metrics['extrusion_volume']:.1f} km³)")
+                    else:
+                        st.markdown("**System characteristics:** Viscous magma with minimal extrusion")
             
             st.markdown("""
             **How to interpret:**
