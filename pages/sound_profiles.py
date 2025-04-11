@@ -69,43 +69,67 @@ def app():
             volcano = get_volcano_by_name(selected_volcano_name)
             
             if volcano:
-                volcano_details = get_volcano_details(volcano['id'])
+                # Handle different volcano data types - could be dict or Volcano object
+                if isinstance(volcano, dict):
+                    volcano_id = volcano['id']
+                    volcano_name = volcano['name']
+                    volcano_type = volcano.get('type', 'Unknown')
+                    volcano_region = volcano.get('region', 'Unknown')  
+                    volcano_alert_level = volcano.get('alert_level', 'Unknown')
+                else:
+                    # Treat it as a Volcano object
+                    volcano_id = volcano.id if hasattr(volcano, 'id') else ''
+                    volcano_name = volcano.name if hasattr(volcano, 'name') else 'Unknown'
+                    volcano_type = getattr(volcano, 'type', 'Unknown')
+                    volcano_region = getattr(volcano, 'region', 'Unknown')
+                    volcano_alert_level = getattr(volcano, 'alert_level', 'Unknown')
+                    
+                volcano_details = get_volcano_details(volcano_id)
                 
                 # Display volcano information
                 col1, col2 = st.columns([1, 1])
                 
                 with col1:
-                    st.subheader(f"{volcano['name']}")
-                    st.markdown(f"**Type:** {volcano.get('type', 'Unknown')}")
-                    st.markdown(f"**Region:** {volcano.get('region', 'Unknown')}")
-                    st.markdown(f"**Alert Level:** {volcano.get('alert_level', 'Unknown')}")
+                    st.subheader(f"{volcano_name}")
+                    st.markdown(f"**Type:** {volcano_type}")
+                    st.markdown(f"**Region:** {volcano_region}")
+                    st.markdown(f"**Alert Level:** {volcano_alert_level}")
                     
                     # Check if already in preferences
-                    is_preferred = is_sound_preference(volcano['id'])
+                    is_preferred = is_sound_preference(volcano_id)
                     
                     # Add button to save/remove this sound to preferences
                     if is_preferred:
                         if st.button("🗑️ Remove from My Sound Preferences"):
                             try:
-                                remove_sound_preference(volcano['id'])
-                                st.success(f"Removed {volcano['name']} from your sound preferences!")
+                                remove_sound_preference(volcano_id)
+                                st.success(f"Removed {volcano_name} from your sound preferences!")
                                 st.rerun()
                             except Exception as e:
                                 st.error(f"Error removing preference: {str(e)}")
                     else:
                         if st.button("💾 Save to My Sound Preferences"):
                             try:
-                                add_volcano_sound_preference(volcano['id'], volcano['name'])
-                                st.success(f"Added {volcano['name']} to your sound preferences!")
+                                add_volcano_sound_preference(volcano_id, volcano_name)
+                                st.success(f"Added {volcano_name} to your sound preferences!")
                                 st.rerun()
                             except Exception as e:
                                 st.error(f"Error saving preference: {str(e)}")
                 
                 with col2:
                     # Display volcano location
-                    st.markdown(f"**Latitude:** {volcano.get('latitude', 'Unknown')}")
-                    st.markdown(f"**Longitude:** {volcano.get('longitude', 'Unknown')}")
-                    st.markdown(f"**Last Eruption:** {volcano.get('last_eruption', 'Unknown')}")
+                    if isinstance(volcano, dict):
+                        volcano_lat = volcano.get('latitude', 'Unknown')
+                        volcano_lon = volcano.get('longitude', 'Unknown')
+                        volcano_last_eruption = volcano.get('last_eruption', 'Unknown')
+                    else:
+                        volcano_lat = getattr(volcano, 'latitude', 'Unknown')
+                        volcano_lon = getattr(volcano, 'longitude', 'Unknown')
+                        volcano_last_eruption = getattr(volcano, 'last_eruption', 'Unknown')
+                    
+                    st.markdown(f"**Latitude:** {volcano_lat}")
+                    st.markdown(f"**Longitude:** {volcano_lon}")
+                    st.markdown(f"**Last Eruption:** {volcano_last_eruption}")
                 
                 st.markdown("---")
                 
@@ -120,8 +144,8 @@ def app():
                     st.markdown(f"""
                     #### Sound Profile Explanation
                     
-                    This audio represents a {volcano.get('type', 'Unknown')} volcano with an 
-                    alert level of {volcano.get('alert_level', 'Unknown')}.
+                    This audio represents a {volcano_type} volcano with an 
+                    alert level of {volcano_alert_level}.
                     
                     * **Base Frequency**: Derived from volcano type and size
                     * **Harmonics**: Complex sounds representing the volcano's structure
