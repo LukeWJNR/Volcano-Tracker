@@ -111,7 +111,7 @@ try:
                 ).add_to(m)
             
             # Display the map with responsive size for iframe
-            folium_static(m, width="100%", height=450)
+            folium_static(m, width=800, height=450)
         
         with tab2:
             st.subheader("Table of Your Favorite Volcanoes")
