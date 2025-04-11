@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Table
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Table, Date, BigInteger, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
@@ -56,6 +56,106 @@ class UserNote(Base):
     
     def __repr__(self):
         return f"<UserNote(id={self.id}, volcano_name={self.volcano_name})>"
+
+class VolcanoRiskAssessment(Base):
+    """Model for storing volcano risk assessment data"""
+    __tablename__ = "volcano_risk_assessments"
+    
+    id = Column(Integer, primary_key=True)
+    volcano_id = Column(String, nullable=False, unique=True)
+    volcano_name = Column(String, nullable=False)
+    risk_factor = Column(Float, nullable=False)
+    risk_level = Column(String, nullable=False)
+    alert_level = Column(String)
+    eruption_risk_score = Column(Float)
+    type_risk_score = Column(Float)
+    monitoring_risk_score = Column(Float)
+    regional_risk_score = Column(Float)
+    last_updated = Column(DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<VolcanoRiskAssessment(id={self.id}, volcano_name={self.volcano_name}, risk_level={self.risk_level})>"
+
+class VolcanoMonitoringHistory(Base):
+    """Model for storing volcano monitoring history data"""
+    __tablename__ = "volcano_monitoring_history"
+    
+    id = Column(Integer, primary_key=True)
+    volcano_id = Column(String, nullable=False)
+    volcano_name = Column(String, nullable=False)
+    alert_level = Column(String)
+    has_insar = Column(Boolean, default=False)
+    has_so2 = Column(Boolean, default=False)
+    has_lava = Column(Boolean, default=False)
+    monitoring_notes = Column(Text)
+    event_date = Column(Date, nullable=False)
+    recorded_at = Column(DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<VolcanoMonitoringHistory(id={self.id}, volcano_name={self.volcano_name}, event_date={self.event_date})>"
+
+class VolcanoCharacteristics(Base):
+    """Model for storing detailed volcano characteristics"""
+    __tablename__ = "volcano_characteristics"
+    
+    id = Column(Integer, primary_key=True)
+    volcano_id = Column(String, nullable=False, unique=True)
+    volcano_name = Column(String, nullable=False)
+    type = Column(String)
+    elevation = Column(Float)
+    last_eruption = Column(String)
+    crater_diameter_km = Column(Float)
+    edifice_height_m = Column(Float)
+    tectonic_setting = Column(String)
+    primary_magma_type = Column(String)
+    historical_fatalities = Column(Integer)
+    significant_eruptions = Column(Text)
+    geological_summary = Column(Text)
+    last_updated = Column(DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<VolcanoCharacteristics(id={self.id}, volcano_name={self.volcano_name})>"
+
+class VolcanoSatelliteImagery(Base):
+    """Model for storing volcano satellite imagery links"""
+    __tablename__ = "volcano_satellite_imagery"
+    
+    id = Column(Integer, primary_key=True)
+    volcano_id = Column(String, nullable=False)
+    volcano_name = Column(String, nullable=False)
+    image_type = Column(String, nullable=False)  # 'InSAR', 'Thermal', 'VIS', etc.
+    provider = Column(String)  # 'Sentinel', 'Landsat', etc.
+    image_url = Column(String, nullable=False)
+    capture_date = Column(Date)
+    description = Column(Text)
+    added_at = Column(DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<VolcanoSatelliteImagery(id={self.id}, volcano_name={self.volcano_name}, image_type={self.image_type})>"
+
+class EruptionEvent(Base):
+    """Model for storing eruption events"""
+    __tablename__ = "eruption_events"
+    
+    id = Column(Integer, primary_key=True)
+    volcano_id = Column(String, nullable=False)
+    volcano_name = Column(String, nullable=False)
+    eruption_start_date = Column(Date, nullable=False)
+    eruption_end_date = Column(Date)
+    vei = Column(Integer)  # Volcanic Explosivity Index (0-8)
+    eruption_type = Column(String)
+    max_plume_height_km = Column(Float)
+    lava_flow_area_km2 = Column(Float)
+    ashfall_area_km2 = Column(Float)
+    fatalities = Column(Integer)
+    injuries = Column(Integer)
+    economic_damage_usd = Column(BigInteger)
+    event_description = Column(Text)
+    data_source = Column(String)
+    recorded_at = Column(DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<EruptionEvent(id={self.id}, volcano_name={self.volcano_name}, eruption_start_date={self.eruption_start_date})>"
 
 # Create all tables in the database
 Base.metadata.create_all(engine)
@@ -332,6 +432,418 @@ def get_all_user_notes():
             })
         
         return result
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
+
+# Risk Assessment Functions
+def save_risk_assessment(volcano_data, risk_factor, risk_level, eruption_score=None, 
+                        type_score=None, monitoring_score=None, regional_score=None):
+    """
+    Save risk assessment data for a volcano
+    
+    Args:
+        volcano_data (dict): Dictionary containing volcano information
+        risk_factor (float): Risk factor (0-1)
+        risk_level (str): Risk level (Low, Moderate, High, Very High)
+        eruption_score (float, optional): Eruption risk score
+        type_score (float, optional): Volcano type risk score
+        monitoring_score (float, optional): Monitoring risk score
+        regional_score (float, optional): Regional risk score
+    
+    Returns:
+        VolcanoRiskAssessment: The created/updated risk assessment object
+    """
+    session = SessionFactory()
+    try:
+        # Check if risk assessment already exists
+        existing = session.query(VolcanoRiskAssessment).filter_by(
+            volcano_id=volcano_data['id']
+        ).first()
+        
+        if existing:
+            # Update existing assessment
+            existing.risk_factor = risk_factor
+            existing.risk_level = risk_level
+            existing.alert_level = volcano_data.get('alert_level')
+            
+            if eruption_score is not None:
+                existing.eruption_risk_score = eruption_score
+            if type_score is not None:
+                existing.type_risk_score = type_score
+            if monitoring_score is not None:
+                existing.monitoring_risk_score = monitoring_score
+            if regional_score is not None:
+                existing.regional_risk_score = regional_score
+                
+            existing.last_updated = datetime.utcnow()
+            session.commit()
+            return existing
+        
+        # Create new risk assessment
+        risk_assessment = VolcanoRiskAssessment(
+            volcano_id=volcano_data['id'],
+            volcano_name=volcano_data['name'],
+            risk_factor=risk_factor,
+            risk_level=risk_level,
+            alert_level=volcano_data.get('alert_level'),
+            eruption_risk_score=eruption_score,
+            type_risk_score=type_score,
+            monitoring_risk_score=monitoring_score,
+            regional_risk_score=regional_score
+        )
+        
+        session.add(risk_assessment)
+        session.commit()
+        return risk_assessment
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+def get_risk_assessments(limit=100):
+    """
+    Get all volcano risk assessments
+    
+    Args:
+        limit (int): Maximum number of results to return
+    
+    Returns:
+        list: List of risk assessment data
+    """
+    session = SessionFactory()
+    try:
+        assessments = session.query(VolcanoRiskAssessment).order_by(
+            VolcanoRiskAssessment.risk_factor.desc()
+        ).limit(limit).all()
+        
+        result = []
+        for assessment in assessments:
+            result.append({
+                'volcano_id': assessment.volcano_id,
+                'volcano_name': assessment.volcano_name,
+                'risk_factor': assessment.risk_factor,
+                'risk_level': assessment.risk_level,
+                'alert_level': assessment.alert_level,
+                'eruption_risk_score': assessment.eruption_risk_score,
+                'type_risk_score': assessment.type_risk_score,
+                'monitoring_risk_score': assessment.monitoring_risk_score,
+                'regional_risk_score': assessment.regional_risk_score,
+                'last_updated': assessment.last_updated.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        
+        return result
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
+
+def get_volcano_risk_assessment(volcano_id):
+    """
+    Get risk assessment for a specific volcano
+    
+    Args:
+        volcano_id (str): ID of the volcano
+    
+    Returns:
+        dict: Risk assessment data or None if not found
+    """
+    session = SessionFactory()
+    try:
+        assessment = session.query(VolcanoRiskAssessment).filter_by(
+            volcano_id=volcano_id
+        ).first()
+        
+        if not assessment:
+            return None
+        
+        return {
+            'volcano_id': assessment.volcano_id,
+            'volcano_name': assessment.volcano_name,
+            'risk_factor': assessment.risk_factor,
+            'risk_level': assessment.risk_level,
+            'alert_level': assessment.alert_level,
+            'eruption_risk_score': assessment.eruption_risk_score,
+            'type_risk_score': assessment.type_risk_score,
+            'monitoring_risk_score': assessment.monitoring_risk_score,
+            'regional_risk_score': assessment.regional_risk_score,
+            'last_updated': assessment.last_updated.strftime('%Y-%m-%d %H:%M:%S')
+        }
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
+
+def get_highest_risk_volcanoes(limit=10):
+    """
+    Get the highest risk volcanoes
+    
+    Args:
+        limit (int): Maximum number of results to return
+    
+    Returns:
+        list: List of highest risk volcanoes
+    """
+    session = SessionFactory()
+    try:
+        assessments = session.query(VolcanoRiskAssessment).order_by(
+            VolcanoRiskAssessment.risk_factor.desc()
+        ).limit(limit).all()
+        
+        result = []
+        for assessment in assessments:
+            result.append({
+                'volcano_id': assessment.volcano_id,
+                'volcano_name': assessment.volcano_name,
+                'risk_factor': assessment.risk_factor,
+                'risk_level': assessment.risk_level,
+                'alert_level': assessment.alert_level
+            })
+        
+        return result
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
+
+# Volcano Monitoring History Functions
+def add_monitoring_history(volcano_id, volcano_name, event_date, alert_level=None, 
+                           has_insar=False, has_so2=False, has_lava=False, notes=None):
+    """
+    Add a monitoring history entry for a volcano
+    
+    Args:
+        volcano_id (str): ID of the volcano
+        volcano_name (str): Name of the volcano
+        event_date (date): Date of the monitoring event
+        alert_level (str, optional): Alert level at the time of monitoring
+        has_insar (bool, optional): Whether InSAR data was available
+        has_so2 (bool, optional): Whether SO2 data was available
+        has_lava (bool, optional): Whether lava data was available
+        notes (str, optional): Notes about the monitoring event
+        
+    Returns:
+        VolcanoMonitoringHistory: The created monitoring history object
+    """
+    session = SessionFactory()
+    try:
+        # Check if an entry already exists for this volcano on this date
+        existing = session.query(VolcanoMonitoringHistory).filter_by(
+            volcano_id=volcano_id,
+            event_date=event_date
+        ).first()
+        
+        if existing:
+            # Update existing entry
+            if alert_level is not None:
+                existing.alert_level = alert_level
+            existing.has_insar = has_insar
+            existing.has_so2 = has_so2
+            existing.has_lava = has_lava
+            if notes is not None:
+                existing.monitoring_notes = notes
+                
+            session.commit()
+            return existing
+        
+        # Create new monitoring history entry
+        history = VolcanoMonitoringHistory(
+            volcano_id=volcano_id,
+            volcano_name=volcano_name,
+            event_date=event_date,
+            alert_level=alert_level,
+            has_insar=has_insar,
+            has_so2=has_so2,
+            has_lava=has_lava,
+            monitoring_notes=notes
+        )
+        
+        session.add(history)
+        session.commit()
+        return history
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+def get_volcano_monitoring_history(volcano_id, limit=10):
+    """
+    Get monitoring history for a specific volcano
+    
+    Args:
+        volcano_id (str): ID of the volcano
+        limit (int): Maximum number of results to return
+        
+    Returns:
+        list: List of monitoring history items
+    """
+    session = SessionFactory()
+    try:
+        history = session.query(VolcanoMonitoringHistory).filter_by(
+            volcano_id=volcano_id
+        ).order_by(VolcanoMonitoringHistory.event_date.desc()).limit(limit).all()
+        
+        result = []
+        for item in history:
+            result.append({
+                'volcano_id': item.volcano_id,
+                'volcano_name': item.volcano_name,
+                'event_date': item.event_date.strftime('%Y-%m-%d'),
+                'alert_level': item.alert_level,
+                'has_insar': item.has_insar,
+                'has_so2': item.has_so2,
+                'has_lava': item.has_lava,
+                'monitoring_notes': item.monitoring_notes,
+                'recorded_at': item.recorded_at.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        
+        return result
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
+
+def get_latest_monitoring_data():
+    """
+    Get the latest monitoring data for all volcanoes
+    
+    Returns:
+        list: List of latest monitoring data for all volcanoes
+    """
+    session = SessionFactory()
+    try:
+        # Create a subquery to get the most recent monitoring date for each volcano
+        from sqlalchemy import func
+        
+        subq = session.query(
+            VolcanoMonitoringHistory.volcano_id,
+            func.max(VolcanoMonitoringHistory.event_date).label('max_date')
+        ).group_by(VolcanoMonitoringHistory.volcano_id).subquery('t')
+        
+        # Join with the main table to get the complete records
+        latest = session.query(VolcanoMonitoringHistory).join(
+            subq, 
+            (VolcanoMonitoringHistory.volcano_id == subq.c.volcano_id) & 
+            (VolcanoMonitoringHistory.event_date == subq.c.max_date)
+        ).all()
+        
+        result = []
+        for item in latest:
+            result.append({
+                'volcano_id': item.volcano_id,
+                'volcano_name': item.volcano_name,
+                'event_date': item.event_date.strftime('%Y-%m-%d'),
+                'alert_level': item.alert_level,
+                'has_insar': item.has_insar,
+                'has_so2': item.has_so2,
+                'has_lava': item.has_lava
+            })
+        
+        return result
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
+
+# Volcano Characteristics Functions
+def save_volcano_characteristics(volcano_id, volcano_name, characteristics):
+    """
+    Save or update detailed characteristics for a volcano
+    
+    Args:
+        volcano_id (str): ID of the volcano
+        volcano_name (str): Name of the volcano
+        characteristics (dict): Dictionary of volcano characteristics
+            - type (str): Volcano type
+            - elevation (float): Elevation in meters
+            - last_eruption (str): Last known eruption date
+            - crater_diameter_km (float): Crater diameter in kilometers
+            - edifice_height_m (float): Edifice height in meters
+            - tectonic_setting (str): Tectonic setting
+            - primary_magma_type (str): Primary magma type
+            - historical_fatalities (int): Historical fatalities count
+            - significant_eruptions (str): Text about significant eruptions
+            - geological_summary (str): Geological summary text
+            
+    Returns:
+        VolcanoCharacteristics: The created/updated characteristics object
+    """
+    session = SessionFactory()
+    try:
+        # Check if characteristics already exist for this volcano
+        existing = session.query(VolcanoCharacteristics).filter_by(
+            volcano_id=volcano_id
+        ).first()
+        
+        if existing:
+            # Update existing characteristics
+            for key, value in characteristics.items():
+                if hasattr(existing, key) and value is not None:
+                    setattr(existing, key, value)
+                    
+            existing.last_updated = datetime.utcnow()
+            session.commit()
+            return existing
+        
+        # Create new characteristics entry
+        char_data = {
+            'volcano_id': volcano_id,
+            'volcano_name': volcano_name
+        }
+        
+        # Add all characteristics from the dictionary
+        for key, value in characteristics.items():
+            if value is not None:
+                char_data[key] = value
+        
+        characteristics_obj = VolcanoCharacteristics(**char_data)
+        
+        session.add(characteristics_obj)
+        session.commit()
+        return characteristics_obj
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+def get_volcano_characteristics(volcano_id):
+    """
+    Get detailed characteristics for a specific volcano
+    
+    Args:
+        volcano_id (str): ID of the volcano
+        
+    Returns:
+        dict: Volcano characteristics or None if not found
+    """
+    session = SessionFactory()
+    try:
+        char = session.query(VolcanoCharacteristics).filter_by(
+            volcano_id=volcano_id
+        ).first()
+        
+        if not char:
+            return None
+        
+        return {
+            'volcano_id': char.volcano_id,
+            'volcano_name': char.volcano_name,
+            'type': char.type,
+            'elevation': char.elevation,
+            'last_eruption': char.last_eruption,
+            'crater_diameter_km': char.crater_diameter_km,
+            'edifice_height_m': char.edifice_height_m,
+            'tectonic_setting': char.tectonic_setting,
+            'primary_magma_type': char.primary_magma_type,
+            'historical_fatalities': char.historical_fatalities,
+            'significant_eruptions': char.significant_eruptions,
+            'geological_summary': char.geological_summary,
+            'last_updated': char.last_updated.strftime('%Y-%m-%d %H:%M:%S')
+        }
     except Exception as e:
         raise e
     finally:
