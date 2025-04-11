@@ -106,3 +106,37 @@ def generate_copernicus_url(latitude: float, longitude: float) -> str:
         f"https://scihub.copernicus.eu/dhus/#/home"
         f"?latitude={latitude}&longitude={longitude}&zoom=12"
     )
+
+
+def generate_smithsonian_wms_url(latitude: float, longitude: float, width: int = 800, height: int = 600, zoom_level: int = 8) -> str:
+    """
+    Generate a URL to the Smithsonian Volcanoes of the World WMS layer centered on given coordinates
+    
+    Args:
+        latitude (float): Latitude of the volcano
+        longitude (float): Longitude of the volcano
+        width (int): Width of the map in pixels
+        height (int): Height of the map in pixels
+        zoom_level (int): Zoom level (1-20, higher numbers = more zoomed in)
+        
+    Returns:
+        str: URL to the Smithsonian WMS map
+    """
+    # Calculate the bounding box based on coordinates and zoom level
+    # This is a simple approximation that works reasonably well for medium latitudes
+    zoom_factor = 10 / (2 ** zoom_level)
+    min_lon = longitude - zoom_factor
+    max_lon = longitude + zoom_factor
+    min_lat = latitude - zoom_factor * (height / width)
+    max_lat = latitude + zoom_factor * (height / width)
+    
+    bbox = f"{min_lon}%2C{min_lat}%2C{max_lon}%2C{max_lat}"
+    
+    # Generate the WMS URL
+    return (
+        f"https://geoserver-apia.sprep.org/geoserver/global/wms"
+        f"?service=WMS&version=1.1.0&request=GetMap"
+        f"&layers=global%3AGlobal_2013_HoloceneEruptions_SmithsonianVOTW"
+        f"&bbox={bbox}&width={width}&height={height}"
+        f"&srs=EPSG%3A4326&format=application/openlayers"
+    )

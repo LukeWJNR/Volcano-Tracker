@@ -9,7 +9,7 @@ import os
 from utils.api import get_volcano_data, get_volcano_details
 from utils.map_utils import create_volcano_map, create_popup_html
 from utils.web_scraper import get_volcano_additional_info
-from utils.insar_data import get_insar_url_for_volcano, generate_sentinel_hub_url, generate_copernicus_url
+from utils.insar_data import get_insar_url_for_volcano, generate_sentinel_hub_url, generate_copernicus_url, generate_smithsonian_wms_url
 from utils.wovodat_utils import (
     get_wovodat_volcano_data,
     get_so2_data,
@@ -417,6 +417,296 @@ with col2:
         if 'latitude' in volcano and 'longitude' in volcano:
             sarviews_url = f"https://sarviews-hazards.alaska.edu/#{volcano['latitude']},{volcano['longitude']},6"
             st.markdown(f"[ASF SARVIEWS (SAR Data)]({sarviews_url})")
+        
+        # Risk Assessment Information
+        st.markdown("### Risk Assessment")
+        try:
+            # Get risk assessment data for this volcano
+            risk_data = get_volcano_risk_assessment(volcano['id'])
+            
+            if risk_data:
+                # Set color based on risk level
+                risk_colors = {
+                    'Low': 'blue',
+                    'Moderate': 'green',
+                    'High': 'orange',
+                    'Very High': 'red'
+                }
+                risk_color = risk_colors.get(risk_data['risk_level'], 'gray')
+                
+                # Display the risk factor and level
+                st.markdown(f"**Risk Level:** <span style='color:{risk_color};font-weight:bold;'>{risk_data['risk_level']}</span> ({risk_data['risk_factor']:.2f})", unsafe_allow_html=True)
+                
+                # Create expandable section for detailed risk factors
+                with st.expander("Detailed Risk Factors", expanded=False):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if risk_data['eruption_risk_score']:
+                            st.markdown(f"**Eruption Risk:** {risk_data['eruption_risk_score']:.2f}")
+                        if risk_data['type_risk_score']:
+                            st.markdown(f"**Type Risk:** {risk_data['type_risk_score']:.2f}")
+                    with col2:
+                        if risk_data['monitoring_risk_score']:
+                            st.markdown(f"**Monitoring Risk:** {risk_data['monitoring_risk_score']:.2f}")
+                        if risk_data['regional_risk_score']:
+                            st.markdown(f"**Regional Risk:** {risk_data['regional_risk_score']:.2f}")
+                    
+                    st.markdown(f"*Last updated: {risk_data['last_updated']}*")
+            else:
+                st.info("No risk assessment data available for this volcano. Visit the Risk Heat Map page to generate risk assessments.")
+        except Exception as e:
+            st.warning(f"Could not load risk assessment data: {str(e)}")
+        
+        # Volcano Characteristics Section
+        st.markdown("### Detailed Characteristics")
+        try:
+            # Get characteristics data for this volcano
+            char_data = get_volcano_characteristics(volcano['id'])
+            
+            if char_data:
+                with st.expander("View Detailed Characteristics", expanded=False):
+                    # Create two columns for better organization
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        if char_data['type']:
+                            st.markdown(f"**Volcano Type:** {char_data['type']}")
+                        if char_data['elevation']:
+                            st.markdown(f"**Elevation:** {char_data['elevation']} m")
+                        if char_data['crater_diameter_km']:
+                            st.markdown(f"**Crater Diameter:** {char_data['crater_diameter_km']} km")
+                        if char_data['edifice_height_m']:
+                            st.markdown(f"**Edifice Height:** {char_data['edifice_height_m']} m")
+                    
+                    with col2:
+                        if char_data['tectonic_setting']:
+                            st.markdown(f"**Tectonic Setting:** {char_data['tectonic_setting']}")
+                        if char_data['primary_magma_type']:
+                            st.markdown(f"**Magma Type:** {char_data['primary_magma_type']}")
+                        if char_data['historical_fatalities'] is not None:
+                            st.markdown(f"**Historical Fatalities:** {char_data['historical_fatalities']:,}")
+                        if char_data['last_eruption']:
+                            st.markdown(f"**Last Eruption:** {char_data['last_eruption']}")
+                    
+                    # Full-width items
+                    if char_data['significant_eruptions']:
+                        st.markdown("#### Significant Eruptions")
+                        st.markdown(char_data['significant_eruptions'])
+                    
+                    if char_data['geological_summary']:
+                        st.markdown("#### Geological Summary")
+                        st.markdown(char_data['geological_summary'])
+            else:
+                # If no data exists, offer to add basic characteristics
+                st.info("No detailed characteristics available for this volcano.")
+                
+                # Offer to save basic characteristics from the volcano data
+                if st.button("Save Basic Characteristics"):
+                    try:
+                        # Create a characteristics object from available volcano data
+                        basic_char = {
+                            'type': volcano.get('type'),
+                            'elevation': volcano.get('elevation'),
+                            'last_eruption': volcano.get('last_eruption')
+                        }
+                        
+                        # Save to database
+                        save_volcano_characteristics(
+                            volcano_id=volcano['id'],
+                            volcano_name=volcano['name'],
+                            characteristics=basic_char
+                        )
+                        
+                        st.success("Basic characteristics saved successfully!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error saving characteristics: {str(e)}")
+        except Exception as e:
+            st.warning(f"Could not load volcano characteristics: {str(e)}")
+        
+        # Eruption History Section
+        st.markdown("### Eruption History")
+        try:
+            # Get eruption history for this volcano
+            eruption_history = get_volcano_eruption_history(volcano['id'])
+            
+            if eruption_history and len(eruption_history) > 0:
+                with st.expander("View Eruption History", expanded=False):
+                    for event in eruption_history:
+                        # Header with date range
+                        end_date = event['eruption_end_date'] if event['eruption_end_date'] else "Ongoing"
+                        st.markdown(f"#### Eruption: {event['eruption_start_date']} to {end_date}")
+                        
+                        # VEI if available
+                        if event['vei'] is not None:
+                            vei_color = "red" if event['vei'] >= 4 else "orange" if event['vei'] >= 2 else "gray"
+                            st.markdown(f"**VEI:** <span style='color:{vei_color};'>{event['vei']}</span>", unsafe_allow_html=True)
+                        
+                        # Two columns for details
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if event['eruption_type']:
+                                st.markdown(f"**Type:** {event['eruption_type']}")
+                            if event['max_plume_height_km']:
+                                st.markdown(f"**Max Plume Height:** {event['max_plume_height_km']} km")
+                        
+                        with col2:
+                            if event['fatalities'] is not None:
+                                st.markdown(f"**Fatalities:** {event['fatalities']:,}")
+                            if event['economic_damage_usd'] is not None:
+                                st.markdown(f"**Economic Damage:** ${event['economic_damage_usd']:,} USD")
+                        
+                        # Description if available
+                        if event['event_description']:
+                            st.markdown(f"**Description:** {event['event_description']}")
+                        
+                        st.markdown("---")
+            else:
+                st.info("No eruption history available for this volcano.")
+                
+                # Check if there's a last eruption date in the volcano data
+                if 'last_eruption' in volcano and volcano['last_eruption'] and volcano['last_eruption'] != "Unknown":
+                    # Offer to add this as an eruption event
+                    if st.button("Add Last Eruption to History"):
+                        try:
+                            # Convert last_eruption string to a date object if possible
+                            from datetime import datetime
+                            
+                            # Try to parse the last eruption string into a date
+                            # This is a simple implementation - might need enhancement based on actual data format
+                            try:
+                                # Try different date formats
+                                date_formats = ["%Y", "%Y-%m", "%Y-%m-%d"]
+                                parsed_date = None
+                                
+                                for fmt in date_formats:
+                                    try:
+                                        parsed_date = datetime.strptime(volcano['last_eruption'], fmt).date()
+                                        break
+                                    except:
+                                        continue
+                                
+                                if parsed_date:
+                                    # Add eruption event
+                                    add_eruption_event(
+                                        volcano_id=volcano['id'],
+                                        volcano_name=volcano['name'],
+                                        eruption_start_date=parsed_date,
+                                        eruption_data={
+                                            'event_description': f"Last known eruption based on catalog data.",
+                                            'data_source': "Volcano catalog"
+                                        }
+                                    )
+                                    
+                                    st.success("Eruption event added successfully!")
+                                    st.rerun()
+                                else:
+                                    st.warning(f"Could not parse date: {volcano['last_eruption']}")
+                            except Exception as e:
+                                st.warning(f"Could not parse last eruption date: {str(e)}")
+                        except Exception as e:
+                            st.error(f"Error adding eruption event: {str(e)}")
+        except Exception as e:
+            st.warning(f"Could not load eruption history: {str(e)}")
+        
+        # Satellite Imagery Section
+        st.markdown("### Satellite Imagery")
+        
+        # Generate Smithsonian WMS URL
+        smithsonian_wms_url = generate_smithsonian_wms_url(
+            latitude=volcano['latitude'], 
+            longitude=volcano['longitude'],
+            width=800,
+            height=600,
+            zoom_level=10
+        )
+        
+        # Display the Smithsonian Volcanoes of the World WMS link
+        st.markdown("#### Holocene Eruptions Map")
+        st.markdown(f"[View Smithsonian Holocene Eruptions Map]({smithsonian_wms_url})")
+        st.markdown("*Data source: Smithsonian Global Volcanism Program*")
+        
+        # Add button to save the Smithsonian WMS link to the database
+        if st.button("Save Smithsonian WMS Map to Database"):
+            try:
+                # Current date for the database record
+                from datetime import date
+                today = date.today()
+                
+                # Add to satellite imagery database
+                add_satellite_image(
+                    volcano_id=volcano['id'],
+                    volcano_name=volcano['name'],
+                    image_type="Holocene Eruptions",
+                    image_url=smithsonian_wms_url,
+                    provider="Smithsonian VOTW/SPREP Geoserver",
+                    capture_date=today,
+                    description="Smithsonian Volcanoes of the World Holocene Eruptions Map"
+                )
+                
+                st.success("Smithsonian WMS Map added to image database!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error adding Smithsonian WMS Map to database: {str(e)}")
+                
+        st.markdown("---")
+        
+        try:
+            # Get satellite imagery for this volcano
+            satellite_images = get_volcano_satellite_images(volcano['id'])
+            
+            if satellite_images and len(satellite_images) > 0:
+                with st.expander("View Satellite Imagery", expanded=False):
+                    # Group images by type
+                    image_types = {}
+                    for img in satellite_images:
+                        if img['image_type'] not in image_types:
+                            image_types[img['image_type']] = []
+                        image_types[img['image_type']].append(img)
+                    
+                    # Display each type in its own section
+                    for img_type, images in image_types.items():
+                        st.markdown(f"#### {img_type} Images")
+                        
+                        for img in images:
+                            col1, col2 = st.columns([3, 1])
+                            with col1:
+                                if img['description']:
+                                    link_text = img['description']
+                                else:
+                                    # Construct a description from available data
+                                    date_str = f" ({img['capture_date']})" if img['capture_date'] else ""
+                                    provider_str = f" from {img['provider']}" if img['provider'] else ""
+                                    link_text = f"{img['image_type']} Image{date_str}{provider_str}"
+                                
+                                st.markdown(f"[{link_text}]({img['image_url']})")
+                            
+                            with col2:
+                                if img['capture_date']:
+                                    st.markdown(f"*{img['capture_date']}*")
+            else:
+                st.info("No satellite imagery links available for this volcano.")
+                
+                # Offer to add InSAR image if available
+                if insar_url:
+                    if st.button("Add InSAR Link to Image Database"):
+                        try:
+                            # Add to satellite imagery database
+                            add_satellite_image(
+                                volcano_id=volcano['id'],
+                                volcano_name=volcano['name'],
+                                image_type="InSAR",
+                                image_url=insar_url,
+                                provider="OpenVolcano",
+                                description="InSAR deformation map"
+                            )
+                            
+                            st.success("InSAR link added to image database!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error adding satellite image: {str(e)}")
+        except Exception as e:
+            st.warning(f"Could not load satellite imagery: {str(e)}")
         
         # WOVOdat Monitoring Data
         st.markdown("### WOVOdat Monitoring Data")
