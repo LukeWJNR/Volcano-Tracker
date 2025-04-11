@@ -1171,3 +1171,124 @@ def get_significant_eruptions(min_vei=4):
         raise e
     finally:
         session.close()
+# Sound Profile Functions
+def add_volcano_sound_preference(volcano_id, volcano_name, user_notes=None):
+    """
+    Add a volcano to sound preferences
+    
+    Args:
+        volcano_id (str): ID of the volcano
+        volcano_name (str): Name of the volcano
+        user_notes (str, optional): User notes about this sound preference
+        
+    Returns:
+        VolcanoSoundPreference: The created sound preference object
+    """
+    session = SessionFactory()
+    try:
+        # Check if volcano already exists in sound preferences
+        existing = session.query(VolcanoSoundPreference).filter_by(
+            volcano_id=volcano_id
+        ).first()
+        
+        if existing:
+            # Update existing preference
+            if user_notes is not None:
+                existing.user_notes = user_notes
+            existing.saved_date = datetime.utcnow()
+            session.commit()
+            return existing
+        
+        # Create new sound preference
+        preference = VolcanoSoundPreference(
+            volcano_id=volcano_id,
+            volcano_name=volcano_name,
+            user_notes=user_notes
+        )
+        
+        session.add(preference)
+        session.commit()
+        return preference
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+def remove_sound_preference(volcano_id):
+    """
+    Remove a volcano from sound preferences
+    
+    Args:
+        volcano_id (str): ID of the volcano to remove
+        
+    Returns:
+        bool: True if volcano was removed, False otherwise
+    """
+    session = SessionFactory()
+    try:
+        preference = session.query(VolcanoSoundPreference).filter_by(
+            volcano_id=volcano_id
+        ).first()
+        
+        if not preference:
+            return False
+        
+        session.delete(preference)
+        session.commit()
+        return True
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+def get_user_sound_preferences():
+    """
+    Get all user's saved sound preferences
+    
+    Returns:
+        list: List of sound preferences
+    """
+    session = SessionFactory()
+    try:
+        preferences = session.query(VolcanoSoundPreference).order_by(
+            VolcanoSoundPreference.saved_date.desc()
+        ).all()
+        
+        result = []
+        for pref in preferences:
+            result.append({
+                'volcano_id': pref.volcano_id,
+                'volcano_name': pref.volcano_name,
+                'user_notes': pref.user_notes,
+                'saved_date': pref.saved_date.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        
+        return result
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
+
+def is_sound_preference(volcano_id):
+    """
+    Check if a volcano is in sound preferences
+    
+    Args:
+        volcano_id (str): ID of the volcano to check
+        
+    Returns:
+        bool: True if volcano is in sound preferences, False otherwise
+    """
+    session = SessionFactory()
+    try:
+        preference = session.query(VolcanoSoundPreference).filter_by(
+            volcano_id=volcano_id
+        ).first()
+        
+        return preference is not None
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
