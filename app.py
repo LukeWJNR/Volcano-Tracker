@@ -277,8 +277,48 @@ if st.session_state.last_update:
 if st.sidebar.button("Refresh Data"):
     with st.spinner("Refreshing volcano data..."):
         try:
+            # Store old data for alert level comparison
+            old_volcanos_df = None
+            if 'volcanos_df' in locals():
+                old_volcanos_df = volcanos_df.copy()
+                
+            # Get fresh data
             volcanos_df = get_volcano_data()
             st.session_state.last_update = datetime.now()
+            
+            # Check for alert level changes and notify subscribers if needed
+            if old_volcanos_df is not None:
+                try:
+                    from utils.alerts import check_alert_level_changes
+                    
+                    # Process each volcano to check for alert level changes
+                    alert_changes = []
+                    for _, row in volcanos_df.iterrows():
+                        volcano_id = row.get('id')
+                        if volcano_id:
+                            # Find old alert level
+                            old_row = old_volcanos_df[old_volcanos_df['id'] == volcano_id]
+                            old_alert_level = None
+                            if not old_row.empty:
+                                old_alert_level = old_row.iloc[0].get('alert_level')
+                            
+                            # Check if alert level changed and send notifications
+                            result = check_alert_level_changes(row.to_dict(), old_alert_level)
+                            if result:
+                                alert_changes.append({
+                                    'volcano': row.get('name', 'Unknown'),
+                                    'new_level': row.get('alert_level', 'Unknown'),
+                                    'old_level': old_alert_level,
+                                    'alerts_sent': len(result)
+                                })
+                    
+                    # Show summary of alert notifications if any were sent
+                    if alert_changes:
+                        st.sidebar.success(f"Sent alert notifications for {len(alert_changes)} volcanoes with changed alert levels.")
+                        
+                except Exception as e:
+                    st.sidebar.warning(f"Alert notification processing error: {str(e)}")
+            
             st.rerun()
         except Exception as e:
             st.sidebar.error(f"Error refreshing data: {str(e)}")
