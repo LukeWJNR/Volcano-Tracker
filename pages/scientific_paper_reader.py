@@ -125,6 +125,51 @@ def app():
         ⬆️ Upload PDFs above to begin analysis
         """)
         
+        # Check for sample PDFs in the attached_assets folder
+        sample_papers = []
+        
+        try:
+            import glob
+            sample_pdf_paths = glob.glob("attached_assets/*.pdf")
+            
+            if sample_pdf_paths:
+                st.success(f"Found {len(sample_pdf_paths)} sample volcano research papers in the attached_assets folder.")
+                
+                selected_sample = st.selectbox(
+                    "Select a sample paper to analyze:",
+                    [os.path.basename(path) for path in sample_pdf_paths]
+                )
+                
+                if selected_sample:
+                    selected_path = next(path for path in sample_pdf_paths if os.path.basename(path) == selected_sample)
+                    
+                    if st.button(f"Analyze {selected_sample}"):
+                        with st.spinner(f"Processing {selected_sample}..."):
+                            # Process the selected PDF
+                            try:
+                                # Try to extract text and images from the PDF
+                                if pymupdf_available:
+                                    text, images, metadata = extract_with_pymupdf(selected_path)
+                                elif pdf_reader_available:
+                                    text, images, metadata = extract_with_pypdf2(selected_path)
+                                else:
+                                    st.error("No PDF processing library available. Unable to extract content.")
+                                    text, images, metadata = "", [], {}
+                                
+                                # Display the extracted content
+                                display_extracted_content(text, images, metadata, selected_sample)
+                                
+                                # Analyze the text for volcano-related content
+                                analyze_volcano_content(text, selected_sample)
+                            except Exception as e:
+                                st.error(f"Error processing PDF: {str(e)}")
+                    
+                    # Also provide info about analyzing your own PDFs
+                    st.info("You can also upload your own volcano research papers using the file uploader above.")
+                
+        except Exception as e:
+            st.warning(f"Could not access sample papers: {str(e)}")
+        
         # Display a list of notable papers in the field as examples
         with st.expander("Notable Papers in Volcanology"):
             papers = [
