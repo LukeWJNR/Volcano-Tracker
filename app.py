@@ -389,6 +389,21 @@ sar_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" vie
 if st.sidebar.button(f"{sar_icon} SAR Animations", help="View SAR data and animations from COMET Volcano Portal"):
     switch_page("sar_animations")
 
+# Scientific 3D Eruption page link
+scientific_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"></path><path d="M21 8V5a2 2 0 0 0-2-2H8"></path><path d="M3 16v3a2 2 0 0 0 2 2h8"></path><path d="M16 21h5a2 2 0 0 0 2-2V8"></path><path d="M7 10v11"></path><path d="M14 13l3 3"></path><path d="M14 19l3-3"></path></svg>"""
+if st.sidebar.button(f"{scientific_icon} Scientific 3D Eruption", help="Explore scientifically accurate 3D eruption model"):
+    switch_page("scientific_3d_eruption")
+
+# Anak Krakatau Case Study page link
+case_study_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 9 6 9-6"></path><path d="M12 19 3 13v8l9 6 9-6v-8l-9 6z"></path><path d="m12 3-9 6 9 6 9-6-9-6z"></path></svg>"""
+if st.sidebar.button(f"{case_study_icon} Anak Krakatau Study", help="View the 2018 Anak Krakatau collapse case study"):
+    switch_page("anak_krakatau_case_study")
+
+# Scientific Paper Reader page link
+paper_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><rect x="8" y="12" width="8" height="2"></rect><rect x="8" y="16" width="8" height="2"></rect><path d="M10 8H8"></path></svg>"""
+if st.sidebar.button(f"{paper_icon} Scientific Paper Reader", help="Analyze scientific papers on volcanology"):
+    switch_page("scientific_paper_reader")
+
 # Risk Map page link
 risk_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 19 21 12 17 5 21 12 2"></polygon></svg>"""
 if st.sidebar.button(f"{risk_icon} Risk Heat Map", help="View volcanic risk assessment heat map"):
