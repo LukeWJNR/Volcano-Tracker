@@ -8,6 +8,10 @@ import os
 from streamlit.runtime.scriptrunner import get_script_run_ctx
 from streamlit.runtime.state import SessionStateProxy
 
+# Load custom CSS
+with open("assets/custom.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
 # Function to switch pages in a multi-page app
 def switch_page(page_name: str):
     """
@@ -137,22 +141,53 @@ sourced from the USGS Volcano Hazards Program. You can explore the map, filter v
 and access InSAR satellite imagery data for research and monitoring purposes.
 """)
 
-# Add navigation links
+# Define our professional icons using SVG format
+icons = {
+    "dashboard": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>""",
+    
+    "eruption": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5h8l4 8-4 8H8l-4-8 4-8z"></path><path d="M12 9v12"></path><path d="M8 13h8"></path></svg>""",
+    
+    "satellite": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h18"></path><path d="M5 4.5a9.16 9.16 0 0 1-.5 5.24"></path><path d="M7 4.5a5.89 5.89 0 0 0 .5 5.24"></path><path d="M4.24 10.24a9.45 9.45 0 0 0 7.5 2.75"></path><circle cx="14.5" cy="13" r="4"></circle><path d="m17 15.5 3.5 3.5"></path></svg>""",
+    
+    "risk": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>""",
+    
+    "news": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path><path d="M18 14h-8"></path><path d="M15 18h-5"></path><path d="M10 6h8v4h-8V6Z"></path></svg>""",
+    
+    "favorites": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>""",
+    
+    "notes": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>"""
+}
+
+# Add navigation links with professional SVG icons
 col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
 with col1:
-    st.page_link("app.py", label="🏠 Main Dashboard", icon="🌋")
+    st.markdown(f"""<a href="/" target="_self" class="nav-link">
+                    {icons['dashboard']} <span>Dashboard</span>
+                </a>""", unsafe_allow_html=True)
 with col2:
-    st.page_link("pages/eruption_simulator.py", label="💥 Eruption Simulator", icon="💥")
+    st.markdown(f"""<a href="/pages/eruption_simulator.py" target="_self" class="nav-link">
+                    {icons['eruption']} <span>Simulator</span>
+                </a>""", unsafe_allow_html=True)
 with col3:
-    st.page_link("pages/sar_animations.py", label="📡 SAR Animations", icon="📡")
+    st.markdown(f"""<a href="/pages/sar_animations.py" target="_self" class="nav-link">
+                    {icons['satellite']} <span>SAR Data</span>
+                </a>""", unsafe_allow_html=True)
 with col4:
-    st.page_link("pages/risk_map.py", label="🔥 Risk Heat Map", icon="🔥")
+    st.markdown(f"""<a href="/pages/risk_map.py" target="_self" class="nav-link">
+                    {icons['risk']} <span>Risk Map</span>
+                </a>""", unsafe_allow_html=True)
 with col5:
-    st.page_link("pages/volcano_news.py", label="🗞️ News", icon="🗞️")
+    st.markdown(f"""<a href="/pages/volcano_news.py" target="_self" class="nav-link">
+                    {icons['news']} <span>News</span>
+                </a>""", unsafe_allow_html=True)
 with col6:
-    st.page_link("pages/favorites.py", label="❤️ Favorites", icon="❤️")
+    st.markdown(f"""<a href="/pages/favorites.py" target="_self" class="nav-link">
+                    {icons['favorites']} <span>Favorites</span>
+                </a>""", unsafe_allow_html=True)
 with col7:
-    st.page_link("pages/notes.py", label="📝 Notes", icon="📝")
+    st.markdown(f"""<a href="/pages/notes.py" target="_self" class="nav-link">
+                    {icons['notes']} <span>Notes</span>
+                </a>""", unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -292,27 +327,33 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("Navigation")
 
 # Sound Profiles page link
-if st.sidebar.button("🔊 Volcano Sound Profiles", help="Explore volcanic acoustic signatures"):
+sound_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14l.001 7a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-7"></path><path d="M8 9v-.956a6 6 0 0 1 2.671-4.972L12 2l1.329 1.072A6 6 0 0 1 16 8.044V9"></path><path d="M18 9h-12a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1a2 2 0 0 0-2-2z"></path></svg>"""
+if st.sidebar.button(f"{sound_icon} Volcano Sound Profiles", help="Explore volcanic acoustic signatures"):
     switch_page("sound_profiles")
 
 # SAR Animations page link
-if st.sidebar.button("📡 SAR Animations", help="View SAR data and animations from COMET Volcano Portal"):
+sar_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="14.31" y1="8" x2="20.05" y2="17.94"></line><line x1="9.69" y1="8" x2="21.17" y2="8"></line><line x1="7.38" y1="12" x2="13.12" y2="2.06"></line><line x1="9.69" y1="16" x2="3.95" y2="6.06"></line><line x1="14.31" y1="16" x2="2.83" y2="16"></line><line x1="16.62" y1="12" x2="10.88" y2="21.94"></line></svg>"""
+if st.sidebar.button(f"{sar_icon} SAR Animations", help="View SAR data and animations from COMET Volcano Portal"):
     switch_page("sar_animations")
 
 # Risk Map page link
-if st.sidebar.button("🔥 Risk Heat Map", help="View volcanic risk assessment heat map"):
+risk_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 19 21 12 17 5 21 12 2"></polygon></svg>"""
+if st.sidebar.button(f"{risk_icon} Risk Heat Map", help="View volcanic risk assessment heat map"):
     switch_page("risk_map")
     
 # Volcano News page link
-if st.sidebar.button("🗞️ Volcano News", help="View volcano news and external monitoring resources"):
+news_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path><path d="M18 14h-8"></path><path d="M15 18h-5"></path><path d="M10 6h8v4h-8V6Z"></path></svg>"""
+if st.sidebar.button(f"{news_icon} Volcano News", help="View volcano news and external monitoring resources"):
     switch_page("volcano_news")
 
 # Favorites page link
-if st.sidebar.button("⭐ My Favorites", help="View your favorite volcanoes"):
+fav_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>"""
+if st.sidebar.button(f"{fav_icon} My Favorites", help="View your favorite volcanoes"):
     switch_page("favorites")
 
 # Notes page link
-if st.sidebar.button("📝 My Notes", help="View your volcano notes"):
+notes_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>"""
+if st.sidebar.button(f"{notes_icon} My Notes", help="View your volcano notes"):
     switch_page("notes")
 
 # Information about data source

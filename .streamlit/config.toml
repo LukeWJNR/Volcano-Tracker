@@ -7,3 +7,13 @@ port = 5000
 
 [browser]
 gatherUsageStats = false
+
+[theme]
+primaryColor = "#FF5A5F"
+backgroundColor = "#F5F5F5"
+secondaryBackgroundColor = "#E0E0E0"
+textColor = "#262730"
+font = "sans serif"
+
+[logger]
+level = "info"
