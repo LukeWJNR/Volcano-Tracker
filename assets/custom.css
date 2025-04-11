@@ -79,6 +79,111 @@ h3 {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
+/* Info panel styling */
+.info-panel {
+    background-color: #FFFFFF;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #FF5A5F;
+}
+
+.info-panel h3 {
+    margin-top: 0 !important;
+    color: #2C3E50;
+    font-weight: 600;
+    border-bottom: 1px solid #EEEEEE;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.info-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #F5F5F5;
+}
+
+.info-section h4 {
+    font-size: 1.1rem !important;
+    color: #34495E;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.info-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.info-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.tag-normal {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: #27ae60;
+}
+
+.tag-advisory {
+    background-color: rgba(241, 196, 15, 0.15);
+    color: #f39c12;
+}
+
+.tag-watch {
+    background-color: rgba(230, 126, 34, 0.15);
+    color: #d35400;
+}
+
+.tag-warning {
+    background-color: rgba(231, 76, 60, 0.15);
+    color: #c0392b;
+}
+
+.tag-uncertain {
+    background-color: rgba(149, 165, 166, 0.15);
+    color: #7f8c8d;
+}
+
+/* Stat cards for volcano info */
+.stat-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+
+.stat-card {
+    flex: 1;
+    min-width: 120px;
+    background-color: #F8FAFB;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2C3E50;
+    margin-bottom: 0.2rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #7F8C8D;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 /* Button styling */
 .stButton > button {
     border-radius: 6px;
