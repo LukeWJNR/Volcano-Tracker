@@ -145,12 +145,12 @@ def app():
         )
     
     # Navigation links
-    col1, col2 = st.columns([1, 1])
-    with col1:
+    nav_col1, nav_col2 = st.columns([1, 1])
+    with nav_col1:
         st.markdown("[← Return to Risk Map](risk_map)", unsafe_allow_html=False)
-    with col2:
-        # Run simulation button
-        if st.button("Run Simulation", type="primary"):
+    
+    # Run simulation button
+    if st.button("Run Simulation", type="primary"):
         with st.spinner("Running eruption simulation..."):
             # Run the simulation
             simulation_results = run_eruption_simulation(
