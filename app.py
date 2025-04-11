@@ -460,7 +460,8 @@ with col2:
                                 if insar_url:
                                     st.markdown(f"[View Ground Deformation Data]({insar_url})")
                                     st.markdown("The Icelandic Meteorological Office uses GPS and InSAR data to monitor ground deformation at Icelandic volcanoes. This helps detect magma movement and potential eruption precursors.")
-                                    st.image("https://earthquake.usgs.gov/data/insar/background/images/example_insar_3d.jpg", caption="Example of InSAR interferogram showing ground deformation")
+                                    st.markdown("![InSAR Example](https://d9-wret.s3.us-west-2.amazonaws.com/assets/palladium/production/s3fs-public/thumbnails/image/Mauna%20Loa%20interferogram.jpg)")
+                                    st.caption("Example of InSAR interferogram showing ground deformation")
                                 
                             with iceland_tab2:
                                 # SO2 data from Icelandic Met Office
@@ -506,7 +507,8 @@ with col2:
                                 if insar_wovodat_url:
                                     st.markdown(f"[View InSAR Data on WOVOdat]({insar_wovodat_url})")
                                     st.markdown("InSAR (Interferometric Synthetic Aperture Radar) data shows ground deformation, which can indicate magma movement beneath the volcano.")
-                                    st.image("https://earthquake.usgs.gov/data/insar/background/images/example_insar_3d.jpg", caption="Example of InSAR interferogram showing ground deformation")
+                                    st.markdown("![InSAR Example](https://d9-wret.s3.us-west-2.amazonaws.com/assets/palladium/production/s3fs-public/thumbnails/image/Mauna%20Loa%20interferogram.jpg)")
+                                    st.caption("Example of InSAR interferogram showing ground deformation")
                                 else:
                                     st.info("No InSAR data available for this volcano in WOVOdat.")
                             
