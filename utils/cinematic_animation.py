@@ -68,13 +68,40 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
         # Default
         Z_surface = 8 * np.exp(-0.1 * R**2)
     
-    # Generate magma chamber
-    chamber_depth = -5 if volcano_type == 'stratovolcano' else -3
-    chamber_x = np.linspace(-4, 4, 30)
-    chamber_y = np.linspace(-4, 4, 30)
+    # Generate magma chamber (make it more prominent)
+    if volcano_type == 'stratovolcano':
+        chamber_depth = -5  # Deeper for stratovolcanoes
+        chamber_width = 5   # Wider chamber
+        chamber_height = 2  # Taller chamber
+    elif volcano_type == 'shield':
+        chamber_depth = -3  # Shallower for shield volcanoes
+        chamber_width = 6   # Very wide chamber for shield volcanoes
+        chamber_height = 1.5  # Flatter chamber
+    elif volcano_type == 'caldera':
+        chamber_depth = -3.5  # Medium depth for calderas
+        chamber_width = 7   # Very wide chamber for calderas
+        chamber_height = 2.5  # Taller chamber for large magma reservoir
+    elif volcano_type == 'cinder_cone':
+        chamber_depth = -2.5  # Shallow for cinder cones
+        chamber_width = 3   # Smaller chamber for cinder cones
+        chamber_height = 1.2  # Small chamber
+    elif volcano_type == 'lava_dome':
+        chamber_depth = -4  # Medium-deep for lava domes
+        chamber_width = 4   # Medium width chamber
+        chamber_height = 2  # Medium height
+    else:
+        chamber_depth = -4  # Default
+        chamber_width = 5   # Default
+        chamber_height = 2  # Default
+    
+    # Create a detailed magma chamber with more points for better visibility
+    chamber_x = np.linspace(-chamber_width, chamber_width, 40)
+    chamber_y = np.linspace(-chamber_width, chamber_width, 40)
     chamber_X, chamber_Y = np.meshgrid(chamber_x, chamber_y)
     chamber_R = np.sqrt(chamber_X**2 + chamber_Y**2)
-    chamber_Z = chamber_depth - 1.5 * np.exp(-0.15 * chamber_R**2)
+    
+    # Create the chamber shape with variable dimensions based on volcano type
+    chamber_Z = chamber_depth - chamber_height * np.exp(-0.15 * (chamber_R**2) / (chamber_width*0.5))
     
     # Conduit parameters
     if volcano_type == 'shield':
@@ -362,20 +389,81 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
                     rand_h = h + np.random.uniform(-0.5, 0.5)
                     column_points.append((x, y, rand_h))
             
-            # Add points for ash cloud at the top
+            # Add points for ash cloud at the top with directional dispersal
             if ash_density > 0:
                 cloud_height = summit_height + eruption_height
                 cloud_radius = vent_radius * 3 * ash_density
-                n_ash_points = int(100 * ash_density)
+                n_ash_points = int(150 * ash_density)  # More points for denser visualization
                 
+                # Create a prevailing wind direction for ash dispersal
+                # Primarily eastward (positive x) with slight northern (negative y) component
+                wind_direction_x = 0.8  # Positive x direction (east)
+                wind_direction_y = -0.3  # Slight negative y (north)
+                
+                # Normalize the wind vector
+                wind_mag = np.sqrt(wind_direction_x**2 + wind_direction_y**2)
+                wind_direction_x /= wind_mag
+                wind_direction_y /= wind_mag
+                
+                # Generate ash cloud with directional bias
                 for _ in range(n_ash_points):
-                    angle = np.random.uniform(0, 2*np.pi)
-                    # More spread at higher ash density
-                    r = cloud_radius * np.random.uniform(0.5, 1.5) 
-                    x = r * np.cos(angle)
-                    y = r * np.sin(angle)
-                    # Ash cloud has vertical dispersion too
-                    z = cloud_height + np.random.uniform(-2, 2) * ash_density
+                    # Base position at eruption column top
+                    base_x = 0
+                    base_y = 0
+                    base_z = cloud_height
+                    
+                    # Distance from the center, farther points for more ash spread
+                    dist = np.random.exponential(scale=cloud_radius * 1.5)
+                    
+                    # Wind influence increases with distance
+                    wind_influence = min(1.0, dist / (cloud_radius * 2))
+                    
+                    # Angle with wind bias (more points in wind direction)
+                    angle_bias = np.random.triangular(0, np.pi, 2*np.pi)
+                    if np.random.random() < 0.7:  # 70% of particles follow wind
+                        # Calculate position with wind influence
+                        dx = dist * (wind_direction_x * wind_influence + 
+                                    np.cos(angle_bias) * (1 - wind_influence))
+                        dy = dist * (wind_direction_y * wind_influence + 
+                                    np.sin(angle_bias) * (1 - wind_influence))
+                    else:
+                        # Some random dispersion in other directions
+                        dx = dist * np.cos(angle_bias)
+                        dy = dist * np.sin(angle_bias)
+                    
+                    # Height decreases with distance from center (ash falling)
+                    height_decay = np.random.uniform(0.1, 0.5) * dist / cloud_radius
+                    dz = np.random.uniform(-2, 1) * ash_density - height_decay
+                    
+                    # Final position
+                    x = base_x + dx
+                    y = base_y + dy
+                    z = base_z + dz
+                    
+                    column_points.append((x, y, z))
+                
+                # Add ash fallout beneath the cloud
+                fallout_points = int(50 * ash_density)
+                max_fallout_dist = cloud_radius * 4  # How far the ash falls
+                
+                for _ in range(fallout_points):
+                    # Distance from center, following the wind direction
+                    dist = np.random.uniform(cloud_radius * 0.5, max_fallout_dist)
+                    
+                    # Position biased in wind direction
+                    angle_jitter = np.random.uniform(-0.5, 0.5)
+                    wind_angle = np.arctan2(wind_direction_y, wind_direction_x)
+                    angle = wind_angle + angle_jitter
+                    
+                    # Calculate position
+                    x = dist * np.cos(angle)
+                    y = dist * np.sin(angle)
+                    
+                    # Height decreases with distance (ash is falling)
+                    height_factor = 1 - (dist / max_fallout_dist)
+                    z_max = cloud_height * height_factor
+                    z = np.random.uniform(0, z_max)
+                    
                     column_points.append((x, y, z))
             
             # Add eruption column to frame
