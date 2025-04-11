@@ -36,7 +36,7 @@ def create_volcano_map(volcano_df):
     # Add tile layer control with proper attributions
     folium.TileLayer(
         'Stamen Terrain',
-        attr='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
+        attr='Map tiles by Stamen Design, CC BY 3.0 — Map data © OpenStreetMap contributors'
     ).add_to(m)
     
     folium.TileLayer(

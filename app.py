@@ -238,6 +238,26 @@ if st.session_state.show_history:
     except Exception as e:
         st.sidebar.warning(f"Could not load search history: {str(e)}")
 
+# Page navigation
+st.sidebar.markdown("---")
+st.sidebar.subheader("Navigation")
+
+# Sound Profiles page link
+if st.sidebar.button("🔊 Volcano Sound Profiles", help="Explore volcanic acoustic signatures"):
+    switch_page("sound_profiles")
+
+# Risk Map page link
+if st.sidebar.button("🔥 Risk Heat Map", help="View volcanic risk assessment heat map"):
+    switch_page("risk_map")
+
+# Favorites page link
+if st.sidebar.button("⭐ My Favorites", help="View your favorite volcanoes"):
+    switch_page("favorites")
+
+# Notes page link
+if st.sidebar.button("📝 My Notes", help="View your volcano notes"):
+    switch_page("notes")
+
 # Information about data source
 st.sidebar.markdown("---")
 st.sidebar.markdown("""
