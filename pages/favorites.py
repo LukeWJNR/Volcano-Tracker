@@ -110,8 +110,19 @@ try:
                     icon=folium.Icon(color='red', icon='heart', prefix='fa')
                 ).add_to(m)
             
-            # Display the map with responsive size for iframe
-            folium_static(m, width=800, height=450)
+            # Add custom styling for the map to make it auto-scale
+            st.markdown("""
+            <style>
+                /* Make the map container responsive */
+                iframe {
+                    width: 100%;
+                    min-height: 450px;
+                }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            # Display the map to fill container
+            folium_static(m)
         
         with tab2:
             st.subheader("Table of Your Favorite Volcanoes")
