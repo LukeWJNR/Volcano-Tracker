@@ -6,6 +6,7 @@ various factors and generating heat map visualizations.
 """
 import pandas as pd
 import numpy as np
+import math
 from typing import Dict, List, Any, Tuple
 from datetime import datetime, timedelta
 
@@ -49,18 +50,36 @@ def calculate_risk_factor(volcano_data: Dict[str, Any]) -> float:
         eruption_score = 0.3  # Moderate if unknown
     else:
         try:
-            # Convert to string if it's not already
-            if not isinstance(last_eruption, str):
-                last_eruption = str(last_eruption)
-                
-            # Try to parse the last eruption as a year
-            if '-' in last_eruption:  # Might be a date range like "2020-2021"
-                last_year = int(last_eruption.split('-')[-1])
+            # Handle different types of last_eruption values
+            if last_eruption is None:
+                # No eruption data available
+                years_since = 10000  # Very old (default high value)
+            elif isinstance(last_eruption, (int, float)):
+                # If it's already a number, use it directly
+                if not math.isnan(float(last_eruption)):  # Check for NaN
+                    last_year = int(float(last_eruption))
+                    current_year = datetime.now().year
+                    years_since = current_year - last_year
+                else:
+                    years_since = 10000  # NaN value, treat as very old
             else:
-                last_year = int(last_eruption)
+                # Convert to string for parsing if it's not already
+                if not isinstance(last_eruption, str):
+                    last_eruption = str(last_eruption)
                 
-            current_year = datetime.now().year
-            years_since = current_year - last_year
+                # Skip if it's "Unknown" or empty
+                if last_eruption.lower() in ("unknown", "none", "", "nan"):
+                    years_since = 10000  # No data, treat as very old
+                # Try to parse the last eruption as a year
+                elif '-' in last_eruption:  # Might be a date range like "2020-2021"
+                    last_year = int(last_eruption.split('-')[-1])
+                    current_year = datetime.now().year
+                    years_since = current_year - last_year
+                else:
+                    # Try to parse as a simple year
+                    last_year = int(last_eruption)
+                    current_year = datetime.now().year
+                    years_since = current_year - last_year
             
             if years_since <= 1:
                 eruption_score = 1.0  # Very recent (within a year)
