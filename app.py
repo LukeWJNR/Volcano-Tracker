@@ -138,18 +138,20 @@ and access InSAR satellite imagery data for research and monitoring purposes.
 """)
 
 # Add navigation links
-col1, col2, col3, col4, col5, col6 = st.columns(6)
+col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
 with col1:
     st.page_link("app.py", label="🏠 Main Dashboard", icon="🌋")
 with col2:
-    st.page_link("pages/sar_animations.py", label="📡 SAR Animations", icon="📡")
+    st.page_link("pages/eruption_simulator.py", label="💥 Eruption Simulator", icon="💥")
 with col3:
-    st.page_link("pages/risk_map.py", label="🔥 Risk Heat Map", icon="🔥")
+    st.page_link("pages/sar_animations.py", label="📡 SAR Animations", icon="📡")
 with col4:
-    st.page_link("pages/volcano_news.py", label="🗞️ News", icon="🗞️")
+    st.page_link("pages/risk_map.py", label="🔥 Risk Heat Map", icon="🔥")
 with col5:
-    st.page_link("pages/favorites.py", label="❤️ Favorites", icon="❤️")
+    st.page_link("pages/volcano_news.py", label="🗞️ News", icon="🗞️")
 with col6:
+    st.page_link("pages/favorites.py", label="❤️ Favorites", icon="❤️")
+with col7:
     st.page_link("pages/notes.py", label="📝 Notes", icon="📝")
 
 st.markdown("---")
