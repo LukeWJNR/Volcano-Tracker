@@ -58,10 +58,30 @@ def app():
     filtered_df = volcano_data if region_filter == "All" else volcano_data[volcano_data["region"] == region_filter]
     
     with col2:
+        # Check if we have a pre-selected volcano from the risk map
+        if 'simulator_volcano' in st.session_state:
+            default_volcano = st.session_state['simulator_volcano']
+            # Remove it from session state to avoid persistence after page reload
+            volcano_name = st.session_state.pop('simulator_volcano')
+            
+            # Find the index of the selected volcano
+            try:
+                default_index = sorted(filtered_df["name"].tolist()).index(volcano_name)
+            except ValueError:
+                # If volcano not found in filtered region, switch to All regions
+                region_filter = "All"
+                filtered_df = volcano_data
+                try:
+                    default_index = sorted(filtered_df["name"].tolist()).index(volcano_name)
+                except ValueError:
+                    default_index = 0
+        else:
+            default_index = 0
+        
         selected_volcano_name = st.selectbox(
             "Select Volcano",
             options=sorted(filtered_df["name"].tolist()),
-            index=0
+            index=default_index
         )
     
     selected_volcano = filtered_df[filtered_df["name"] == selected_volcano_name].iloc[0]
@@ -86,11 +106,17 @@ def app():
     col1, col2 = st.columns([1, 1])
     
     with col1:
+        # Check if we have a pre-set probability from the risk map
+        if 'simulator_probability' in st.session_state:
+            default_probability = st.session_state.pop('simulator_probability')
+        else:
+            default_probability = int(float(selected_volcano.get('risk_factor', 0.3)) * 100)
+            
         eruption_probability = st.slider(
             "Eruption Probability (%)", 
             min_value=0, 
             max_value=100, 
-            value=int(float(selected_volcano.get('risk_factor', 0.3)) * 100),
+            value=default_probability,
             help="Likelihood of an eruption occurring during the simulation period"
         )
         
@@ -118,8 +144,13 @@ def app():
             help="Type of eruption scenario to simulate"
         )
     
-    # Run simulation button
-    if st.button("Run Simulation", type="primary"):
+    # Navigation links
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.markdown("[← Return to Risk Map](risk_map)", unsafe_allow_html=False)
+    with col2:
+        # Run simulation button
+        if st.button("Run Simulation", type="primary"):
         with st.spinner("Running eruption simulation..."):
             # Run the simulation
             simulation_results = run_eruption_simulation(
