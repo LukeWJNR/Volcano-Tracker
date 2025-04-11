@@ -5,11 +5,32 @@ from typing import Dict, List, Optional, Any
 
 from utils.volcano_types import Volcano, VolcanoDict
 from utils.insar_data import get_insar_url_for_volcano
+from data.volcano_data import VOLCANO_DATA
 
-# USGS Volcano API endpoints
-# USGS_VOLCANO_API_URL = "https://volcano.si.edu/api/v1/volcanoes"  # Original URL (not working)
-USGS_VOLCANO_API_URL = "https://www.usgs.gov/programs/VHP/volcano-data" 
-USGS_VOLCANO_DETAILS_URL = "https://www.usgs.gov/programs/VHP/volcano/{volcano_id}"
+def get_known_volcano_data() -> pd.DataFrame:
+    """
+    Get volcano data from our known dataset
+    
+    Returns:
+        pd.DataFrame: DataFrame containing volcano information
+    """
+    # Add InSAR URLs to data
+    volcano_list = []
+    for volcano in VOLCANO_DATA:
+        # Create a copy to avoid modifying the original data
+        volcano_copy = volcano.copy()
+        
+        # Add InSAR URL if available
+        insar_url = get_insar_url_for_volcano(volcano_copy['name'])
+        if insar_url:
+            volcano_copy['insar_url'] = insar_url
+            
+        volcano_list.append(volcano_copy)
+    
+    # Convert to DataFrame
+    df = pd.DataFrame(volcano_list)
+    return df
+
 
 def get_volcano_data() -> pd.DataFrame:
     """
@@ -19,24 +40,8 @@ def get_volcano_data() -> pd.DataFrame:
     Note: We're using a data source that's stored locally since the API has changed.
     In a production environment, you would update to use the correct API endpoint.
     """
-    try:
-        # Try to fetch from API first
-        response = requests.get(USGS_VOLCANO_API_URL, timeout=10)
-        if response.status_code == 200:
-            try:
-                data = response.json()
-                # Process API data as before
-                # (this part would be updated if the API is working)
-            except Exception:
-                # If JSON parsing fails, fall back to local data
-                return get_known_volcano_data()
-        else:
-            # If API call failed, use known volcano data
-            return get_known_volcano_data()
-            
-    except requests.exceptions.RequestException:
-        # Use the known volcano data
-        return get_known_volcano_data()
+    # Use the known volcano data
+    return get_known_volcano_data()
 
 def get_volcano_details(volcano_id: str) -> Dict[str, Any]:
     """
@@ -48,51 +53,28 @@ def get_volcano_details(volcano_id: str) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: Detailed information about the volcano
     """
-    try:
-        url = USGS_VOLCANO_DETAILS_URL.format(volcano_id=volcano_id)
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        
-        data = response.json()
-        
-        # Extract relevant details
-        details = {
-            'id': volcano_id,
-            'description': data.get('description', ''),
-            'activity': data.get('activity', ''),
-            'monitoring': data.get('monitoring', ''),
-            'hazard_info': data.get('hazard_info', ''),
-            # Look for additional fields that match our type definition
-            'name': data.get('name', ''),
-            'country': data.get('country', ''),
-            'region': data.get('region', ''),
-        }
-        
-        # Try to get volcano name to check for InSAR data
-        volcano_name = data.get('name', '')
-        if volcano_name:
-            insar_url = get_insar_url_for_volcano(volcano_name)
+    # Search in our local data first
+    for volcano in VOLCANO_DATA:
+        if volcano['id'] == volcano_id:
+            # Add InSAR URL if available
+            details = volcano.copy()
+            insar_url = get_insar_url_for_volcano(details['name'])
             if insar_url:
                 details['insar_url'] = insar_url
-        
-        return details
+            return details
     
-    except requests.exceptions.RequestException as e:
-        # Since we need to handle this gracefully on the frontend,
-        # we'll raise a more informative exception
-        raise Exception(f"Failed to fetch volcano details: {str(e)}")
+    # If not found in local data, return a minimal response
+    return {
+        'id': volcano_id,
+        'name': 'Unknown',
+        'description': 'Details not available',
+        'activity': 'Unknown',
+        'country': 'Unknown',
+        'region': 'Unknown'
+    }
 
-# Function to handle the case when the USGS API is not working as expected
-def get_fallback_volcano_data() -> pd.DataFrame:
-    """
-    Fallback function to provide a minimal dataset when the API is unavailable
-    This is only used in case of complete API failure
-    """
-    # In a real application, this could fetch data from a backup source or cache
-    return pd.DataFrame(columns=[
-        'id', 'name', 'country', 'region', 'latitude', 'longitude',
-        'elevation', 'type', 'last_eruption', 'alert_level', 'insar_url'
-    ])
+# This code was updated to use a reliable local data source
+# instead of depending on the external API which was not available
     
     
 def get_volcano_by_name(name: str) -> Optional[Volcano]:
