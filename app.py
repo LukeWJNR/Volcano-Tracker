@@ -9,6 +9,7 @@ import os
 from utils.api import get_volcano_data, get_volcano_details
 from utils.map_utils import create_volcano_map, create_popup_html
 from utils.web_scraper import get_volcano_additional_info
+from utils.insar_data import get_insar_url_for_volcano, generate_sentinel_hub_url, generate_copernicus_url
 from utils.db_utils import (
     add_favorite_volcano, 
     remove_favorite_volcano, 
@@ -35,6 +36,17 @@ This dashboard displays real-time data about active volcanoes around the world,
 sourced from the USGS Volcano Hazards Program. You can explore the map, filter volcanoes, 
 and access InSAR satellite imagery data for research and monitoring purposes.
 """)
+
+# Add navigation links
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.page_link("app.py", label="🏠 Main Dashboard", icon="🌋")
+with col2:
+    st.page_link("pages/favorites.py", label="❤️ Your Favorites", icon="❤️")
+with col3:
+    st.page_link("pages/notes.py", label="📝 Your Notes", icon="📝")
+
+st.markdown("---")
 
 # Initialize session state for storing selected volcano
 if 'selected_volcano' not in st.session_state:
@@ -290,17 +302,28 @@ with col2:
         # InSAR Data links
         st.markdown("### InSAR Satellite Data")
         
-        # Sentinel Hub link
-        sentinel_hub_url = f"https://www.sentinel-hub.com/explore/sentinelplayground/?zoom=12&lat={volcano['latitude']}&lng={volcano['longitude']}&preset=1_NATURAL_COLOR&layers=B01,B02,B03&maxcc=20&gain=1.0&gamma=1.0&time=2021-06-01%7C2021-12-01&atmFilter=&showDates=false"
+        # Get specific InSAR URL for this volcano if available
+        insar_url = get_insar_url_for_volcano(volcano['name'])
+        if insar_url:
+            st.markdown(f"[View InSAR Data for {volcano['name']}]({insar_url})")
+            st.markdown("---")
+        
+        # Generate Sentinel Hub URL
+        sentinel_hub_url = generate_sentinel_hub_url(volcano['latitude'], volcano['longitude'])
         st.markdown(f"[View on Sentinel Hub]({sentinel_hub_url})")
         
-        # ESA Copernicus link
-        copernicus_url = f"https://scihub.copernicus.eu/dhus/#/home?latitude={volcano['latitude']}&longitude={volcano['longitude']}&zoom=12"
+        # Generate ESA Copernicus URL
+        copernicus_url = generate_copernicus_url(volcano['latitude'], volcano['longitude'])
         st.markdown(f"[Search ESA Copernicus Data]({copernicus_url})")
         
         # USGS link
         usgs_url = f"https://www.usgs.gov/volcanoes/volcanoes-around-the-world/{volcano['name'].lower().replace(' ', '-')}"
         st.markdown(f"[USGS Volcano Information]({usgs_url})")
+        
+        # ASF SARVIEWS link (if coordinates are available)
+        if 'latitude' in volcano and 'longitude' in volcano:
+            sarviews_url = f"https://sarviews-hazards.alaska.edu/#{volcano['latitude']},{volcano['longitude']},6"
+            st.markdown(f"[ASF SARVIEWS (SAR Data)]({sarviews_url})")
         
         # Climate Links Information
         st.markdown("### Climate Links Information")
