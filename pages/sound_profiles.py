@@ -112,20 +112,20 @@ def app():
                         # Add button to save/remove this sound to preferences
                         if is_preferred:
                             if st.button("🗑️ Remove from My Sound Preferences"):
-                                try:
-                                    remove_sound_preference(volcano_id)
+                                result = remove_sound_preference(volcano_id)
+                                if result:
                                     st.success(f"Removed {volcano_name} from your sound preferences!")
                                     st.rerun()
-                                except Exception as e:
-                                    st.error(f"Error removing preference: {str(e)}")
+                                else:
+                                    st.error("Error removing preference. Please try again later.")
                         else:
                             if st.button("💾 Save to My Sound Preferences"):
-                                try:
-                                    add_volcano_sound_preference(volcano_id, volcano_name)
+                                result = add_volcano_sound_preference(volcano_id, volcano_name)
+                                if result:
                                     st.success(f"Added {volcano_name} to your sound preferences!")
                                     st.rerun()
-                                except Exception as e:
-                                    st.error(f"Error saving preference: {str(e)}")
+                                else:
+                                    st.error("Error saving preference. Please try again later.")
                     else:
                         st.info("This volcano cannot be saved to preferences due to missing ID.")
                 
@@ -284,12 +284,12 @@ def app():
                             with action_col:
                                 # Add remove button
                                 if st.button("🗑️ Remove", key=f"remove_{pref['volcano_id']}"):
-                                    try:
-                                        remove_sound_preference(pref['volcano_id'])
+                                    result = remove_sound_preference(pref['volcano_id'])
+                                    if result:
                                         st.success(f"Removed {pref['volcano_name']} from sound preferences")
                                         st.rerun()
-                                    except Exception as e:
-                                        st.error(f"Error removing preference: {str(e)}")
+                                    else:
+                                        st.error("Error removing preference. Please try again later.")
                             
                             # Generate and display sound profile
                             sound_html = get_volcano_sound_player(volcano_details, include_waveform=True)

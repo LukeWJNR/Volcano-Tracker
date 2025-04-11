@@ -1182,8 +1182,12 @@ def add_volcano_sound_preference(volcano_id, volcano_name, user_notes=None):
         user_notes (str, optional): User notes about this sound preference
         
     Returns:
-        VolcanoSoundPreference: The created sound preference object
+        VolcanoSoundPreference: The created sound preference object or None on error
     """
+    if not volcano_id or not volcano_name:
+        print("Error: Missing required volcano ID or name")
+        return None
+        
     session = SessionFactory()
     try:
         # Check if volcano already exists in sound preferences
@@ -1211,7 +1215,8 @@ def add_volcano_sound_preference(volcano_id, volcano_name, user_notes=None):
         return preference
     except Exception as e:
         session.rollback()
-        raise e
+        print(f"Database error in add_volcano_sound_preference: {str(e)}")
+        return None
     finally:
         session.close()
 
@@ -1225,6 +1230,10 @@ def remove_sound_preference(volcano_id):
     Returns:
         bool: True if volcano was removed, False otherwise
     """
+    if not volcano_id:
+        print("Error: Missing required volcano ID")
+        return False
+        
     session = SessionFactory()
     try:
         preference = session.query(VolcanoSoundPreference).filter_by(
@@ -1239,7 +1248,8 @@ def remove_sound_preference(volcano_id):
         return True
     except Exception as e:
         session.rollback()
-        raise e
+        print(f"Database error in remove_sound_preference: {str(e)}")
+        return False
     finally:
         session.close()
 
