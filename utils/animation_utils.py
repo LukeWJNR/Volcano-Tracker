@@ -2,7 +2,8 @@
 Utility functions for creating volcano animations based on InSAR data and scientific models.
 
 This module provides functionality to generate animated visualizations of different volcano types,
-eruption processes, and deformation patterns derived from real InSAR data.
+eruption processes, and deformation patterns derived from real InSAR data. It also includes
+comprehensive eruption sequence animations showing the full lifecycle from magma buildup to eruption.
 """
 
 import streamlit as st
