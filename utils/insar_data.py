@@ -124,19 +124,27 @@ def generate_smithsonian_wms_url(latitude: float, longitude: float, width: int =
     """
     # Calculate the bounding box based on coordinates and zoom level
     # This is a simple approximation that works reasonably well for medium latitudes
-    zoom_factor = 10 / (2 ** zoom_level)
+    # Adjusted formula to provide better zoom control
+    zoom_factor = 8 / (2 ** (zoom_level / 2))  # More gradual zoom scaling
+    
+    # For higher zoom levels (individual volcanoes), narrow the bounding box
+    if zoom_level >= 10:
+        zoom_factor = 2 / (2 ** (zoom_level / 4))
+    
     min_lon = longitude - zoom_factor
     max_lon = longitude + zoom_factor
     min_lat = latitude - zoom_factor * (height / width)
     max_lat = latitude + zoom_factor * (height / width)
     
+    # Format the bounding box
     bbox = f"{min_lon}%2C{min_lat}%2C{max_lon}%2C{max_lat}"
     
-    # Generate the WMS URL
+    # Generate the WMS URL with additional parameters for better rendering
     return (
         f"https://geoserver-apia.sprep.org/geoserver/global/wms"
         f"?service=WMS&version=1.1.0&request=GetMap"
         f"&layers=global%3AGlobal_2013_HoloceneEruptions_SmithsonianVOTW"
         f"&bbox={bbox}&width={width}&height={height}"
         f"&srs=EPSG%3A4326&format=application/openlayers"
+        f"&transparent=true&tiled=true"  # Added parameters for better display
     )

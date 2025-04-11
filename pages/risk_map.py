@@ -100,21 +100,53 @@ with st.spinner("Generating volcanic risk assessment..."):
         show_smithsonian = st.checkbox("Show Smithsonian Holocene Eruptions WMS Layer", value=False)
         
         if show_smithsonian:
-            # Generate a global view of the Smithsonian WMS
+            # Generate a global view of the Smithsonian WMS with better rendering
             smithsonian_global_url = "https://geoserver-apia.sprep.org/geoserver/global/wms?service=WMS&version=1.1.0&request=GetMap&layers=global%3AGlobal_2013_HoloceneEruptions_SmithsonianVOTW&bbox=-180.0%2C-90.0%2C180.0%2C90.0&width=1500&height=650&srs=EPSG%3A4326&format=application/openlayers"
             
             # Display an explanation
             st.info("This WMS layer displays the Smithsonian Global Volcanism Program's Holocene Eruptions dataset. The layer shows volcanoes with documented eruptions during the Holocene epoch (approximately the last 11,700 years).")
             
-            # Add a link to the WMS service
-            st.markdown(f"[Open Smithsonian Holocene Eruptions Map in New Tab]({smithsonian_global_url})")
+            # Show tabs for different regions to enable better viewing
+            tab_global, tab_america, tab_asia_pacific, tab_europe_africa = st.tabs(["Global View", "Americas", "Asia-Pacific", "Europe & Africa"])
             
-            # Show the Smithsonian WMS map in an iframe
-            st.markdown(f"""
-            <div style="margin-bottom: 20px;">
-                <iframe src="{smithsonian_global_url}" width="100%" height="400" frameborder="0"></iframe>
-            </div>
-            """, unsafe_allow_html=True)
+            with tab_global:
+                # Global view
+                st.markdown(f"[Open Global View in New Tab]({smithsonian_global_url})")
+                st.markdown(f"""
+                <div style="border:1px solid #ddd; padding:5px; border-radius:5px; margin-bottom:10px;">
+                    <iframe src="{smithsonian_global_url}" width="100%" height="400" frameborder="0"></iframe>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            with tab_america:
+                # Americas view
+                americas_url = "https://geoserver-apia.sprep.org/geoserver/global/wms?service=WMS&version=1.1.0&request=GetMap&layers=global%3AGlobal_2013_HoloceneEruptions_SmithsonianVOTW&bbox=-170.0%2C-60.0%2C-30.0%2C80.0&width=1000&height=800&srs=EPSG%3A4326&format=application/openlayers"
+                st.markdown(f"[Open Americas View in New Tab]({americas_url})")
+                st.markdown(f"""
+                <div style="border:1px solid #ddd; padding:5px; border-radius:5px; margin-bottom:10px;">
+                    <iframe src="{americas_url}" width="100%" height="400" frameborder="0"></iframe>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            with tab_asia_pacific:
+                # Asia-Pacific view
+                asia_pacific_url = "https://geoserver-apia.sprep.org/geoserver/global/wms?service=WMS&version=1.1.0&request=GetMap&layers=global%3AGlobal_2013_HoloceneEruptions_SmithsonianVOTW&bbox=70.0%2C-60.0%2C-150.0%2C70.0&width=1000&height=800&srs=EPSG%3A4326&format=application/openlayers"
+                st.markdown(f"[Open Asia-Pacific View in New Tab]({asia_pacific_url})")
+                st.markdown(f"""
+                <div style="border:1px solid #ddd; padding:5px; border-radius:5px; margin-bottom:10px;">
+                    <iframe src="{asia_pacific_url}" width="100%" height="400" frameborder="0"></iframe>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            with tab_europe_africa:
+                # Europe-Africa view
+                europe_africa_url = "https://geoserver-apia.sprep.org/geoserver/global/wms?service=WMS&version=1.1.0&request=GetMap&layers=global%3AGlobal_2013_HoloceneEruptions_SmithsonianVOTW&bbox=-30.0%2C-40.0%2C60.0%2C70.0&width=1000&height=800&srs=EPSG%3A4326&format=application/openlayers"
+                st.markdown(f"[Open Europe & Africa View in New Tab]({europe_africa_url})")
+                st.markdown(f"""
+                <div style="border:1px solid #ddd; padding:5px; border-radius:5px; margin-bottom:10px;">
+                    <iframe src="{europe_africa_url}" width="100%" height="400" frameborder="0"></iframe>
+                </div>
+                """, unsafe_allow_html=True)
             
         # Show the risk heatmap
         folium_static(heatmap)
