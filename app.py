@@ -869,7 +869,7 @@ with col2:
                                 
                             with iceland_tab2:
                                 # SO2 data from Icelandic Met Office
-                                so2_data = get_so2_data(volcano['name'])
+                                so2_data = get_wovodat_so2_data(volcano['name'])
                                 if so2_data:
                                     st.markdown(f"[View Gas Emission Data]({so2_data['url']})")
                                     st.markdown(so2_data['description'])
@@ -918,7 +918,7 @@ with col2:
                             
                             with wovodat_tab2:
                                 # SO2 data
-                                so2_data = get_so2_data(volcano['name'])
+                                so2_data = get_wovodat_so2_data(volcano['name'])
                                 if so2_data:
                                     st.markdown(f"[View SO2 Emission Data on WOVOdat]({so2_data['url']})")
                                     st.markdown(so2_data['description'])
