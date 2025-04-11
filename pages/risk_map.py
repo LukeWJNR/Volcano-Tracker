@@ -8,6 +8,7 @@ from streamlit_folium import folium_static
 from utils.api import get_volcano_data
 from utils.map_utils import create_risk_heatmap
 from utils.risk_assessment import generate_risk_levels
+from utils.db_utils import save_risk_assessment, get_highest_risk_volcanoes
 
 # Set page config
 st.set_page_config(
@@ -123,6 +124,30 @@ with st.spinner("Generating volcanic risk assessment..."):
         
         # Display the highest risk volcanoes
         st.subheader("Highest Risk Volcanoes")
+        
+        # Save risk assessment data to database
+        with st.spinner("Saving risk assessments to database..."):
+            # Process top high-risk volcanoes 
+            for _, volcano in risk_df[risk_df['risk_factor'] >= 0.5].iterrows():
+                # Get individual scores for detailed breakdown
+                eruption_score = None
+                type_score = None
+                monitoring_score = None
+                regional_score = None
+                
+                try:
+                    # Save to database
+                    save_risk_assessment(
+                        volcano_data=volcano.to_dict(),
+                        risk_factor=volcano['risk_factor'],
+                        risk_level=volcano['risk_level'],
+                        eruption_score=eruption_score,
+                        type_score=type_score,
+                        monitoring_score=monitoring_score,
+                        regional_score=regional_score
+                    )
+                except Exception as e:
+                    st.warning(f"Could not save risk assessment for {volcano['name']}: {str(e)}")
         
         # Get top 10 highest risk volcanoes
         top_risk = risk_df.sort_values('risk_factor', ascending=False).head(10)
