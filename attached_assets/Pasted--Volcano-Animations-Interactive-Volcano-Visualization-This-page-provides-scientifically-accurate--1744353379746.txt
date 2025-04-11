@@ -1,0 +1,79 @@
+
+Volcano Animations
+Interactive Volcano Visualization
+This page provides scientifically accurate animations of different volcano types and eruption processes. The visualizations combine real InSAR data with computational models to help understand volcanic activity patterns.
+
+Explore Different Types of Visualizations:
+Surface Deformation Patterns - View InSAR-like visualizations showing ground movement
+Magma Chamber Dynamics - Explore the behavior of magma within the volcano
+Eruption Sequence - See how key metrics change throughout a volcanic eruption
+Real InSAR Data - Compare with actual satellite radar interferometry data
+The animations are based on scientific models and real-world volcano behavior patterns.
+
+
+Surface Deformation
+
+
+Magma Chamber Dynamics
+
+
+Eruption Sequence
+
+
+Real InSAR Comparison
+
+Surface Deformation Patterns
+This visualization shows simulated InSAR interferometry patterns for different volcano types.
+
+In InSAR data:
+
+Each complete color cycle (fringe) represents ~2.8 cm of ground displacement
+Concentric patterns often indicate inflation or deflation of a magma reservoir
+The pattern shape reveals information about the magma chamber's depth and geometry
+Choose a volcano to see its characteristic deformation pattern based on its type and alert level.
+
+Select a volcano:
+
+Anak Krakatau
+Selected Volcano: Anak Krakatau
+
+Type: Stratovolcano
+
+Alert Level: Watch
+
+
+Technical Details
+
+InSAR-like Interferogram
+3D Surface Deformation
+How to interpret:
+
+The 3D plot shows the actual ground displacement (unwrapped)
+Upward movement (inflation) appears as peaks
+Downward movement (deflation) appears as depressions
+The pattern shape is related to the magma chamber's characteristics
+Drag to rotate the 3D model for different perspectives
+
+_plotly_utils.exceptions.PlotlyError: The `figure_or_data` positional argument must be `dict`-like, `list`-like, or an instance of plotly.graph_objs.Figure
+Traceback:
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 121, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 639, in code_to_exec
+    _mpa_v1(self._main_script_path)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 159, in _mpa_v1
+    page.run()
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/navigation/page.py", line 297, in run
+    exec(code, module.__dict__)
+File "/home/runner/workspace/pages/volcano_animations.py", line 596, in <module>
+    app()
+File "/home/runner/workspace/pages/volcano_animations.py", line 268, in app
+    st.plotly_chart(chamber_3d_fig, use_container_width=True, key="magma_chamber_3d")
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/metrics_util.py", line 410, in wrapped_func
+    result = non_optional_func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/elements/plotly_chart.py", line 487, in plotly_chart
+    figure = plotly.tools.return_figure_from_figure_or_data(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/plotly/tools.py", line 535, in return_figure_from_figure_or_data
+    raise exceptions.PlotlyError(

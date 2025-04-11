@@ -263,8 +263,8 @@ def app():
             *Drag to rotate, zoom, and pan the 3D model for different perspectives*
             """)
             
-            # Generate 3D magma chamber model
-            chamber_3d_fig = generate_3d_magma_chamber(selected_volcano_type, alert_level)
+            # Generate 3D magma chamber model and get chamber metrics
+            chamber_3d_fig, chamber_metrics_3d = generate_3d_magma_chamber(selected_volcano_type, alert_level)
             st.plotly_chart(chamber_3d_fig, use_container_width=True, key="magma_chamber_3d")
             
             # Additional information about the volcano structure
