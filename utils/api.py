@@ -48,7 +48,10 @@ def get_volcano_data() -> pd.DataFrame:
     # For this demo, we're adding indicators for some well-known volcanoes
     well_monitored_volcanoes = [
         "Mauna Loa", "Kilauea", "Mount St. Helens", "Etna", "Vesuvius", 
-        "Krakatau", "Merapi", "Fuji", "Pinatubo", "Cotopaxi"
+        "Krakatau", "Merapi", "Fuji", "Pinatubo", "Cotopaxi",
+        # Iceland volcanoes
+        "Reykjanes", "Fagradalsfjall", "Krafla", "Askja", "Hekla", 
+        "Eyjafjallajökull", "Katla", "Grimsvötn", "Bardarbunga"
     ]
     
     # Add monitoring indicators columns
@@ -85,7 +88,10 @@ def get_volcano_details(volcano_id: str) -> Dict[str, Any]:
             # For this demo, we're adding indicators for some well-known volcanoes
             well_monitored_volcanoes = [
                 "Mauna Loa", "Kilauea", "Mount St. Helens", "Etna", "Vesuvius", 
-                "Krakatau", "Merapi", "Fuji", "Pinatubo", "Cotopaxi"
+                "Krakatau", "Merapi", "Fuji", "Pinatubo", "Cotopaxi",
+                # Iceland volcanoes
+                "Reykjanes", "Fagradalsfjall", "Krafla", "Askja", "Hekla", 
+                "Eyjafjallajökull", "Katla", "Grimsvötn", "Bardarbunga"
             ]
             
             details['has_insar'] = details['name'] in well_monitored_volcanoes

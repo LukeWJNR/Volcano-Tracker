@@ -417,8 +417,23 @@ with col2:
                     wovodat_data = get_wovodat_volcano_data(volcano['name'])
                     
                     if wovodat_data:
-                        # WOVOdat link
-                        st.markdown(f"[View on WOVOdat]({wovodat_data['wovodat_url']})")
+                        # Check if it's an Icelandic volcano or standard WOVOdat
+                        if wovodat_data.get('is_iceland', False):
+                            # Display Iceland-specific information
+                            st.markdown("### Icelandic Volcano Monitoring")
+                            st.markdown(f"[Icelandic Met Office Volcanic Monitoring]({wovodat_data['wovodat_url']})")
+                            
+                            if 'volcano_discovery_url' in wovodat_data:
+                                st.markdown(f"[VolcanoDiscovery - Reykjanes]({wovodat_data['volcano_discovery_url']})")
+                            
+                            if 'icelandic_met_url' in wovodat_data:
+                                st.markdown(f"[Latest Magma Movement - IMO]({wovodat_data['icelandic_met_url']})")
+                                
+                            if 'special_note' in wovodat_data:
+                                st.info(wovodat_data['special_note'])
+                        else:
+                            # Standard WOVOdat link
+                            st.markdown(f"[View on WOVOdat]({wovodat_data['wovodat_url']})")
                         
                         # Get monitoring status
                         monitoring_status = get_volcano_monitoring_status(volcano['name'])
@@ -427,38 +442,93 @@ with col2:
                         st.markdown("#### Monitoring Status")
                         st.markdown(monitoring_status['description'])
                         
+                        # Show source if available
+                        if 'source' in monitoring_status:
+                            st.caption(f"Source: {monitoring_status['source']}")
+                        
                         # Create tabs for different types of monitoring data
-                        wovodat_tab1, wovodat_tab2, wovodat_tab3 = st.tabs(["InSAR Data", "SO2 Emissions", "Lava Injection"])
-                        
-                        with wovodat_tab1:
-                            # InSAR data from WOVOdat
-                            insar_wovodat_url = get_wovodat_insar_url(volcano['name'])
-                            if insar_wovodat_url:
-                                st.markdown(f"[View InSAR Data on WOVOdat]({insar_wovodat_url})")
-                                st.markdown("InSAR (Interferometric Synthetic Aperture Radar) data shows ground deformation, which can indicate magma movement beneath the volcano.")
-                                st.image("https://earthquake.usgs.gov/data/insar/background/images/example_insar_3d.jpg", caption="Example of InSAR interferogram showing ground deformation")
-                            else:
-                                st.info("No InSAR data available for this volcano in WOVOdat.")
-                        
-                        with wovodat_tab2:
-                            # SO2 data
-                            so2_data = get_so2_data(volcano['name'])
-                            if so2_data:
-                                st.markdown(f"[View SO2 Emission Data on WOVOdat]({so2_data['url']})")
-                                st.markdown(so2_data['description'])
-                                st.markdown("SO2 (sulfur dioxide) is a significant gas released during volcanic eruptions. Monitoring SO2 levels helps track volcanic activity and potential environmental impacts.")
-                            else:
-                                st.info("No SO2 emission data available for this volcano in WOVOdat.")
-                        
-                        with wovodat_tab3:
-                            # Lava injection data
-                            lava_data = get_lava_injection_data(volcano['name'])
-                            if lava_data:
-                                st.markdown(f"[View Eruption/Lava Data on WOVOdat]({lava_data['url']})")
-                                st.markdown(lava_data['description'])
-                                st.markdown("Lava injection and eruption data provides information about the volume, composition, and behavior of magma during volcanic activity.")
-                            else:
-                                st.info("No lava injection/eruption data available for this volcano in WOVOdat.")
+                        if wovodat_data.get('is_iceland', False):
+                            # Iceland-specific tabs
+                            iceland_tab1, iceland_tab2, iceland_tab3, iceland_tab4 = st.tabs([
+                                "Ground Deformation", "Gas Emissions", 
+                                "Magma Movement", "Live Monitoring"
+                            ])
+                            
+                            with iceland_tab1:
+                                # InSAR/GPS data from Icelandic Met Office
+                                insar_url = get_wovodat_insar_url(volcano['name'])
+                                if insar_url:
+                                    st.markdown(f"[View Ground Deformation Data]({insar_url})")
+                                    st.markdown("The Icelandic Meteorological Office uses GPS and InSAR data to monitor ground deformation at Icelandic volcanoes. This helps detect magma movement and potential eruption precursors.")
+                                    st.image("https://earthquake.usgs.gov/data/insar/background/images/example_insar_3d.jpg", caption="Example of InSAR interferogram showing ground deformation")
+                                
+                            with iceland_tab2:
+                                # SO2 data from Icelandic Met Office
+                                so2_data = get_so2_data(volcano['name'])
+                                if so2_data:
+                                    st.markdown(f"[View Gas Emission Data]({so2_data['url']})")
+                                    st.markdown(so2_data['description'])
+                                    if 'notes' in so2_data:
+                                        st.markdown(so2_data['notes'])
+                            
+                            with iceland_tab3:
+                                # Magma movement data
+                                lava_data = get_lava_injection_data(volcano['name'])
+                                if lava_data:
+                                    st.markdown(f"[View Magma Movement/Eruption Data]({lava_data['url']})")
+                                    st.markdown(lava_data['description'])
+                                    
+                                    # Special notes for Reykjanes
+                                    if volcano['name'] == "Reykjanes" and 'notes' in lava_data:
+                                        st.info(lava_data['notes'])
+                                    
+                                    if 'volcano_discovery_url' in lava_data:
+                                        st.markdown(f"[VolcanoDiscovery - Additional Data]({lava_data['volcano_discovery_url']})")
+                            
+                            with iceland_tab4:
+                                # Live monitoring from Icelandic Met Office
+                                st.markdown("### Live Monitoring Data")
+                                st.markdown("[Live Earthquake Data from Icelandic Met Office](https://en.vedur.is/earthquakes-and-volcanism/earthquakes)")
+                                st.markdown("[Live Webcams of Volcanic Areas](https://www.ruv.is/frett/2023/03/30/live-feed-from-the-eruption)")
+                                
+                                # Embed an iframe with the IMO earthquake map
+                                st.markdown("""
+                                <iframe src="https://en.vedur.is/earthquakes-and-volcanism/earthquakes/reykjanespeninsula" 
+                                width="100%" height="600" frameborder="0"></iframe>
+                                """, unsafe_allow_html=True)
+                        else:
+                            # Standard WOVOdat tabs
+                            wovodat_tab1, wovodat_tab2, wovodat_tab3 = st.tabs(["InSAR Data", "SO2 Emissions", "Lava Injection"])
+                            
+                            with wovodat_tab1:
+                                # InSAR data from WOVOdat
+                                insar_wovodat_url = get_wovodat_insar_url(volcano['name'])
+                                if insar_wovodat_url:
+                                    st.markdown(f"[View InSAR Data on WOVOdat]({insar_wovodat_url})")
+                                    st.markdown("InSAR (Interferometric Synthetic Aperture Radar) data shows ground deformation, which can indicate magma movement beneath the volcano.")
+                                    st.image("https://earthquake.usgs.gov/data/insar/background/images/example_insar_3d.jpg", caption="Example of InSAR interferogram showing ground deformation")
+                                else:
+                                    st.info("No InSAR data available for this volcano in WOVOdat.")
+                            
+                            with wovodat_tab2:
+                                # SO2 data
+                                so2_data = get_so2_data(volcano['name'])
+                                if so2_data:
+                                    st.markdown(f"[View SO2 Emission Data on WOVOdat]({so2_data['url']})")
+                                    st.markdown(so2_data['description'])
+                                    st.markdown("SO2 (sulfur dioxide) is a significant gas released during volcanic eruptions. Monitoring SO2 levels helps track volcanic activity and potential environmental impacts.")
+                                else:
+                                    st.info("No SO2 emission data available for this volcano in WOVOdat.")
+                            
+                            with wovodat_tab3:
+                                # Lava injection data
+                                lava_data = get_lava_injection_data(volcano['name'])
+                                if lava_data:
+                                    st.markdown(f"[View Eruption/Lava Data on WOVOdat]({lava_data['url']})")
+                                    st.markdown(lava_data['description'])
+                                    st.markdown("Lava injection and eruption data provides information about the volume, composition, and behavior of magma during volcanic activity.")
+                                else:
+                                    st.info("No lava injection/eruption data available for this volcano in WOVOdat.")
                     else:
                         st.info("This volcano does not have monitoring data in WOVOdat.")
                         st.markdown("[Visit WOVOdat](https://wovodat.org/gvmid/index.php?type=world) to explore other monitored volcanoes.")
