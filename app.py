@@ -10,6 +10,13 @@ from utils.api import get_volcano_data, get_volcano_details
 from utils.map_utils import create_volcano_map, create_popup_html
 from utils.web_scraper import get_volcano_additional_info
 from utils.insar_data import get_insar_url_for_volcano, generate_sentinel_hub_url, generate_copernicus_url
+from utils.wovodat_utils import (
+    get_wovodat_volcano_data,
+    get_so2_data,
+    get_lava_injection_data,
+    get_wovodat_insar_url,
+    get_volcano_monitoring_status
+)
 from utils.db_utils import (
     add_favorite_volcano, 
     remove_favorite_volcano, 
@@ -400,6 +407,63 @@ with col2:
         if 'latitude' in volcano and 'longitude' in volcano:
             sarviews_url = f"https://sarviews-hazards.alaska.edu/#{volcano['latitude']},{volcano['longitude']},6"
             st.markdown(f"[ASF SARVIEWS (SAR Data)]({sarviews_url})")
+        
+        # WOVOdat Monitoring Data
+        st.markdown("### WOVOdat Monitoring Data")
+        with st.expander("View Monitoring Data from WOVOdat", expanded=False):
+            with st.spinner("Loading WOVOdat data..."):
+                try:
+                    # Get WOVOdat volcano data
+                    wovodat_data = get_wovodat_volcano_data(volcano['name'])
+                    
+                    if wovodat_data:
+                        # WOVOdat link
+                        st.markdown(f"[View on WOVOdat]({wovodat_data['wovodat_url']})")
+                        
+                        # Get monitoring status
+                        monitoring_status = get_volcano_monitoring_status(volcano['name'])
+                        
+                        # Display monitoring status
+                        st.markdown("#### Monitoring Status")
+                        st.markdown(monitoring_status['description'])
+                        
+                        # Create tabs for different types of monitoring data
+                        wovodat_tab1, wovodat_tab2, wovodat_tab3 = st.tabs(["InSAR Data", "SO2 Emissions", "Lava Injection"])
+                        
+                        with wovodat_tab1:
+                            # InSAR data from WOVOdat
+                            insar_wovodat_url = get_wovodat_insar_url(volcano['name'])
+                            if insar_wovodat_url:
+                                st.markdown(f"[View InSAR Data on WOVOdat]({insar_wovodat_url})")
+                                st.markdown("InSAR (Interferometric Synthetic Aperture Radar) data shows ground deformation, which can indicate magma movement beneath the volcano.")
+                                st.image("https://earthquake.usgs.gov/data/insar/background/images/example_insar_3d.jpg", caption="Example of InSAR interferogram showing ground deformation")
+                            else:
+                                st.info("No InSAR data available for this volcano in WOVOdat.")
+                        
+                        with wovodat_tab2:
+                            # SO2 data
+                            so2_data = get_so2_data(volcano['name'])
+                            if so2_data:
+                                st.markdown(f"[View SO2 Emission Data on WOVOdat]({so2_data['url']})")
+                                st.markdown(so2_data['description'])
+                                st.markdown("SO2 (sulfur dioxide) is a significant gas released during volcanic eruptions. Monitoring SO2 levels helps track volcanic activity and potential environmental impacts.")
+                            else:
+                                st.info("No SO2 emission data available for this volcano in WOVOdat.")
+                        
+                        with wovodat_tab3:
+                            # Lava injection data
+                            lava_data = get_lava_injection_data(volcano['name'])
+                            if lava_data:
+                                st.markdown(f"[View Eruption/Lava Data on WOVOdat]({lava_data['url']})")
+                                st.markdown(lava_data['description'])
+                                st.markdown("Lava injection and eruption data provides information about the volume, composition, and behavior of magma during volcanic activity.")
+                            else:
+                                st.info("No lava injection/eruption data available for this volcano in WOVOdat.")
+                    else:
+                        st.info("This volcano does not have monitoring data in WOVOdat.")
+                        st.markdown("[Visit WOVOdat](https://wovodat.org/gvmid/index.php?type=world) to explore other monitored volcanoes.")
+                except Exception as e:
+                    st.warning(f"Could not load WOVOdat data: {str(e)}")
         
         # Climate Links Information
         st.markdown("### Climate Links Information")
