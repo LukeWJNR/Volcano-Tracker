@@ -184,15 +184,74 @@ def run_eruption_simulation(volcano, eruption_probability, simulation_days, max_
     vei = np.zeros(simulation_days)
     alert_levels = ["Normal"] * simulation_days
     
+    # Extract volcano-specific characteristics
+    volcano_type = volcano['type'].lower() if 'type' in volcano else 'stratovolcano'
+    volcano_country = volcano['country'] if 'country' in volcano else ''
+    volcano_name = volcano['name'] if 'name' in volcano else 'Unknown Volcano'
+    
+    # Set modifiers based on volcano type
+    seismic_modifier = 1.0
+    gas_modifier = 1.0
+    deformation_modifier = 1.0
+    vei_modifier = 1.0
+    
+    # Apply volcano type modifiers
+    if 'shield' in volcano_type:
+        # Shield volcanoes like many Hawaiian volcanoes - more fluid lava, less explosive
+        seismic_modifier = 0.8
+        gas_modifier = 1.2
+        deformation_modifier = 1.3
+        vei_modifier = 0.7
+    elif 'caldera' in volcano_type:
+        # Calderas can have significant explosions
+        seismic_modifier = 1.2
+        gas_modifier = 1.3
+        deformation_modifier = 0.9
+        vei_modifier = 1.4
+    elif 'stratovolcano' in volcano_type:
+        # Stratovolcanoes tend to be more explosive
+        seismic_modifier = 1.1
+        gas_modifier = 1.0
+        deformation_modifier = 1.0
+        vei_modifier = 1.2
+    elif 'subglacial' in volcano_type or 'jökull' in volcano_name.lower():
+        # Subglacial volcanoes (common in Iceland)
+        seismic_modifier = 1.1
+        gas_modifier = 0.8  # Gas partially trapped by ice
+        deformation_modifier = 1.2
+        vei_modifier = 1.1  # Can be explosive due to ice-magma interaction
+    
+    # Apply country-specific adjustments
+    if 'iceland' in volcano_country.lower():
+        # Icelandic volcanoes often have extensive fissure systems
+        if 'fissure' in volcano_type.lower() or 'system' in volcano_type.lower() or 'reykjanes' in volcano_name.lower():
+            # Increased seismic swarms and ground deformation
+            seismic_modifier *= 1.2
+            deformation_modifier *= 1.3
+            
+        # Special case for famous Icelandic volcanoes
+        if any(name in volcano_name.lower() for name in ['katla', 'hekla', 'eyjafjallajökull', 'eyjafjallajokull', 'grimsvötn', 'grimsvotn', 'bardarbunga']):
+            # These have had notable eruptions
+            eruption_probability = max(eruption_probability, eruption_probability * 1.2)
+            vei_modifier *= 1.2
+    
     # Determine if eruption occurs based on probability
     eruption_occurs = np.random.random() < (eruption_probability / 100)
     
     # Set eruption day if eruption occurs
     if eruption_occurs:
         if scenario == "Sudden Explosion":
-            eruption_day = np.random.randint(1, int(simulation_days * 0.7))
+            # Some volcanoes like Hekla are known for sudden eruptions
+            if 'hekla' in volcano_name.lower():
+                eruption_day = np.random.randint(1, int(simulation_days * 0.4))  # Hekla erupts with less warning
+            else:
+                eruption_day = np.random.randint(1, int(simulation_days * 0.7))
         elif scenario == "Multiple Events":
-            eruption_day = np.random.randint(1, int(simulation_days * 0.4))
+            if 'iceland' in volcano_country.lower() and ('fissure' in volcano_type.lower() or 'system' in volcano_type.lower()):
+                # Icelandic fissure eruptions often have multiple events closer together
+                eruption_day = np.random.randint(1, int(simulation_days * 0.3))
+            else:
+                eruption_day = np.random.randint(1, int(simulation_days * 0.4))
             second_eruption_day = np.random.randint(eruption_day + 2, simulation_days - 1)
         else:  # Gradual Buildup or False Alarm
             eruption_day = np.random.randint(int(simulation_days * 0.6), simulation_days - 1)
