@@ -3,7 +3,7 @@ Risk assessment heat map page for the Volcano Monitoring Dashboard
 """
 import streamlit as st
 import pandas as pd
-from streamlit_folium import folium_static
+from streamlit_folium import st_folium
 
 from utils.api import get_volcano_data
 from utils.map_utils import create_risk_heatmap
@@ -149,7 +149,7 @@ with st.spinner("Generating volcanic risk assessment..."):
                 """, unsafe_allow_html=True)
             
         # Show the risk heatmap
-        folium_static(heatmap)
+        st_folium(heatmap, width=800, height=500)
         
         # Create risk statistics
         risk_counts = risk_df['risk_level'].value_counts().sort_index()

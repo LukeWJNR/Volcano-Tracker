@@ -136,15 +136,17 @@ and access InSAR satellite imagery data for research and monitoring purposes.
 """)
 
 # Add navigation links
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 with col1:
     st.page_link("app.py", label="🏠 Main Dashboard", icon="🌋")
 with col2:
-    st.page_link("pages/favorites.py", label="❤️ Your Favorites", icon="❤️")
+    st.page_link("pages/sar_animations.py", label="📡 SAR Animations", icon="📡")
 with col3:
-    st.page_link("pages/notes.py", label="📝 Your Notes", icon="📝")
-with col4:
     st.page_link("pages/risk_map.py", label="🔥 Risk Heat Map", icon="🔥")
+with col4:
+    st.page_link("pages/favorites.py", label="❤️ Your Favorites", icon="❤️")
+with col5:
+    st.page_link("pages/notes.py", label="📝 Your Notes", icon="📝")
 
 st.markdown("---")
 
@@ -281,6 +283,10 @@ st.sidebar.subheader("Navigation")
 # Sound Profiles page link
 if st.sidebar.button("🔊 Volcano Sound Profiles", help="Explore volcanic acoustic signatures"):
     switch_page("sound_profiles")
+
+# SAR Animations page link
+if st.sidebar.button("📡 SAR Animations", help="View SAR data and animations from COMET Volcano Portal"):
+    switch_page("sar_animations")
 
 # Risk Map page link
 if st.sidebar.button("🔥 Risk Heat Map", help="View volcanic risk assessment heat map"):
