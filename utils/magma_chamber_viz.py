@@ -651,8 +651,8 @@ def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
             )
         ),
         margin=dict(l=0, r=0, t=30, b=0),
-        width=800,
-        height=500,
+        width=1200,
+        height=900,
     )
     
     # Calculate magma chamber metrics
@@ -1230,6 +1230,8 @@ def generate_animated_magma_flow(volcano_type: str, alert_level: str, frames: in
     
     # Add animation controls
     fig.update_layout(
+        width=1200,
+        height=900,
         updatemenus=[{
             'type': 'buttons',
             'showactive': False,
