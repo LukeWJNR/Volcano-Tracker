@@ -108,6 +108,11 @@ def create_popup_html(volcano):
         'Unknown': 'gray'
     }.get(alert_level, 'gray')
     
+    # Monitoring indicators
+    has_insar = volcano.get('has_insar', False)
+    has_so2 = volcano.get('has_so2', False)
+    has_lava = volcano.get('has_lava', False)
+    
     # Construct HTML
     html = f"""
     <div style="font-family: Arial; width: 250px;">
@@ -122,6 +127,25 @@ def create_popup_html(volcano):
         html += f"<p><b>Last Known Eruption:</b> {volcano['last_eruption']}</p>"
     else:
         html += "<p><b>Last Known Eruption:</b> Unknown</p>"
+    
+    # Add monitoring indicators
+    html += "<p><b>Monitoring Data:</b> "
+    
+    if has_insar or has_so2 or has_lava:
+        if has_insar:
+            html += '<span title="InSAR data available">📡 </span>'
+        if has_so2:
+            html += '<span title="SO2 gas data available">☁️ </span>'
+        if has_lava:
+            html += '<span title="Lava/eruption data available">🔥 </span>'
+    else:
+        html += "<span>Limited data available</span>"
+    
+    html += "</p>"
+        
+    # Add WOVOdat link if available
+    if 'wovodat_id' in volcano and volcano['wovodat_id']:
+        html += f'<p><a href="https://wovodat.org/gvmid/volcano.php?name={volcano["name"].replace(" ", "%20")}" target="_blank">WOVOdat Profile</a></p>'
     
     # Add a button to select this volcano in the dashboard
     html += f"""
