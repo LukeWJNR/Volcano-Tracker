@@ -247,8 +247,6 @@ def app():
     threejs_html = f"""
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three-noise@0.1.1/build/three-noise.min.js"></script>
     
     <div id="volcano-container" style="height: 70vh; width: 100%; background: linear-gradient(180deg, #052D49 0%, #000000 100%); position: relative;">
         <div id="loading" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:white; font-size:24px;">
@@ -309,23 +307,23 @@ def app():
     let volcano, magmaChamber, deepReservoir, mainConduit, secondaryChambers = [];
     let lavaFlows = [], ashCloud, eruption_column;
     let currentPhase = document.getElementById("selected_phase").value || "buildup";
-    let animationMixer;
     let phaseProgress = 0;
     
-    // Quality settings based on selection
-    const particleCount = {{ 
-        'Low': 5000, 
-        'Medium': 15000, 
-        'High': 30000 
-    }}[volcanoData.quality];
+    // Optimize for performance based on quality setting
+    const quality = volcanoData.quality || 'Medium';
+    const particleCount = {{'Low': 2000, 'Medium': 5000, 'High': 10000}}[quality];
+    const segmentCount = {{'Low': 16, 'Medium': 24, 'High': 32}}[quality];
+    const geometryDetail = {{'Low': 8, 'Medium': 16, 'High': 32}}[quality];
     
     // Initial setup
     function init() {{
         // Set renderer size and append to container
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setClearColor(0x000000, 0);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.shadowMap.enabled = quality !== 'Low';  // Disable shadows on low quality
+        if (renderer.shadowMap.enabled) {{
+            renderer.shadowMap.type = THREE.PCFShadowMap; // Simpler shadow type for performance
+        }}
         container.appendChild(renderer.domElement);
         
         // Remove loading message
@@ -400,18 +398,22 @@ def app():
         const ambientLight = new THREE.AmbientLight(0x333333);
         scene.add(ambientLight);
         
-        // Main sunlight
+        // Main sunlight - simpler shadow setup for performance
         const sunlight = new THREE.DirectionalLight(0xFFFFFF, 1);
         sunlight.position.set(100, 200, 100);
-        sunlight.castShadow = true;
-        sunlight.shadow.mapSize.width = 2048;
-        sunlight.shadow.mapSize.height = 2048;
-        sunlight.shadow.camera.near = 10;
-        sunlight.shadow.camera.far = 1000;
-        sunlight.shadow.camera.left = -500;
-        sunlight.shadow.camera.right = 500;
-        sunlight.shadow.camera.top = 500;
-        sunlight.shadow.camera.bottom = -500;
+        
+        if (renderer.shadowMap.enabled) {{
+            sunlight.castShadow = true;
+            // Reduced shadow quality for better performance
+            sunlight.shadow.mapSize.width = quality === 'High' ? 2048 : 1024;
+            sunlight.shadow.mapSize.height = quality === 'High' ? 2048 : 1024;
+            sunlight.shadow.camera.near = 10;
+            sunlight.shadow.camera.far = 1000;
+            sunlight.shadow.camera.left = -500;
+            sunlight.shadow.camera.right = 500;
+            sunlight.shadow.camera.top = 500;
+            sunlight.shadow.camera.bottom = -500;
+        }}
         scene.add(sunlight);
         
         // Add magma glow light - will be visible during eruption
@@ -420,11 +422,13 @@ def app():
         scene.add(magmaLight);
     }}
     
-    // Create terrain
+    // Create terrain - simplified for performance
     function createTerrain() {{
-        // Create large ground plane
+        // Create large ground plane - lower resolution for performance
         const groundSize = 1000;
-        const groundGeometry = new THREE.PlaneGeometry(groundSize, groundSize, 64, 64);
+        const groundDetail = quality === 'Low' ? 32 : (quality === 'Medium' ? 48 : 64);
+        
+        const groundGeometry = new THREE.PlaneGeometry(groundSize, groundSize, groundDetail, groundDetail);
         
         // Add some natural terrain variation
         const vertices = groundGeometry.attributes.position.array;
@@ -459,17 +463,20 @@ def app():
                 groundColor = 0x556B2F; // Olive
         }}
         
+        // Simpler material for better performance
         const groundMaterial = new THREE.MeshStandardMaterial({{ 
             color: groundColor,
             roughness: 1,
             metalness: 0.1,
-            flatShading: true
+            flatShading: quality !== 'Low'  // Disable flat shading on low quality
         }});
         
         const ground = new THREE.Mesh(groundGeometry, groundMaterial);
         ground.rotation.x = -Math.PI / 2;
         ground.position.y = -0.5;
-        ground.receiveShadow = true;
+        if (renderer.shadowMap.enabled) {{
+            ground.receiveShadow = true;
+        }}
         scene.add(ground);
     }}
     
@@ -512,183 +519,277 @@ def app():
                 color = 0x808080; // Gray
         }}
         
-        // Material with roughness for natural look
+        // Material with roughness for natural look - simplified for performance
         const material = new THREE.MeshStandardMaterial({{ 
             color: color, 
-            flatShading: true,
+            flatShading: quality !== 'Low',
             roughness: 0.9,
             metalness: 0.1
         }});
         
         // Create and add volcano mesh
         volcano = new THREE.Mesh(geometry, material);
-        volcano.castShadow = true;
-        volcano.receiveShadow = true;
+        if (renderer.shadowMap.enabled) {{
+            volcano.castShadow = true;
+            volcano.receiveShadow = true;
+        }}
         scene.add(volcano);
         
-        // Add labels if enabled
-        if (volcanoData.show_labels) {{
+        // Add labels if enabled and not in low quality mode
+        if (volcanoData.show_labels && quality !== 'Low') {{
             addVolcanoLabels();
         }}
     }}
     
+    // Simplified geometries for better loading performance
     // Custom shield volcano geometry (broad, gentle slopes)
     function createShieldVolcanoGeometry() {{
         const radius = 150;
         const height = 50;
-        const radialSegments = 32;
-        const heightSegments = 16;
+        // Adjust detail based on quality setting
+        const radialSegments = segmentCount;
+        const heightSegments = geometryDetail / 2;
         
         // Create base cone with gentle slope
         const geometry = new THREE.ConeGeometry(radius, height, radialSegments, heightSegments, true);
         geometry.rotateX(Math.PI); // Flip to have base at y=0
         
-        // Create a small summit crater
-        const craterGeometry = new THREE.CylinderGeometry(10, 20, 5, 32);
-        craterGeometry.translate(0, -height + 2.5, 0);
+        // For medium/high quality, add a crater
+        if (quality !== 'Low') {{
+            // Create a simplified crater by directly manipulating vertices
+            const positions = geometry.attributes.position.array;
+            const centerIndex = positions.length - 3; // Top center vertex
+            
+            // Create a depression at the top
+            positions[centerIndex + 1] -= 5; // Lower the center point
+            
+            // Lower vertices near the top to create crater shape
+            for (let i = 0; i < positions.length; i += 3) {{
+                const y = positions[i + 1];
+                // If near the top
+                if (y < -height + 10) {{
+                    // Calculate distance from center in xz plane
+                    const x = positions[i];
+                    const z = positions[i + 2];
+                    const distFromCenter = Math.sqrt(x*x + z*z);
+                    
+                    // If close to center but not at center
+                    if (distFromCenter < 20 && distFromCenter > 0.1) {{
+                        // Create crater shape
+                        positions[i + 1] -= 5 * (1 - distFromCenter/20);
+                    }}
+                }}
+            }}
+            
+            // Update geometry
+            geometry.attributes.position.needsUpdate = true;
+            geometry.computeVertexNormals();
+        }}
         
-        // Merge geometries (main volcano and crater)
-        const bspVolcano = CSG.fromMesh(new THREE.Mesh(geometry));
-        const bspCrater = CSG.fromMesh(new THREE.Mesh(craterGeometry));
-        const finalGeometry = CSG.toMesh(bspVolcano.subtract(bspCrater), new THREE.Matrix4()).geometry;
+        // For high quality, add natural variation
+        if (quality === 'High') {{
+            addNaturalVariation(geometry, 0.05);
+        }}
         
-        // Add natural variation
-        addNaturalVariation(finalGeometry, 0.05);
-        
-        return finalGeometry;
+        return geometry;
     }}
     
-    // Custom stratovolcano geometry (tall, steep sides)
+    // Create simple stratovolcano geometry
     function createStratovolcanoGeometry() {{
         const radius = 100;
         const height = 100;
-        const radialSegments = 32;
-        const heightSegments = 16;
+        // Adjust detail based on quality setting
+        const radialSegments = segmentCount;
+        const heightSegments = geometryDetail / 2;
         
         // Create base cone
         const geometry = new THREE.ConeGeometry(radius, height, radialSegments, heightSegments, true);
         geometry.rotateX(Math.PI); // Flip to have base at y=0
         
-        // Create a medium-sized summit crater
-        const craterGeometry = new THREE.CylinderGeometry(15, 25, 20, 32);
-        craterGeometry.translate(0, -height + 10, 0);
-        
-        // Merge geometries
-        const bspVolcano = CSG.fromMesh(new THREE.Mesh(geometry));
-        const bspCrater = CSG.fromMesh(new THREE.Mesh(craterGeometry));
-        const finalGeometry = CSG.toMesh(bspVolcano.subtract(bspCrater), new THREE.Matrix4()).geometry;
-        
-        // Add natural variation
-        addNaturalVariation(finalGeometry, 0.1);
-        
-        return finalGeometry;
-    }}
-    
-    // Custom caldera geometry (wide with depression)
-    function createCalderaGeometry() {{
-        // Base shape
-        const geometry = new THREE.BufferGeometry();
-        const vertices = [];
-        const resolution = 32;
-        
-        // Create base volcano form
-        for (let i = 0; i < resolution; i++) {{
-            const angle1 = (i / resolution) * Math.PI * 2;
-            const angle2 = ((i + 1) / resolution) * Math.PI * 2;
+        // For medium/high quality, add a crater
+        if (quality !== 'Low') {{
+            // Manipulate vertices to create crater
+            const positions = geometry.attributes.position.array;
             
-            const x1 = Math.sin(angle1) * 150;
-            const z1 = Math.cos(angle1) * 150;
-            
-            const x2 = Math.sin(angle2) * 150;
-            const z2 = Math.cos(angle2) * 150;
-            
-            // Outer bottom vertex
-            vertices.push(x1, 0, z1);
-            // Outer top vertex
-            vertices.push(x1, 70, z1);
-            // Inner top vertex (caldera rim)
-            vertices.push(x1 * 0.4, 60, z1 * 0.4);
-            
-            // Triangulate
-            vertices.push(x1, 0, z1);
-            vertices.push(x2, 0, z2);
-            vertices.push(x2, 70, z2);
-            
-            vertices.push(x1, 0, z1);
-            vertices.push(x2, 70, z2);
-            vertices.push(x1, 70, z1);
-            
-            // Caldera rim
-            vertices.push(x1, 70, z1);
-            vertices.push(x2, 70, z2);
-            vertices.push(x2 * 0.4, 60, z2 * 0.4);
-            
-            vertices.push(x1, 70, z1);
-            vertices.push(x2 * 0.4, 60, z2 * 0.4);
-            vertices.push(x1 * 0.4, 60, z1 * 0.4);
-            
-            // Caldera floor
-            if (i % 2 === 0) {{
-                vertices.push(x1 * 0.4, 60, z1 * 0.4);
-                vertices.push(x2 * 0.4, 60, z2 * 0.4);
-                vertices.push(0, 40, 0);
+            // Create a depression at the top
+            for (let i = 0; i < positions.length; i += 3) {{
+                const y = positions[i + 1];
+                
+                // If near the top
+                if (y < -height + 20) {{
+                    // Calculate distance from center in xz plane
+                    const x = positions[i];
+                    const z = positions[i + 2];
+                    const distFromCenter = Math.sqrt(x*x + z*z);
+                    
+                    // If close to center but not at center
+                    if (distFromCenter < 25 && distFromCenter > 0.1) {{
+                        // Create crater shape
+                        positions[i + 1] -= 15 * (1 - distFromCenter/25);
+                    }}
+                }}
             }}
+            
+            // Update geometry
+            geometry.attributes.position.needsUpdate = true;
+            geometry.computeVertexNormals();
         }}
         
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-        geometry.computeVertexNormals();
+        // For high quality, add natural variation
+        if (quality === 'High') {{
+            addNaturalVariation(geometry, 0.1);
+        }}
         
         return geometry;
     }}
     
-    // Custom cinder cone geometry (small, steep sides)
+    // Simplified caldera geometry for better performance
+    function createCalderaGeometry() {{
+        // Base shape - reduced complexity for performance
+        const outerRadius = 150;
+        const innerRadius = 60;
+        const height = 70;
+        const floorHeight = 40;
+        
+        // Simplified approach: two cylinders and a cone
+        const outerShape = new THREE.CylinderGeometry(
+            outerRadius, outerRadius, 1, segmentCount, 1, true
+        );
+        
+        // Create cone for sides
+        const sideShape = new THREE.CylinderGeometry(
+            innerRadius, outerRadius, height, segmentCount, 1, true
+        );
+        sideShape.translate(0, -height/2, 0);
+        
+        // Create inner cylinder for caldera floor
+        const floorShape = new THREE.CylinderGeometry(
+            0, innerRadius, height - floorHeight, segmentCount, 1, true
+        );
+        floorShape.translate(0, -height + (height - floorHeight)/2, 0);
+        
+        // Merge geometries
+        const mergedGeometry = new THREE.BufferGeometry();
+        
+        // Function to merge buffer geometries
+        function mergeBufferGeometries(geometries) {{
+            // Count total vertices and faces
+            let vertexCount = 0;
+            for (const geo of geometries) {{
+                vertexCount += geo.attributes.position.count;
+            }}
+            
+            // Create merged arrays
+            const positions = new Float32Array(vertexCount * 3);
+            const normals = new Float32Array(vertexCount * 3);
+            
+            // Copy data
+            let offset = 0;
+            for (const geo of geometries) {{
+                const posArr = geo.attributes.position.array;
+                const normArr = geo.attributes.normal.array;
+                
+                positions.set(posArr, offset * 3);
+                normals.set(normArr, offset * 3);
+                
+                offset += geo.attributes.position.count;
+            }}
+            
+            // Create merged geometry
+            const merged = new THREE.BufferGeometry();
+            merged.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            merged.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+            
+            return merged;
+        }}
+        
+        // Merge the parts
+        const geometry = mergeBufferGeometries([outerShape, sideShape, floorShape]);
+        
+        // For high quality, add some variation
+        if (quality === 'High') {{
+            addNaturalVariation(geometry, 0.1);
+        }}
+        
+        return geometry;
+    }}
+    
+    // Create simplified cinder cone geometry
     function createCinderConeGeometry() {{
         const radius = 50;
         const height = 80;
-        const radialSegments = 32;
-        const heightSegments = 8;
+        // Adjust detail based on quality setting
+        const radialSegments = segmentCount;
+        const heightSegments = geometryDetail / 2;
         
         // Create base cone with steep slope
         const geometry = new THREE.ConeGeometry(radius, height, radialSegments, heightSegments, true);
         geometry.rotateX(Math.PI); // Flip to have base at y=0
         
-        // Create a small summit crater
-        const craterGeometry = new THREE.CylinderGeometry(10, 20, 15, 32);
-        craterGeometry.translate(0, -height + 7.5, 0);
+        // For medium/high quality, add a crater
+        if (quality !== 'Low') {{
+            // Create a simplified crater by modifying vertices
+            const positions = geometry.attributes.position.array;
+            
+            // Create a depression at the top
+            for (let i = 0; i < positions.length; i += 3) {{
+                const y = positions[i + 1];
+                
+                // If near the top
+                if (y < -height + 15) {{
+                    // Calculate distance from center in xz plane
+                    const x = positions[i];
+                    const z = positions[i + 2];
+                    const distFromCenter = Math.sqrt(x*x + z*z);
+                    
+                    // If close to center but not at center
+                    if (distFromCenter < 20 && distFromCenter > 0.1) {{
+                        // Create crater shape
+                        positions[i + 1] -= 10 * (1 - distFromCenter/20);
+                    }}
+                }}
+            }}
+            
+            // Update geometry
+            geometry.attributes.position.needsUpdate = true;
+            geometry.computeVertexNormals();
+        }}
         
-        // Merge geometries
-        const bspVolcano = CSG.fromMesh(new THREE.Mesh(geometry));
-        const bspCrater = CSG.fromMesh(new THREE.Mesh(craterGeometry));
-        const finalGeometry = CSG.toMesh(bspVolcano.subtract(bspCrater), new THREE.Matrix4()).geometry;
-        
-        // Add pronounced natural variation for cinder cones
-        addNaturalVariation(finalGeometry, 0.15);
-        
-        return finalGeometry;
-    }}
-    
-    // Custom lava dome geometry (dome-shaped)
-    function createLavaDomeGeometry() {{
-        // Create dome shape
-        const radius = 80;
-        const widthSegments = 32;
-        const heightSegments = 16;
-        
-        // Use half sphere for dome
-        const geometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments, 0, Math.PI * 2, 0, Math.PI / 2);
-        geometry.translate(0, 0, 0); // Center at origin with flat side down
-        
-        // Add blocky, cracked surface characteristic of lava domes
-        addNaturalVariation(geometry, 0.2);
+        // For high quality, add pronounced natural variation
+        if (quality === 'High') {{
+            addNaturalVariation(geometry, 0.15);
+        }}
         
         return geometry;
     }}
     
-    // Add natural terrain variation to geometry
+    // Create simplified lava dome geometry
+    function createLavaDomeGeometry() {{
+        // Create dome shape
+        const radius = 80;
+        // Adjust detail based on quality setting
+        const widthSegments = segmentCount;
+        const heightSegments = geometryDetail / 2;
+        
+        // Use half sphere for dome
+        const geometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments, 0, Math.PI * 2, 0, Math.PI / 2);
+        
+        // For high quality, add blocky, cracked surface
+        if (quality === 'High') {{
+            addNaturalVariation(geometry, 0.2);
+        }}
+        
+        return geometry;
+    }}
+    
+    // Add natural terrain variation to geometry - simplified for performance
     function addNaturalVariation(geometry, intensity) {{
         const positions = geometry.attributes.position.array;
         
-        for (let i = 0; i < positions.length; i += 3) {{
+        // Reduce iterations for better performance
+        const skipFactor = quality === 'Low' ? 6 : (quality === 'Medium' ? 3 : 1);
+        
+        for (let i = 0; i < positions.length; i += 3 * skipFactor) {{
             const x = positions[i];
             const y = positions[i+1];
             const z = positions[i+2];
@@ -696,7 +797,7 @@ def app():
             // Skip points at y=0 (base of volcano)
             if (Math.abs(y) < 0.1) continue;
             
-            // Add random variation based on position
+            // Add deterministic variation based on position
             const noise1 = Math.sin(x/10) * Math.cos(z/10) * intensity;
             const noise2 = Math.cos(x/15) * Math.sin(z/15) * intensity;
             
@@ -709,72 +810,47 @@ def app():
         geometry.computeVertexNormals();
     }}
     
-    // Add labels to volcano features
+    // Add labels to volcano features - simplified to text overlay for better performance
     function addVolcanoLabels() {{
-        // Create canvas elements for labels
-        const labelRenderer = new THREE.CSS2DRenderer();
-        labelRenderer.setSize(container.clientWidth, container.clientHeight);
-        labelRenderer.domElement.style.position = 'absolute';
-        labelRenderer.domElement.style.top = '0';
-        labelRenderer.domElement.style.pointerEvents = 'none';
-        container.appendChild(labelRenderer.domElement);
+        // In a real implementation, this would use CSS2DRenderer
+        // For this simplified version, we'll just add text overlay
         
-        // Create labels based on volcano type
-        const labels = [];
+        // Create HTML overlay for labels
+        const labelContainer = document.createElement('div');
+        labelContainer.style.position = 'absolute';
+        labelContainer.style.top = '0';
+        labelContainer.style.left = '0';
+        labelContainer.style.width = '100%';
+        labelContainer.style.height = '100%';
+        labelContainer.style.pointerEvents = 'none';
+        container.appendChild(labelContainer);
         
-        // Summit crater or vent
-        const summitLabel = createLabel('Summit Crater', 0, getSummitHeight(), 0);
-        labels.push(summitLabel);
+        // Add some basic labels
+        const labels = [
+            {{ text: 'Summit Crater', x: 50, y: 30 }},
+            {{ text: 'Magma Chamber', x: 50, y: 70 }},
+            {{ text: volcanoData.type === 'shield' ? 'Rift Zone' : 
+                   volcanoData.type === 'caldera' ? 'Caldera Floor' : 
+                   'Main Conduit', x: 70, y: 50 }}
+        ];
         
-        // Magma chamber label
-        const chamberLabel = createLabel('Magma Chamber', 0, -40, 0);
-        labels.push(chamberLabel);
-        
-        // Conduit label
-        const conduitLabel = createLabel('Main Conduit', 0, 20, 0);
-        labels.push(conduitLabel);
-        
-        // Type-specific labels
-        switch(volcanoData.type) {{
-            case 'shield':
-                labels.push(createLabel('Rift Zone', 80, 5, 0));
-                break;
-            case 'stratovolcano':
-                labels.push(createLabel('Secondary Chamber', 30, 0, 30));
-                break;
-            case 'caldera':
-                labels.push(createLabel('Caldera Floor', 0, 45, 0));
-                labels.push(createLabel('Ring Fracture', 40, 65, 40));
-                break;
-            case 'lava_dome':
-                labels.push(createLabel('Viscous Lava', 0, 60, 0));
-                break;
-        }}
-        
-        // Add deep reservoir label if applicable
-        if (['stratovolcano', 'caldera'].includes(volcanoData.type)) {{
-            labels.push(createLabel('Deep Reservoir', 20, -120, 20));
-        }}
-        
-        // Add labels to scene
-        labels.forEach(label => scene.add(label));
-    }}
-    
-    // Create a label at a specific position
-    function createLabel(text, x, y, z) {{
-        const div = document.createElement('div');
-        div.className = 'volcano-label';
-        div.textContent = text;
-        div.style.color = 'white';
-        div.style.padding = '2px 6px';
-        div.style.background = 'rgba(0,0,0,0.6)';
-        div.style.borderRadius = '3px';
-        div.style.fontSize = '12px';
-        div.style.pointerEvents = 'none';
-        
-        const label = new THREE.CSS2DObject(div);
-        label.position.set(x, y, z);
-        return label;
+        // Create label elements
+        labels.forEach(label => {{
+            const div = document.createElement('div');
+            div.className = 'volcano-label';
+            div.textContent = label.text;
+            div.style.position = 'absolute';
+            div.style.left = label.x + '%';
+            div.style.top = label.y + '%';
+            div.style.color = 'white';
+            div.style.padding = '2px 6px';
+            div.style.background = 'rgba(0,0,0,0.6)';
+            div.style.borderRadius = '3px';
+            div.style.fontSize = '12px';
+            div.style.transform = 'translate(-50%, -50%)';
+            
+            labelContainer.appendChild(div);
+        }});
     }}
     
     // Get appropriate summit height based on volcano type
@@ -789,10 +865,11 @@ def app():
         }}
     }}
     
-    // Create scientifically accurate magma plumbing system
+    // Create simplified magma plumbing system
     function createMagmaPlumbingSystem() {{
         // Create main magma chamber
-        const chamberGeometry = new THREE.SphereGeometry(40, 32, 16);
+        const chamberDetail = quality === 'Low' ? 16 : (quality === 'Medium' ? 24 : 32);
+        const chamberGeometry = new THREE.SphereGeometry(40, chamberDetail, chamberDetail/2);
         const chamberMaterial = new THREE.MeshStandardMaterial({{
             color: 0xFF4500,
             emissive: 0xFF4500,
@@ -805,23 +882,21 @@ def app():
         magmaChamber.position.set(0, -40, 0);
         scene.add(magmaChamber);
         
-        // Create connecting conduits and chambers based on volcano type
+        // Create simplified conduits based on volcano type
         switch(volcanoData.type) {{
             case 'shield':
                 // Shield volcanoes have a connected deep reservoir and rift zones
                 createDeepReservoir(-20, -120, -20, 60);
                 
-                // Create rift zones (radiating lateral dikes)
-                createConduit(
-                    new THREE.Vector3(0, -20, 0),
-                    new THREE.Vector3(80, 5, 0),
-                    7
-                );
-                createConduit(
-                    new THREE.Vector3(0, -20, 0),
-                    new THREE.Vector3(-80, 5, 0),
-                    7
-                );
+                // Only create main conduit for low quality
+                if (quality !== 'Low') {{
+                    // Create rift zones (radiating lateral dikes)
+                    createConduit(
+                        new THREE.Vector3(0, -20, 0),
+                        new THREE.Vector3(80, 5, 0),
+                        7
+                    );
+                }}
                 
                 // Main conduit to surface
                 mainConduit = createConduit(
@@ -835,39 +910,37 @@ def app():
                 // Stratovolcanoes have complex plumbing with multiple chambers
                 createDeepReservoir(20, -120, 20, 60);
                 
-                // Create secondary chamber
-                const secondaryGeometry = new THREE.SphereGeometry(20, 32, 16);
-                const secondaryChamber = new THREE.Mesh(secondaryGeometry, chamberMaterial);
-                secondaryChamber.position.set(30, 0, 30);
-                scene.add(secondaryChamber);
-                secondaryChambers.push(secondaryChamber);
+                // In medium/high quality, add secondary chamber
+                if (quality !== 'Low') {{
+                    // Create secondary chamber
+                    const secondaryGeometry = new THREE.SphereGeometry(20, chamberDetail, chamberDetail/2);
+                    const secondaryChamber = new THREE.Mesh(secondaryGeometry, chamberMaterial);
+                    secondaryChamber.position.set(30, 0, 30);
+                    scene.add(secondaryChamber);
+                    secondaryChambers.push(secondaryChamber);
+                    
+                    // Connect chambers
+                    createConduit(
+                        new THREE.Vector3(0, -40, 0),
+                        new THREE.Vector3(30, 0, 30),
+                        6
+                    );
+                }}
                 
-                // Connect chambers
-                createConduit(
-                    new THREE.Vector3(0, -40, 0),
-                    new THREE.Vector3(30, 0, 30),
-                    6
-                );
-                
-                // Connect to deep reservoir
-                createConduit(
-                    new THREE.Vector3(20, -120, 20),
-                    new THREE.Vector3(0, -40, 0),
-                    10
-                );
+                // Connect to deep reservoir in medium/high quality
+                if (quality !== 'Low') {{
+                    createConduit(
+                        new THREE.Vector3(20, -120, 20),
+                        new THREE.Vector3(0, -40, 0),
+                        10
+                    );
+                }}
                 
                 // Main conduit to surface
                 mainConduit = createConduit(
                     new THREE.Vector3(0, -40, 0),
                     new THREE.Vector3(0, 100, 0),
                     8
-                );
-                
-                // Secondary conduit
-                createConduit(
-                    new THREE.Vector3(30, 0, 30),
-                    new THREE.Vector3(30, 100, 30),
-                    6
                 );
                 break;
                 
@@ -876,31 +949,41 @@ def app():
                 createDeepReservoir(0, -150, 0, 100);
                 
                 // Connect to deep reservoir
-                createConduit(
-                    new THREE.Vector3(0, -150, 0),
-                    new THREE.Vector3(0, -40, 0),
-                    12
-                );
-                
-                // Create ring dikes
-                for (let i = 0; i < 8; i++) {{
-                    const angle = (i / 8) * Math.PI * 2;
-                    const x = Math.sin(angle) * 60;
-                    const z = Math.cos(angle) * 60;
+                if (quality !== 'Low') {{
+                    createConduit(
+                        new THREE.Vector3(0, -150, 0),
+                        new THREE.Vector3(0, -40, 0),
+                        12
+                    );
                     
-                    if (i === 0) {{
-                        mainConduit = createConduit(
-                            new THREE.Vector3(0, -40, 0),
-                            new THREE.Vector3(x, 70, z),
-                            8
-                        );
-                    }} else {{
-                        createConduit(
-                            new THREE.Vector3(0, -40, 0),
-                            new THREE.Vector3(x, 70, z),
-                            5
-                        );
+                    // Create ring dikes in medium/high quality
+                    const ringCount = quality === 'Medium' ? 4 : 8;
+                    for (let i = 0; i < ringCount; i++) {{
+                        const angle = (i / ringCount) * Math.PI * 2;
+                        const x = Math.sin(angle) * 60;
+                        const z = Math.cos(angle) * 60;
+                        
+                        if (i === 0) {{
+                            mainConduit = createConduit(
+                                new THREE.Vector3(0, -40, 0),
+                                new THREE.Vector3(x, 70, z),
+                                8
+                            );
+                        }} else {{
+                            createConduit(
+                                new THREE.Vector3(0, -40, 0),
+                                new THREE.Vector3(x, 70, z),
+                                5
+                            );
+                        }}
                     }}
+                }} else {{
+                    // Just one main conduit in low quality
+                    mainConduit = createConduit(
+                        new THREE.Vector3(0, -40, 0),
+                        new THREE.Vector3(0, 70, 0),
+                        8
+                    );
                 }}
                 break;
                 
@@ -917,12 +1000,14 @@ def app():
                 // Lava domes have thick conduit
                 createDeepReservoir(0, -120, 0, 50);
                 
-                // Connect to deep reservoir
-                createConduit(
-                    new THREE.Vector3(0, -120, 0),
-                    new THREE.Vector3(0, -40, 0),
-                    10
-                );
+                // Connect to deep reservoir in medium/high quality
+                if (quality !== 'Low') {{
+                    createConduit(
+                        new THREE.Vector3(0, -120, 0),
+                        new THREE.Vector3(0, -40, 0),
+                        10
+                    );
+                }}
                 
                 // Thick main conduit for viscous lava
                 mainConduit = createConduit(
@@ -936,7 +1021,8 @@ def app():
     
     // Create a deep magma reservoir
     function createDeepReservoir(x, y, z, radius) {{
-        const reservoirGeometry = new THREE.SphereGeometry(radius, 32, 16);
+        const chamberDetail = quality === 'Low' ? 16 : (quality === 'Medium' ? 24 : 32);
+        const reservoirGeometry = new THREE.SphereGeometry(radius, chamberDetail, chamberDetail/2);
         const reservoirMaterial = new THREE.MeshStandardMaterial({{
             color: 0xFF2000,
             emissive: 0xFF2000,
@@ -952,38 +1038,71 @@ def app():
         return deepReservoir;
     }}
     
-    // Create magma conduit connecting two points
+    // Create magma conduit connecting two points - simplified for performance
     function createConduit(start, end, radius) {{
-        const points = [];
-        points.push(start);
+        // Use cylinder for low quality, curved tube for medium/high
+        let conduit;
         
-        // Add slight bend for more natural look
-        const midPoint = new THREE.Vector3(
-            (start.x + end.x) / 2 + (Math.random() - 0.5) * 10,
-            (start.y + end.y) / 2,
-            (start.z + end.z) / 2 + (Math.random() - 0.5) * 10
-        );
-        points.push(midPoint);
-        points.push(end);
+        if (quality === 'Low') {{
+            // For low quality, use a simple cylinder
+            const direction = new THREE.Vector3().subVectors(end, start);
+            const height = direction.length();
+            const midpoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+            
+            const geometry = new THREE.CylinderGeometry(radius, radius, height, 12, 1);
+            
+            // Orient to point from start to end
+            const axis = new THREE.Vector3(0, 1, 0);
+            const normalizedDirection = direction.clone().normalize();
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, normalizedDirection);
+            geometry.applyQuaternion(quaternion);
+            
+            // Move to correct position
+            geometry.translate(midpoint.x, midpoint.y, midpoint.z);
+            
+            const magmaMaterial = new THREE.MeshStandardMaterial({{
+                color: 0xFF4500,
+                emissive: 0xFF4500,
+                emissiveIntensity: 0.3,
+                transparent: true,
+                opacity: 0.7
+            }});
+            
+            conduit = new THREE.Mesh(geometry, magmaMaterial);
+        }} else {{
+            // For medium/high quality, use a curved tube
+            const points = [];
+            points.push(start);
+            
+            // Add slight bend for more natural look
+            const midPoint = new THREE.Vector3(
+                (start.x + end.x) / 2 + (Math.random() - 0.5) * 10,
+                (start.y + end.y) / 2,
+                (start.z + end.z) / 2 + (Math.random() - 0.5) * 10
+            );
+            points.push(midPoint);
+            points.push(end);
+            
+            const curve = new THREE.CatmullRomCurve3(points);
+            const tubeDetail = quality === 'Medium' ? 12 : 20;
+            const tubeGeometry = new THREE.TubeGeometry(curve, tubeDetail, radius, 8, false);
+            
+            const magmaMaterial = new THREE.MeshStandardMaterial({{
+                color: 0xFF4500,
+                emissive: 0xFF4500,
+                emissiveIntensity: 0.3,
+                transparent: true,
+                opacity: 0.7
+            }});
+            
+            conduit = new THREE.Mesh(tubeGeometry, magmaMaterial);
+        }}
         
-        const curve = new THREE.CatmullRomCurve3(points);
-        const tubeGeometry = new THREE.TubeGeometry(curve, 20, radius, 8, false);
-        
-        const magmaMaterial = new THREE.MeshStandardMaterial({{
-            color: 0xFF4500,
-            emissive: 0xFF4500,
-            emissiveIntensity: 0.3,
-            transparent: true,
-            opacity: 0.7
-        }});
-        
-        const conduit = new THREE.Mesh(tubeGeometry, magmaMaterial);
         scene.add(conduit);
-        
         return conduit;
     }}
     
-    // Create dynamic eruption elements
+    // Create dynamic eruption elements - simplified for performance
     function createDynamicElements() {{
         // Create lava flows - initially hidden
         createLavaFlows();
@@ -995,39 +1114,40 @@ def app():
         createEruptionColumn();
     }}
     
-    // Create lava flows based on volcano type
+    // Create simplified lava flows based on volcano type
     function createLavaFlows() {{
         // Create different numbers/types of lava flows based on volcano type
         let flowCount, flowLength, flowWidth;
         
+        // Reduce complexity for performance
         switch(volcanoData.type) {{
             case 'shield':
-                flowCount = 6;  // Many long flows
+                flowCount = quality === 'Low' ? 2 : (quality === 'Medium' ? 4 : 6);
                 flowLength = 200;
                 flowWidth = 15;
                 break;
             case 'stratovolcano':
-                flowCount = 4;  // Fewer, shorter flows
+                flowCount = quality === 'Low' ? 2 : (quality === 'Medium' ? 3 : 4);
                 flowLength = 120;
                 flowWidth = 10;
                 break;
             case 'caldera':
-                flowCount = 3;  // Just a few flows
+                flowCount = quality === 'Low' ? 1 : (quality === 'Medium' ? 2 : 3);
                 flowLength = 80;
                 flowWidth = 12;
                 break;
             case 'cinder_cone':
-                flowCount = 2;  // Limited flows
+                flowCount = quality === 'Low' ? 1 : 2;
                 flowLength = 100;
                 flowWidth = 8;
                 break;
             case 'lava_dome':
-                flowCount = 1;  // Minimal flow (mostly dome growth)
+                flowCount = 1;
                 flowLength = 50;
                 flowWidth = 20;
                 break;
             default:
-                flowCount = 3;
+                flowCount = quality === 'Low' ? 1 : (quality === 'Medium' ? 2 : 3);
                 flowLength = 100;
                 flowWidth = 10;
         }}
@@ -1043,50 +1163,82 @@ def app():
         }}
     }}
     
-    // Create individual lava flow
+    // Create simplified individual lava flow
     function createLavaFlow(startX, startZ, angle, length, width) {{
-        const points = [];
+        // Use simplified approach for low quality
+        let lavaFlow;
         const summitHeight = getSummitHeight();
-        points.push(new THREE.Vector3(startX, summitHeight, startZ));
         
-        // Create curved path down the volcano
-        let currentY = summitHeight;
-        let currentX = startX;
-        let currentZ = startZ;
-        
-        const segmentCount = 10;
-        for (let i = 1; i <= segmentCount; i++) {{
-            const t = i / segmentCount;
-            const radius = t * length; // Increase radius as we go down
+        if (quality === 'Low') {{
+            // For low quality, use simple cone shape
+            const flowGeometry = new THREE.ConeGeometry(width, length, 8, 1, true);
+            flowGeometry.rotateX(-Math.PI/2); // Lay it down
+            flowGeometry.translate(0, 0, length/2); // Center at origin
             
-            // Decrease height logarithmically for realistic flow
-            currentY = summitHeight * Math.pow(0.95, i*2);
+            // Rotate to face correct direction
+            flowGeometry.rotateY(angle);
             
-            // Add some randomness to the path with more pronounced meandering
-            // for lower viscosity lava (shield volcanoes)
-            const angleVariation = angle + 
-                (Math.random() - 0.5) * (1 - volcanoData.lava_viscosity);
-            currentX = Math.sin(angleVariation) * radius;
-            currentZ = Math.cos(angleVariation) * radius;
+            // Position at summit
+            flowGeometry.translate(startX, summitHeight, startZ);
             
-            points.push(new THREE.Vector3(currentX, currentY, currentZ));
+            // Lava material with glow based on temperature
+            const lavaColor = getColorForTemperature(volcanoData.lava_temperature);
+            const lavaMaterial = new THREE.MeshStandardMaterial({{
+                color: lavaColor,
+                emissive: lavaColor,
+                emissiveIntensity: 0.6,
+                roughness: 0.7,
+                metalness: 0.3
+            }});
+            
+            lavaFlow = new THREE.Mesh(flowGeometry, lavaMaterial);
+        }} else {{
+            // For medium/high quality, use curved path
+            const points = [];
+            points.push(new THREE.Vector3(startX, summitHeight, startZ));
+            
+            // Create curved path down the volcano
+            let currentY = summitHeight;
+            let currentX = startX;
+            let currentZ = startZ;
+            
+            // Reduce segments for better performance
+            const segmentCount = quality === 'Medium' ? 6 : 10;
+            for (let i = 1; i <= segmentCount; i++) {{
+                const t = i / segmentCount;
+                const radius = t * length; // Increase radius as we go down
+                
+                // Decrease height logarithmically for realistic flow
+                currentY = summitHeight * Math.pow(0.95, i*2);
+                
+                // Add some randomness to the path with more pronounced meandering
+                // for lower viscosity lava (shield volcanoes)
+                const angleVariation = angle + 
+                    (Math.random() - 0.5) * (1 - volcanoData.lava_viscosity);
+                currentX = Math.sin(angleVariation) * radius;
+                currentZ = Math.cos(angleVariation) * radius;
+                
+                points.push(new THREE.Vector3(currentX, currentY, currentZ));
+            }}
+            
+            // Create tube geometry along path
+            const curve = new THREE.CatmullRomCurve3(points);
+            const tubeDetail = quality === 'Medium' ? 12 : 20;
+            const tubeGeometry = new THREE.TubeGeometry(curve, tubeDetail, width / 2, 8, false);
+            
+            // Lava material with glow based on temperature
+            const lavaColor = getColorForTemperature(volcanoData.lava_temperature);
+            const lavaMaterial = new THREE.MeshStandardMaterial({{
+                color: lavaColor,
+                emissive: lavaColor,
+                emissiveIntensity: 0.6,
+                roughness: 0.7,
+                metalness: 0.3
+            }});
+            
+            lavaFlow = new THREE.Mesh(tubeGeometry, lavaMaterial);
         }}
         
-        // Create tube geometry along path
-        const curve = new THREE.CatmullRomCurve3(points);
-        const tubeGeometry = new THREE.TubeGeometry(curve, 20, width / 2, 8, false);
-        
-        // Lava material with glow based on temperature
-        const lavaColor = getColorForTemperature(volcanoData.lava_temperature);
-        const lavaMaterial = new THREE.MeshStandardMaterial({{
-            color: lavaColor,
-            emissive: lavaColor,
-            emissiveIntensity: 0.6,
-            roughness: 0.7,
-            metalness: 0.3
-        }});
-        
-        const lavaFlow = new THREE.Mesh(tubeGeometry, lavaMaterial);
         lavaFlow.visible = false; // Hidden initially
         scene.add(lavaFlow);
         
@@ -1108,10 +1260,10 @@ def app():
         }}
     }}
     
-    // Create ash cloud particle system
+    // Create ash cloud particle system - simplified for performance
     function createAshCloud() {{
         const geometry = new THREE.BufferGeometry();
-        const particles = particleCount;
+        const particles = particleCount; // Reduced for performance
         const positions = new Float32Array(particles * 3);
         const colors = new Float32Array(particles * 3);
         
@@ -1129,8 +1281,9 @@ def app():
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
         
+        // Reduced point size for performance
         const material = new THREE.PointsMaterial({{
-            size: 3,
+            size: quality === 'Low' ? 2 : 3,
             vertexColors: true,
             transparent: true,
             opacity: 0,
@@ -1141,7 +1294,7 @@ def app():
         scene.add(ashCloud);
     }}
     
-    // Create eruption column
+    // Create simplified eruption column
     function createEruptionColumn() {{
         // Create column parameters based on volcano type
         let height = 0;
@@ -1170,8 +1323,15 @@ def app():
                 break;
         }}
         
-        // Create eruption column geometry
-        const geometry = createEruptionColumnGeometry(height, radius);
+        // Create eruption column geometry - simplified for performance
+        let geometry;
+        if (quality === 'Low') {{
+            // For low quality, use a simple cone
+            geometry = new THREE.ConeGeometry(radius, height, 8, 1);
+        }} else {{
+            geometry = createEruptionColumnGeometry(height, radius);
+        }}
+        
         const material = new THREE.MeshStandardMaterial({{
             color: 0x666666,
             transparent: true,
@@ -1184,10 +1344,11 @@ def app():
         scene.add(eruption_column);
     }}
     
-    // Create eruption column geometry
+    // Create eruption column geometry - medium/high quality only
     function createEruptionColumnGeometry(height, radius) {{
         const points = [];
-        const segments = 10;
+        // Reduce segments for better performance
+        const segments = quality === 'Medium' ? 6 : 10;
         
         // Create profile curve for lathe geometry
         for (let i = 0; i <= segments; i++) {{
@@ -1206,7 +1367,9 @@ def app():
             points.push(new THREE.Vector2(r, t * height));
         }}
         
-        const geometry = new THREE.LatheGeometry(points, 20);
+        // Reduce radial segments for better performance
+        const radialSegments = quality === 'Medium' ? 12 : 20;
+        const geometry = new THREE.LatheGeometry(points, radialSegments);
         return geometry;
     }}
     
@@ -1243,7 +1406,7 @@ def app():
         const ashDensity = document.getElementById("ash-density");
         const temperature = document.getElementById("temperature");
         
-        // Calculate current data values (interpolated for smooth animation)
+        // Calculate current data values
         const phaseData = volcanoData.eruption_data.phase_samples[phase];
         if (!phaseData) return;
         
@@ -1261,7 +1424,7 @@ def app():
             Math.round(progress * 100) + "% complete";
     }}
     
-    // Update visual elements based on phase
+    // Update visual elements based on phase - simplified for performance
     function updateVisualElements(phase, phaseData) {{
         // Get current magma light
         const magmaLight = scene.children.find(child => 
@@ -1316,7 +1479,7 @@ def app():
             }}
         }});
         
-        // Update ash cloud
+        // Update ash cloud 
         if (ashCloud) {{
             const material = ashCloud.material;
             
@@ -1325,8 +1488,10 @@ def app():
                 phaseData.ash_density * 0.6 : 0;
                 
             if (material.opacity > 0) {{
-                // Reposition ash particles based on eruption phase
-                setupAshCloudParticles(phaseData.ash_density, phaseData.eruption_height);
+                // For Low/Medium quality, no need to update all particles every frame
+                if (quality !== 'Low') {{
+                    setupAshCloudParticles(phaseData.ash_density, phaseData.eruption_height);
+                }}
             }}
         }}
         
@@ -1354,7 +1519,7 @@ def app():
         }}
     }}
     
-    // Setup ash cloud particles based on eruption intensity
+    // Setup ash cloud particles - simplified for medium/high quality only
     function setupAshCloudParticles(density, height) {{
         if (!ashCloud) return;
         
@@ -1365,7 +1530,10 @@ def app():
         const eruptionHeight = height * 200; // Convert to scene units
         const ashRadius = 50 + density * 150; // Cloud radius grows with density
         
-        for (let i = 0; i < positions.length; i += 3) {{
+        // Limit updates for performance
+        const updateFactor = quality === 'Medium' ? 3 : 1; // Update every 3rd particle for medium quality
+        
+        for (let i = 0; i < positions.length; i += 3 * updateFactor) {{
             // Create cloud shape that expands with height
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(2 * Math.random() - 1);
@@ -1403,7 +1571,7 @@ def app():
         renderer.setSize(newWidth, newHeight);
     }}
     
-    // Animation loop
+    // Animation loop - optimized for performance
     function animate() {{
         requestAnimationFrame(animate);
         
@@ -1417,39 +1585,43 @@ def app():
         // Update progress bar
         document.getElementById("phase-progress").style.width = (phaseProgress * 100) + "%";
         
-        // Update metrics
-        updateMetricsPanel(currentPhase, phaseProgress);
-        
-        // Animate ash cloud when visible
-        if (ashCloud && ashCloud.material.opacity > 0) {{
-            const positions = ashCloud.geometry.attributes.position.array;
-            
-            for (let i = 0; i < positions.length; i += 3) {{
-                // Apply wind drift and rise
-                positions[i] += Math.sin(elapsed + i*0.01) * 0.1;
-                positions[i+1] += 0.2 * volcanoData.animation_speed;
-                positions[i+2] += Math.cos(elapsed + i*0.01) * 0.1;
-                
-                // Reset particles that drift too far
-                if (positions[i+1] > getSummitHeight() + 300) {{
-                    // Recreate at bottom of cloud
-                    const theta = Math.random() * Math.PI * 2;
-                    positions[i] = Math.sin(theta) * 20;
-                    positions[i+1] = getSummitHeight() + 20;
-                    positions[i+2] = Math.cos(theta) * 20;
-                }}
-            }}
-            
-            ashCloud.geometry.attributes.position.needsUpdate = true;
+        // Update metrics only every few frames for better performance
+        if (Math.floor(elapsed * 10) % 3 === 0) {{
+            updateMetricsPanel(currentPhase, phaseProgress);
         }}
         
-        // Animate lava flows
-        lavaFlows.forEach(flow => {{
-            if (flow.visible) {{
-                // Pulse lava glow
-                flow.material.emissiveIntensity = 0.5 + Math.sin(elapsed * 3) * 0.2;
+        // Animate ash cloud when visible - simplified for performance
+        if (ashCloud && ashCloud.material.opacity > 0) {{
+            // Only animate in medium/high quality
+            if (quality !== 'Low') {{
+                const positions = ashCloud.geometry.attributes.position.array;
+                
+                // Reduce number of updates for better performance
+                const updateFactor = quality === 'Medium' ? 6 : 3;
+                
+                for (let i = 0; i < positions.length; i += 3 * updateFactor) {{
+                    // Simple vertical movement
+                    positions[i+1] += 0.2 * volcanoData.animation_speed;
+                    
+                    // Reset particles that drift too far
+                    if (positions[i+1] > getSummitHeight() + 300) {{
+                        positions[i+1] = getSummitHeight() + 20;
+                    }}
+                }}
+                
+                ashCloud.geometry.attributes.position.needsUpdate = true;
             }}
-        }});
+        }}
+        
+        // Animate lava flows - reduced for performance
+        if (quality !== 'Low' && Math.floor(elapsed * 2) % 2 === 0) {{
+            lavaFlows.forEach(flow => {{
+                if (flow.visible) {{
+                    // Pulse lava glow
+                    flow.material.emissiveIntensity = 0.5 + Math.sin(elapsed * 3) * 0.2;
+                }}
+            }});
+        }}
         
         // Animate magma light
         const magmaLight = scene.children.find(child => 
@@ -1461,7 +1633,7 @@ def app():
         renderer.render(scene, camera);
     }}
     
-    // Basic CSG implementation for geometric operations
+    // Simplified CSG implementation for geometric operations
     class CSG {{
         static fromMesh(mesh) {{
             return new CSG(mesh);
@@ -1472,7 +1644,7 @@ def app():
         }}
         
         subtract(otherCSG) {{
-            // Simplified for this example - in reality would perform actual CSG operations
+            // Simplified for this example
             return this;
         }}
         
@@ -1488,18 +1660,17 @@ def app():
     const buttons = document.querySelectorAll(".stButton button");
     buttons.forEach(button => {{
         button.addEventListener("click", event => {{
-            // Update is handled automatically through the hidden input
-            // that Streamlit updates on button clicks
+            // Update is handled through the hidden input
         }});
     }});
     
-    // Check for phase changes
+    // Check for phase changes - reduced frequency for performance
     setInterval(() => {{
         const newPhase = document.getElementById("selected_phase").value;
         if (newPhase && newPhase !== currentPhase) {{
             updatePhase(newPhase);
         }}
-    }}, 500);
+    }}, 1000); // Check less frequently
     </script>
     """
     
@@ -1545,9 +1716,9 @@ def app():
         
         This model incorporates scientific data on:
         
-        - Magma viscosity: {volcanoData.get('lava_viscosity', 0.5)*100:.0f}% (scale where 100% = highest viscosity)
-        - Typical eruption temperature: {volcanoData.get('lava_temperature', 1000)}°C
-        - Ash production potential: {volcanoData.get('ash_production', 0.5)*100:.0f}% (relative scale)
+        - Magma viscosity: {volcano_params.get('lava_viscosity', 0.5)*100:.0f}% (scale where 100% = highest viscosity)
+        - Typical eruption temperature: {volcano_params.get('lava_temperature', 1000)}°C
+        - Ash production potential: {volcano_params.get('ash_production', 0.5)*100:.0f}% (relative scale)
         
         ### References
         
