@@ -122,16 +122,18 @@ def simulate_gas_emissions(
     simulation_days: int, 
     eruption_probability: float,
     eruption_days: List[int] = None,
-    scenario: str = "Gradual Buildup"
+    scenario: str = "Gradual Buildup",
+    volcano_type: str = "stratovolcano"
 ) -> Dict[str, np.ndarray]:
     """
-    Simulate volcanic gas emissions time series
+    Simulate volcanic gas emissions time series based on volcano type
     
     Args:
         simulation_days (int): Number of days to simulate
         eruption_probability (float): Probability of eruption (0-100)
         eruption_days (List[int], optional): Days when eruptions occur
         scenario (str): Type of eruption scenario
+        volcano_type (str): Type of volcano (affects gas composition)
         
     Returns:
         Dict[str, np.ndarray]: Dictionary of simulated gas emission time series
