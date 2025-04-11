@@ -60,7 +60,7 @@ def create_volcano_map(volcano_df, include_monitoring_data=False):
         overlay=True,
         opacity=0.6,
         shown=False,
-        attribution="NASA Earth Observing System Data and Information System (EOSDIS)"
+        attr="NASA Earth Observing System Data and Information System (EOSDIS)"
     )
     wms_layer.add_to(m)
     
