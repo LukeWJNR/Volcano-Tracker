@@ -17,4 +17,5 @@ dependencies = [
     "matplotlib>=3.10.1",
     "requests>=2.32.3",
     "plotly>=6.0.1",
+    "twilio>=9.5.2",
 ]
