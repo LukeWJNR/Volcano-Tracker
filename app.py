@@ -5,6 +5,42 @@ from streamlit_folium import folium_static
 from datetime import datetime
 import time
 import os
+from streamlit.runtime.scriptrunner import get_script_run_ctx
+from streamlit.runtime.state import SessionStateProxy
+
+# Function to switch pages in a multi-page app
+def switch_page(page_name: str):
+    """
+    Switch to a different page in a Streamlit multi-page app
+    
+    Args:
+        page_name (str): Name of the page to switch to (without .py extension)
+    """
+    from streamlit.runtime.scriptrunner import RerunData, RerunException
+    
+    def standardize_name(name: str) -> str:
+        return name.lower().replace("_", " ")
+    
+    page_name = standardize_name(page_name)
+    
+    # Get current page info
+    ctx = get_script_run_ctx()
+    if ctx is None:
+        raise RuntimeError("Could not get script context")
+    
+    # Get all pages
+    pages = ctx.page_script_hash.keys()
+    
+    # Find the matching page
+    for page in pages:
+        if standardize_name(page.split("/")[-1].split(".")[0]) == page_name:
+            raise RerunException(
+                RerunData(
+                    page_script_hash=ctx.page_script_hash,
+                    page_name=page,
+                    query_string=ctx.query_string
+                )
+            )
 
 from utils.api import get_volcano_data, get_volcano_details
 from utils.map_utils import create_volcano_map, create_popup_html
