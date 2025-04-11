@@ -32,7 +32,11 @@ def calculate_risk_factor(volcano_data: Dict[str, Any]) -> float:
     }
     alert_weight = 0.35
     
-    alert_level = volcano_data.get('alert_level', 'Unknown')
+    # Ensure alert_level is a string and use 'Unknown' as fallback
+    alert_level = volcano_data.get('alert_level')
+    if alert_level is None or not isinstance(alert_level, str):
+        alert_level = 'Unknown'
+        
     risk_score += alert_levels.get(alert_level, 0.3) * alert_weight
     total_weight += alert_weight
     
@@ -45,6 +49,10 @@ def calculate_risk_factor(volcano_data: Dict[str, Any]) -> float:
         eruption_score = 0.3  # Moderate if unknown
     else:
         try:
+            # Convert to string if it's not already
+            if not isinstance(last_eruption, str):
+                last_eruption = str(last_eruption)
+                
             # Try to parse the last eruption as a year
             if '-' in last_eruption:  # Might be a date range like "2020-2021"
                 last_year = int(last_eruption.split('-')[-1])
@@ -66,7 +74,7 @@ def calculate_risk_factor(volcano_data: Dict[str, Any]) -> float:
                 eruption_score = 0.2  # Historic (within 100 years)
             else:
                 eruption_score = 0.1  # Very old eruption
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, AttributeError):
             # If we can't parse it as a year, assign moderate risk
             eruption_score = 0.3
     
@@ -79,7 +87,7 @@ def calculate_risk_factor(volcano_data: Dict[str, Any]) -> float:
     medium_risk_types = ['shield volcano', 'pyroclastic shield', 'volcanic field']
     low_risk_types = ['cinder cone', 'fissure vent', 'lava dome']
     
-    volcano_type = volcano_data.get('type', '').lower()
+    volcano_type = str(volcano_data.get('type', '')).lower()
     
     if any(risk_type in volcano_type for risk_type in high_risk_types):
         type_score = 0.9
@@ -123,14 +131,14 @@ def calculate_risk_factor(volcano_data: Dict[str, Any]) -> float:
     high_activity_regions = ['iceland', 'indonesia', 'philippines', 'kamchatka']
     medium_activity_regions = ['alaska', 'hawaii', 'japan', 'italy']
     
-    region = volcano_data.get('region', '').lower()
-    country = volcano_data.get('country', '').lower()
+    region = str(volcano_data.get('region', '')).lower()
+    country = str(volcano_data.get('country', '')).lower()
     
-    if any(region.lower() in high_region for high_region in high_activity_regions) or \
-       any(country.lower() in high_region for high_region in high_activity_regions):
+    if any(high_region in region for high_region in high_activity_regions) or \
+       any(high_region in country for high_region in high_activity_regions):
         region_score = 0.9
-    elif any(region.lower() in medium_region for medium_region in medium_activity_regions) or \
-         any(country.lower() in medium_region for medium_region in medium_activity_regions):
+    elif any(medium_region in region for medium_region in medium_activity_regions) or \
+         any(medium_region in country for medium_region in medium_activity_regions):
         region_score = 0.6
     else:
         region_score = 0.3
