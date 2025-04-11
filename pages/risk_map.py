@@ -55,15 +55,17 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Add navigation links
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 with col1:
     st.page_link("app.py", label="🏠 Main Dashboard", icon="🌋")
 with col2:
-    st.page_link("pages/favorites.py", label="❤️ Your Favorites", icon="❤️")
+    st.page_link("pages/sar_animations.py", label="📡 SAR Animations", icon="📡")
 with col3:
-    st.page_link("pages/notes.py", label="📝 Your Notes", icon="📝")
-with col4:
     st.page_link("pages/risk_map.py", label="🔥 Risk Heat Map", icon="🔥")
+with col4:
+    st.page_link("pages/favorites.py", label="❤️ Your Favorites", icon="❤️")
+with col5:
+    st.page_link("pages/notes.py", label="📝 Your Notes", icon="📝")
 
 st.markdown("---")
 

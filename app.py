@@ -46,6 +46,7 @@ from utils.api import get_volcano_data, get_volcano_details
 from utils.map_utils import create_volcano_map, create_popup_html
 from utils.web_scraper import get_volcano_additional_info
 from utils.insar_data import get_insar_url_for_volcano, generate_sentinel_hub_url, generate_copernicus_url, generate_smithsonian_wms_url
+from utils.comet_utils import get_comet_url_for_volcano
 from utils.wovodat_utils import (
     get_wovodat_volcano_data,
     get_so2_data,
@@ -479,6 +480,17 @@ with col2:
         if 'latitude' in volcano and 'longitude' in volcano:
             sarviews_url = f"https://sarviews-hazards.alaska.edu/#{volcano['latitude']},{volcano['longitude']},6"
             st.markdown(f"[ASF SARVIEWS (SAR Data)]({sarviews_url})")
+            
+        # COMET Volcano Portal link
+        location = {
+            'latitude': volcano.get('latitude'),
+            'longitude': volcano.get('longitude')
+        }
+        comet_url = get_comet_url_for_volcano(volcano['name'], location)
+        if comet_url:
+            st.markdown(f"[COMET Volcano Portal (SAR Animations)]({comet_url})")
+        else:
+            st.markdown("[COMET Volcano Portal](https://comet.nerc.ac.uk/comet-volcano-portal/)")
         
         # Risk Assessment Information
         st.markdown("### Risk Assessment")
