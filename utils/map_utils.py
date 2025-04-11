@@ -1,22 +1,28 @@
 import folium
 import pandas as pd
 import streamlit as st
-from folium.plugins import MarkerCluster, HeatMap
+from folium.plugins import MarkerCluster, HeatMap, MeasureControl
 from utils.risk_assessment import (
     generate_risk_levels,
     generate_risk_heatmap_data,
     calculate_radius_from_risk
 )
+from utils.web_scraper import (
+    get_so2_data,
+    get_volcanic_ash_data,
+    get_radon_data
+)
 
-def create_volcano_map(volcano_df):
+def create_volcano_map(volcano_df, include_monitoring_data=False):
     """
-    Create an interactive folium map with volcano markers
+    Create an interactive folium map with volcano markers and optional monitoring data
     
     Args:
         volcano_df (pd.DataFrame): DataFrame containing volcano data
+        include_monitoring_data (bool): Whether to include SO2, ash, and radon monitoring data
         
     Returns:
-        folium.Map: An interactive map with volcano markers
+        folium.Map: An interactive map with volcano markers and data layers
     """
     # Calculate center of map based on data
     if len(volcano_df) > 0:
@@ -44,10 +50,130 @@ def create_volcano_map(volcano_df):
         attr='Map tiles by <a href="https://carto.com/">CartoDB</a>, under <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
     ).add_to(m)
     
-    folium.LayerControl().add_to(m)
+    # Add NASA GIBS satellite imagery for atmospheric SO2 (if available)
+    wms_layer = folium.WmsTileLayer(
+        url="https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi",
+        layers="AIRS_SO2_Total_Column_Day",
+        name="NASA AIRS SO2 Column",
+        fmt="image/png",
+        transparent=True,
+        overlay=True,
+        opacity=0.6,
+        shown=False,
+        attribution="NASA Earth Observing System Data and Information System (EOSDIS)"
+    )
+    wms_layer.add_to(m)
     
-    # Create a marker cluster group
-    marker_cluster = MarkerCluster().add_to(m)
+    # Add measurement tool
+    MeasureControl(position='topleft', primary_length_unit='kilometers').add_to(m)
+    
+    # If monitoring data is requested, add the data layers
+    if include_monitoring_data:
+        try:
+            # Create additional feature groups for monitoring data
+            so2_layer = folium.FeatureGroup(name="SO2 Emissions", show=False)
+            ash_layer = folium.FeatureGroup(name="Volcanic Ash", show=False)
+            radon_layer = folium.FeatureGroup(name="Radon Gas Levels", show=False)
+            
+            # Get SO2 data
+            so2_data = get_so2_data()
+            if not so2_data.empty:
+                # Add SO2 markers
+                for _, emission in so2_data.iterrows():
+                    if 'latitude' in emission and 'longitude' in emission:
+                        # Create popup for SO2 emission
+                        so2_popup_html = f"""
+                        <div style="font-family: Arial; width: 200px;">
+                            <h3>SO2 Emission</h3>
+                            <p><b>Detected:</b> {emission.get('acq_date', 'Unknown')}</p>
+                            <p><b>Confidence:</b> {emission.get('confidence', 'Unknown')}%</p>
+                            <p><b>Brightness:</b> {emission.get('bright_t31', 'Unknown')} K</p>
+                            <p><b>Source:</b> NASA FIRMS</p>
+                        </div>
+                        """
+                        
+                        # Add marker to SO2 layer
+                        folium.CircleMarker(
+                            location=[emission['latitude'], emission['longitude']],
+                            radius=5,
+                            color='purple',
+                            fill=True,
+                            fill_color='purple',
+                            fill_opacity=0.7,
+                            popup=folium.Popup(so2_popup_html, max_width=250),
+                            tooltip="SO2 Emission"
+                        ).add_to(so2_layer)
+            
+            # Get volcanic ash data
+            ash_data = get_volcanic_ash_data()
+            if not ash_data.empty:
+                # Add ash cloud markers
+                for _, ash in ash_data.iterrows():
+                    if 'latitude' in ash and 'longitude' in ash:
+                        # Create popup for ash cloud
+                        ash_popup_html = f"""
+                        <div style="font-family: Arial; width: 200px;">
+                            <h3>Volcanic Ash Advisory</h3>
+                            <p><b>Volcano:</b> {ash.get('volcano_name', 'Unknown')}</p>
+                            <p><b>Advisory Time:</b> {ash.get('advisory_time', 'Unknown')}</p>
+                            <p><b>Ash Height:</b> {ash.get('ash_height_ft', 'Unknown')} ft</p>
+                            <p><b>Direction:</b> {ash.get('ash_direction', 'Unknown')}</p>
+                            <p><b>Source:</b> {ash.get('source', 'VAAC')}</p>
+                        </div>
+                        """
+                        
+                        # Add marker to ash layer
+                        folium.CircleMarker(
+                            location=[ash['latitude'], ash['longitude']],
+                            radius=10,
+                            color='darkgray',
+                            fill=True,
+                            fill_color='darkgray',
+                            fill_opacity=0.7,
+                            popup=folium.Popup(ash_popup_html, max_width=250),
+                            tooltip=f"Ash Cloud: {ash.get('volcano_name', 'Unknown')}"
+                        ).add_to(ash_layer)
+            
+            # Get radon data
+            radon_data = get_radon_data()
+            if not radon_data.empty:
+                # Add radon measurement markers
+                for _, radon in radon_data.iterrows():
+                    if 'latitude' in radon and 'longitude' in radon:
+                        # Create popup for radon measurement
+                        radon_popup_html = f"""
+                        <div style="font-family: Arial; width: 200px;">
+                            <h3>Radon Gas Reading</h3>
+                            <p><b>Station:</b> {radon.get('station_id', 'Unknown')}</p>
+                            <p><b>Volcano:</b> {radon.get('volcano_name', 'Unknown')}</p>
+                            <p><b>Radon Level:</b> {radon.get('radon_level_bq_m3', 'Unknown')} Bq/m³</p>
+                            <p><b>Measurement Time:</b> {radon.get('measurement_time', 'Unknown')}</p>
+                            <p><b>Source:</b> {radon.get('source', 'Unknown')}</p>
+                        </div>
+                        """
+                        
+                        # Add marker to radon layer
+                        folium.CircleMarker(
+                            location=[radon['latitude'], radon['longitude']],
+                            radius=7,
+                            color='green',
+                            fill=True,
+                            fill_color='green',
+                            fill_opacity=0.7,
+                            popup=folium.Popup(radon_popup_html, max_width=250),
+                            tooltip=f"Radon: {radon.get('station_id', 'Unknown')}"
+                        ).add_to(radon_layer)
+            
+            # Add the layers to the map
+            so2_layer.add_to(m)
+            ash_layer.add_to(m)
+            radon_layer.add_to(m)
+            
+        except Exception as e:
+            st.error(f"Error loading monitoring data: {str(e)}")
+    
+    # Create a marker cluster group for volcanoes
+    marker_cluster = MarkerCluster(name="Volcanoes").add_to(m)
     
     # Add volcano markers
     for idx, volcano in volcano_df.iterrows():
@@ -90,6 +216,9 @@ def create_volcano_map(volcano_df):
                 """
             )
         )
+    
+    # Add layer control
+    folium.LayerControl().add_to(m)
     
     return m
 

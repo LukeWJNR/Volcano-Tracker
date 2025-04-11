@@ -44,12 +44,13 @@ def switch_page(page_name: str):
 
 from utils.api import get_volcano_data, get_volcano_details
 from utils.map_utils import create_volcano_map, create_popup_html
-from utils.web_scraper import get_volcano_additional_info
+from utils.web_scraper import get_so2_data as get_satellite_so2_data
+from utils.web_scraper import get_volcanic_ash_data, get_radon_data
 from utils.insar_data import get_insar_url_for_volcano, generate_sentinel_hub_url, generate_copernicus_url, generate_smithsonian_wms_url
 from utils.comet_utils import get_comet_url_for_volcano
 from utils.wovodat_utils import (
     get_wovodat_volcano_data,
-    get_so2_data,
+    get_so2_data as get_wovodat_so2_data,
     get_lava_injection_data,
     get_wovodat_insar_url,
     get_volcano_monitoring_status
@@ -192,6 +193,11 @@ selected_region = st.sidebar.selectbox("Select Region", ["All"] + regions)
 # Name filter
 volcano_name_filter = st.sidebar.text_input("Filter by Volcano Name")
 
+# Add monitoring data option
+st.sidebar.markdown("---")
+st.sidebar.subheader("Data Layers")
+include_monitoring_data = st.sidebar.checkbox("Show Monitoring Data", value=False, help="Display SO2, volcanic ash, and radon gas monitoring data layers on the map")
+
 # Track search filters
 if 'last_region' not in st.session_state:
     st.session_state.last_region = "All"
@@ -326,8 +332,18 @@ with col1:
     # Display a message about the number of volcanos shown
     st.markdown(f"Showing {len(filtered_df)} volcanos")
     
-    # Create the map
-    m = create_volcano_map(filtered_df)
+    # Create the map with optional monitoring data layers
+    m = create_volcano_map(filtered_df, include_monitoring_data=include_monitoring_data)
+    
+    # Display info about monitoring layers if enabled
+    if include_monitoring_data:
+        st.markdown("""
+        **Monitoring Data Layers:**
+        - **NASA AIRS SO2 Column**: Global atmospheric SO2 measurements (toggle in layer control)
+        - **SO2 Emissions**: Local SO2 emission points detected by satellites
+        - **Volcanic Ash**: Ash clouds and advisories from Volcanic Ash Advisory Centers
+        - **Radon Gas Levels**: Radon gas measurements from monitoring stations (where available)
+        """)
     
     # Add custom styling and meta tags for proper iframe embedding
     st.markdown("""
@@ -930,15 +946,9 @@ with col2:
         with st.expander("View Educational Information", expanded=False):
             with st.spinner("Loading educational information..."):
                 try:
-                    climate_link_info = get_volcano_additional_info("https://climatelinks.weebly.com/volcanoes.html")
-                    if climate_link_info and climate_link_info['content']:
-                        # Display a subset of the content (first 500 characters) to keep it manageable
-                        content = climate_link_info['content']
-                        preview = content[:500] + "..." if len(content) > 500 else content
-                        st.markdown(preview)
-                        st.markdown(f"[Read more on Climate Links]({climate_link_info['source_url']})")
-                    else:
-                        st.info("No additional educational information available.")
+                    # Simplified climate links information
+                    st.markdown("For educational information about volcanoes, check out the Climate Links website.")
+                    st.markdown("[Visit Climate Links Volcanoes Page](https://climatelinks.weebly.com/volcanoes.html)")
                 except Exception as e:
                     st.warning(f"Could not load educational information: {str(e)}")
     else:

@@ -15,4 +15,5 @@ dependencies = [
     "pydub>=0.25.1",
     "soundfile>=0.13.1",
     "matplotlib>=3.10.1",
+    "requests>=2.32.3",
 ]
