@@ -75,7 +75,7 @@ VOLCANO_TYPE_PROFILES = {
         'attack': 0.05,  # Fast attack
         'sustain': 0.4,  # Longer sustain due to water medium
         'release': 0.7,  # Longer release
-        'duration': 6.0,  # Sound duration in seconds
+        'duration': 30.0,  # Sound duration in seconds (extended to 30s as requested)
         'rumble_freq': 7.0,  # Low rumble through water
         'rumble_strength': 0.3,  # Moderate rumbling
         'water_effect': 0.7  # Water filtering effect
@@ -87,7 +87,7 @@ VOLCANO_TYPE_PROFILES = {
         'attack': 0.1,
         'sustain': 0.3,
         'release': 0.6,
-        'duration': 5.0,
+        'duration': 30.0,  # Sound duration in seconds (extended to 30s as requested)
         'rumble_freq': 10.0,
         'rumble_strength': 0.3
     },
@@ -102,7 +102,7 @@ SPECIAL_VOLCANO_PROFILES = {
         'attack': 0.02,  # Very fast attack for Etna's strombolian eruptions
         'sustain': 0.3,
         'release': 0.8,  # Long decay
-        'duration': 6.5,
+        'duration': 30.0,  # Sound duration in seconds (extended to 30s as requested)
         'rumble_freq': 9.0,  # Medium-low rumble
         'rumble_strength': 0.5,  # Strong rumbling
         'crackle_effect': 0.4  # Etna's distinctive crackling sound
@@ -114,7 +114,7 @@ SPECIAL_VOLCANO_PROFILES = {
         'attack': 0.25,
         'sustain': 0.7,
         'release': 0.5,
-        'duration': 7.5,
+        'duration': 30.0,  # Sound duration in seconds (extended to 30s as requested)
         'rumble_freq': 7.5,
         'rumble_strength': 0.25,
         'lava_bubble_effect': 0.6  # Kilauea's bubbling lava sound
@@ -126,7 +126,7 @@ SPECIAL_VOLCANO_PROFILES = {
         'attack': 0.01,
         'sustain': 0.1,
         'release': 0.95,
-        'duration': 9.0,
+        'duration': 30.0,  # Sound duration in seconds (extended to 30s as requested)
         'rumble_freq': 4.0,  # Very deep rumble
         'rumble_strength': 0.7,  # Strong rumbling
         'geothermal_effect': 0.5  # Geothermal activity sounds
@@ -138,7 +138,7 @@ SPECIAL_VOLCANO_PROFILES = {
         'attack': 0.01,  # Very fast attack
         'sustain': 0.2,
         'release': 0.5,
-        'duration': 5.0,
+        'duration': 30.0,  # Sound duration in seconds (extended to 30s as requested)
         'rumble_freq': 15.0,
         'rumble_strength': 0.4,
         'explosion_effect': 0.6  # Stromboli's characteristic explosions
@@ -150,7 +150,7 @@ SPECIAL_VOLCANO_PROFILES = {
         'attack': 0.05,
         'sustain': 0.4,
         'release': 0.6,
-        'duration': 6.0,
+        'duration': 30.0,  # Sound duration in seconds (extended to 30s as requested)
         'rumble_freq': 10.0,
         'rumble_strength': 0.35,
         'lava_fountain_effect': 0.5  # Characteristic lava fountain sounds
@@ -313,9 +313,14 @@ def generate_volcano_sound(volcano_data: Dict[str, Any]) -> Tuple[np.ndarray, in
         tremor_depth = modifiers['tremor']
         tremor = tremor_depth * np.sin(2 * np.pi * tremor_rate * t)
         
-        # Add harmonic with tremor
-        freq = base_freq * (i + 1) * (1 + tremor)
-        signal += harmonic_strength * np.sin(2 * np.pi * freq * t)
+        # Add frequency jitter to make sound less "comb-like" (less synthetic/mechanical)
+        # This creates a more natural, less regular sound by slightly detuning each harmonic
+        freq_jitter = np.random.uniform(-0.005, 0.005)  # Small random detuning (±0.5%)
+        phase_jitter = np.random.uniform(0, 2*np.pi)  # Random phase offset
+        
+        # Add harmonic with tremor and jitter
+        freq = base_freq * (i + 1) * (1 + tremor) * (1 + freq_jitter)
+        signal += harmonic_strength * np.sin(2 * np.pi * freq * t + phase_jitter)
     
     # Add low-frequency rumbling component (typical of volcanic sounds)
     if 'rumble_freq' in profile and 'rumble_strength' in profile:
@@ -324,9 +329,20 @@ def generate_volcano_sound(volcano_data: Dict[str, Any]) -> Tuple[np.ndarray, in
         
         # Create more complex rumbling with sub-harmonics
         rumble = np.zeros_like(t)
-        for i in range(1, 4):  # Multiple subharmonics
-            sub_freq = rumble_freq / i
-            rumble += (1.0/i) * rumble_strength * np.sin(2 * np.pi * sub_freq * t)
+        for i in range(1, 6):  # More subharmonics for richer sound texture
+            # Add slight randomness to frequencies to avoid comb effect
+            freq_jitter = np.random.uniform(-0.02, 0.02)  # 2% random detuning
+            phase_jitter = np.random.uniform(0, 2*np.pi)  # Random phase
+            
+            # Frequency decreases with harmonic number, but with slight randomness
+            sub_freq = (rumble_freq / i) * (1 + freq_jitter)
+            
+            # Amplitude falls off with harmonic number but with some randomness
+            amp_jitter = np.random.uniform(0.9, 1.1)  # ±10% amplitude variation
+            harmonic_amp = (1.0/i) * rumble_strength * amp_jitter
+            
+            # Add this subharmonic with its unique phase
+            rumble += harmonic_amp * np.sin(2 * np.pi * sub_freq * t + phase_jitter)
         
         # Add random amplitude modulation to rumble (creates realistic pulsing)
         rumble_mod = 0.5 + 0.5 * np.random.rand(len(t))
@@ -444,7 +460,7 @@ def get_volcano_sound_file(volcano_data: Dict[str, Any], force_regenerate: bool 
     alert_level = volcano_data.get('alert_level', 'Unknown')
     
     # Sound algorithm version - increment this when making significant changes to the algorithm
-    sound_version = "v2.0"
+    sound_version = "v3.0"  # Updated to v3.0 - extended duration to 30s and improved sound quality
     
     filename = f"volcano_{volcano_id}_{alert_level}_{sound_version}.wav"
     filepath = os.path.join(AUDIO_DIR, filename)
