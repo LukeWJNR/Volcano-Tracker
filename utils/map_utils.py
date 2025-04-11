@@ -70,98 +70,229 @@ def create_volcano_map(volcano_df, include_monitoring_data=False):
     # If monitoring data is requested, add the data layers
     if include_monitoring_data:
         try:
-            # Create additional feature groups for monitoring data
-            so2_layer = folium.FeatureGroup(name="SO2 Emissions", show=False)
-            ash_layer = folium.FeatureGroup(name="Volcanic Ash", show=False)
-            radon_layer = folium.FeatureGroup(name="Radon Gas Levels", show=False)
+            # Create more specific feature groups for different types of monitoring data
+            so2_layer = folium.FeatureGroup(name="SO2 Emissions", show=True)
+            ash_layer = folium.FeatureGroup(name="Volcanic Ash", show=True)
+            radon_layer = folium.FeatureGroup(name="Radon Gas", show=True)
+            
+            # Color maps for concentration levels
+            so2_colors = {
+                'low': '#add8e6',      # Light blue
+                'moderate': '#4169e1',  # Royal blue
+                'high': '#800080',      # Purple
+                'very_high': '#9400d3'  # Dark violet
+            }
+            
+            ash_colors = {
+                'low': '#c0c0c0',      # Silver
+                'moderate': '#808080',  # Gray
+                'high': '#696969',      # DimGray
+                'very_high': '#2f4f4f'  # DarkSlateGray
+            }
+            
+            radon_colors = {
+                'normal': '#98fb98',    # Pale green
+                'slight': '#90ee90',    # Light green
+                'elevated': '#32cd32',  # Lime green
+                'high': '#228b22'       # Forest green
+            }
             
             # Get SO2 data
             so2_data = get_so2_data()
             if not so2_data.empty:
-                # Add SO2 markers
+                # Add SO2 markers with proper concentration-based visualization
                 for _, emission in so2_data.iterrows():
                     if 'latitude' in emission and 'longitude' in emission:
-                        # Create popup for SO2 emission
+                        # Determine color and radius based on concentration
+                        concentration = emission.get('so2_concentration', 0)
+                        
+                        if concentration > 80:
+                            so2_color = so2_colors['very_high']
+                            so2_radius = 12
+                            level_text = "Very High"
+                        elif concentration > 60:
+                            so2_color = so2_colors['high']
+                            so2_radius = 10
+                            level_text = "High"
+                        elif concentration > 40:
+                            so2_color = so2_colors['moderate']
+                            so2_radius = 8
+                            level_text = "Moderate"
+                        else:
+                            so2_color = so2_colors['low']
+                            so2_radius = 6
+                            level_text = "Low"
+                        
+                        # Create detailed popup for SO2 emission
                         so2_popup_html = f"""
-                        <div style="font-family: Arial; width: 200px;">
-                            <h3>SO2 Emission</h3>
-                            <p><b>Detected:</b> {emission.get('acq_date', 'Unknown')}</p>
-                            <p><b>Confidence:</b> {emission.get('confidence', 'Unknown')}%</p>
-                            <p><b>Brightness:</b> {emission.get('bright_t31', 'Unknown')} K</p>
-                            <p><b>Source:</b> NASA FIRMS</p>
+                        <div style="font-family: Arial; width: 250px;">
+                            <h3 style="color: #333; margin-bottom: 10px;">SO<sub>2</sub> Emission</h3>
+                            <div style="background-color: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 10px;">
+                                <p style="margin: 5px 0;"><b>Concentration:</b> <span style="color: {so2_color};">{level_text}</span> ({concentration:.1f})</p>
+                                <p style="margin: 5px 0;"><b>Volcano:</b> {emission.get('volcano_name', 'Unknown')}</p>
+                                <p style="margin: 5px 0;"><b>Detected:</b> {emission.get('acq_date', 'Unknown')}</p>
+                                """
+                        
+                        # Add type-specific details
+                        emission_type = emission.get('emission_type', '')
+                        if emission_type == 'Volcanic':
+                            so2_popup_html += f"""
+                                <p style="margin: 5px 0;"><b>Emission Rate:</b> {emission.get('emission_rate_tons_day', 'Unknown')} tons/day</p>
+                            """
+                        
+                        # Add source information
+                        so2_popup_html += f"""
+                                <p style="margin: 5px 0;"><b>Source:</b> {emission.get('source', 'Unknown')}</p>
+                                <p style="margin: 5px 0;"><b>Type:</b> {emission.get('detection_type', 'Unknown')}</p>
+                            </div>
+                            <p style="font-size: 0.8em; color: #666; font-style: italic;">Sulfur dioxide (SO<sub>2</sub>) is a key indicator of volcanic activity.</p>
                         </div>
                         """
                         
-                        # Add marker to SO2 layer
+                        # Add marker to SO2 layer with enhanced styling
                         folium.CircleMarker(
                             location=[emission['latitude'], emission['longitude']],
-                            radius=5,
-                            color='purple',
+                            radius=so2_radius,
+                            color=so2_color,
                             fill=True,
-                            fill_color='purple',
+                            fill_color=so2_color,
                             fill_opacity=0.7,
-                            popup=folium.Popup(so2_popup_html, max_width=250),
-                            tooltip="SO2 Emission"
+                            weight=2,
+                            popup=folium.Popup(so2_popup_html, max_width=300),
+                            tooltip=f"{emission.get('volcano_name', 'SO2')}: {level_text}"
                         ).add_to(so2_layer)
             
             # Get volcanic ash data
             ash_data = get_volcanic_ash_data()
             if not ash_data.empty:
-                # Add ash cloud markers
+                # Add ash cloud markers with enhanced visualization
                 for _, ash in ash_data.iterrows():
                     if 'latitude' in ash and 'longitude' in ash:
-                        # Create popup for ash cloud
+                        # Determine color and radius based on concentration or ash height
+                        concentration = ash.get('ash_concentration', 0)
+                        ash_height = ash.get('ash_height_ft', 0)
+                        
+                        if concentration > 80 or ash_height > 25000:
+                            ash_color = ash_colors['very_high']
+                            ash_radius = 12
+                            level_text = "Very High"
+                        elif concentration > 60 or ash_height > 20000:
+                            ash_color = ash_colors['high']
+                            ash_radius = 10
+                            level_text = "High"
+                        elif concentration > 40 or ash_height > 15000:
+                            ash_color = ash_colors['moderate']
+                            ash_radius = 8
+                            level_text = "Moderate"
+                        else:
+                            ash_color = ash_colors['low']
+                            ash_radius = 6
+                            level_text = "Low"
+                        
+                        # Create detailed popup with more ash information
                         ash_popup_html = f"""
-                        <div style="font-family: Arial; width: 200px;">
-                            <h3>Volcanic Ash Advisory</h3>
-                            <p><b>Volcano:</b> {ash.get('volcano_name', 'Unknown')}</p>
-                            <p><b>Advisory Time:</b> {ash.get('advisory_time', 'Unknown')}</p>
-                            <p><b>Ash Height:</b> {ash.get('ash_height_ft', 'Unknown')} ft</p>
-                            <p><b>Direction:</b> {ash.get('ash_direction', 'Unknown')}</p>
-                            <p><b>Source:</b> {ash.get('source', 'VAAC')}</p>
+                        <div style="font-family: Arial; width: 250px;">
+                            <h3 style="color: #333; margin-bottom: 10px;">Volcanic Ash</h3>
+                            <div style="background-color: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 10px;">
+                                <p style="margin: 5px 0;"><b>Concentration:</b> <span style="color: {ash_color};">{level_text}</span></p>
+                                <p style="margin: 5px 0;"><b>Volcano:</b> {ash.get('volcano_name', 'Unknown')}</p>
+                                <p style="margin: 5px 0;"><b>Advisory Time:</b> {ash.get('advisory_time', 'Unknown')}</p>
+                                <p style="margin: 5px 0;"><b>Ash Height:</b> {ash.get('ash_height_ft', 'Unknown')} ft</p>
+                                <p style="margin: 5px 0;"><b>Direction:</b> {ash.get('ash_direction', 'Unknown')}</p>
+                        """
+                        
+                        # Add type-specific details
+                        data_type = ash.get('data_type', '')
+                        if data_type == 'Forecast':
+                            ash_popup_html += f"""
+                                <p style="margin: 5px 0;"><b>Forecast Hours:</b> {ash.get('forecast_hours', 'Unknown')} hours</p>
+                            """
+                        elif data_type == 'Satellite':
+                            ash_popup_html += f"""
+                                <p style="margin: 5px 0;"><b>Plume Length:</b> {ash.get('plume_length_km', 'Unknown')} km</p>
+                                <p style="margin: 5px 0;"><b>Satellite:</b> {ash.get('satellite', 'Unknown')}</p>
+                            """
+                        
+                        # Add source information
+                        ash_popup_html += f"""
+                                <p style="margin: 5px 0;"><b>Source:</b> {ash.get('source', 'Unknown')}</p>
+                                <p style="margin: 5px 0;"><b>Type:</b> {ash.get('data_type', 'Unknown')}</p>
+                            </div>
+                            <p style="font-size: 0.8em; color: #666; font-style: italic;">Volcanic ash presents hazards to aviation and public health.</p>
                         </div>
                         """
                         
-                        # Add marker to ash layer
+                        # Add marker with improved styling
                         folium.CircleMarker(
                             location=[ash['latitude'], ash['longitude']],
-                            radius=10,
-                            color='darkgray',
+                            radius=ash_radius,
+                            color=ash_color,
                             fill=True,
-                            fill_color='darkgray',
+                            fill_color=ash_color,
                             fill_opacity=0.7,
-                            popup=folium.Popup(ash_popup_html, max_width=250),
-                            tooltip=f"Ash Cloud: {ash.get('volcano_name', 'Unknown')}"
+                            weight=2,
+                            popup=folium.Popup(ash_popup_html, max_width=300),
+                            tooltip=f"Ash: {ash.get('volcano_name', 'Unknown')} ({level_text})"
                         ).add_to(ash_layer)
             
             # Get radon data
             radon_data = get_radon_data()
             if not radon_data.empty:
-                # Add radon measurement markers
+                # Add radon measurement markers with enhanced visualization
                 for _, radon in radon_data.iterrows():
                     if 'latitude' in radon and 'longitude' in radon:
-                        # Create popup for radon measurement
+                        # Determine color and radius based on radon level and anomaly
+                        radon_level = radon.get('radon_level_bq_m3', 0)
+                        anomaly_percent = radon.get('anomaly_percent', 0)
+                        status = radon.get('status', '')
+                        
+                        if 'Highly' in status or anomaly_percent > 90:
+                            radon_color = radon_colors['high']
+                            radon_radius = 10
+                            level_text = "Highly Elevated"
+                        elif 'Elevated' in status or anomaly_percent > 60:
+                            radon_color = radon_colors['elevated']
+                            radon_radius = 8
+                            level_text = "Elevated"
+                        elif 'Slightly' in status or anomaly_percent > 30:
+                            radon_color = radon_colors['slight']
+                            radon_radius = 6
+                            level_text = "Slightly Elevated"
+                        else:
+                            radon_color = radon_colors['normal']
+                            radon_radius = 5
+                            level_text = "Normal"
+                        
+                        # Create detailed popup for radon measurements
                         radon_popup_html = f"""
-                        <div style="font-family: Arial; width: 200px;">
-                            <h3>Radon Gas Reading</h3>
-                            <p><b>Station:</b> {radon.get('station_id', 'Unknown')}</p>
-                            <p><b>Volcano:</b> {radon.get('volcano_name', 'Unknown')}</p>
-                            <p><b>Radon Level:</b> {radon.get('radon_level_bq_m3', 'Unknown')} Bq/m³</p>
-                            <p><b>Measurement Time:</b> {radon.get('measurement_time', 'Unknown')}</p>
-                            <p><b>Source:</b> {radon.get('source', 'Unknown')}</p>
+                        <div style="font-family: Arial; width: 250px;">
+                            <h3 style="color: #333; margin-bottom: 10px;">Radon Gas Monitoring</h3>
+                            <div style="background-color: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 10px;">
+                                <p style="margin: 5px 0;"><b>Status:</b> <span style="color: {radon_color};">{level_text}</span></p>
+                                <p style="margin: 5px 0;"><b>Station:</b> {radon.get('station_id', 'Unknown')}</p>
+                                <p style="margin: 5px 0;"><b>Volcano:</b> {radon.get('volcano_name', 'Unknown')}</p>
+                                <p style="margin: 5px 0;"><b>Radon Level:</b> {radon_level} Bq/m³</p>
+                                <p style="margin: 5px 0;"><b>Baseline:</b> {radon.get('baseline_bq_m3', 'Unknown')} Bq/m³</p>
+                                <p style="margin: 5px 0;"><b>Anomaly:</b> +{anomaly_percent}%</p>
+                                <p style="margin: 5px 0;"><b>Measurement:</b> {radon.get('measurement_time', 'Unknown')}</p>
+                                <p style="margin: 5px 0;"><b>Source:</b> {radon.get('source', 'Unknown')}</p>
+                                <p style="margin: 5px 0;"><b>Method:</b> {radon.get('monitoring_method', 'Unknown')}</p>
+                            </div>
+                            <p style="font-size: 0.8em; color: #666; font-style: italic;">Radon gas (²²²Rn) increases can precede volcanic activity.</p>
                         </div>
                         """
                         
-                        # Add marker to radon layer
+                        # Add marker with improved styling
                         folium.CircleMarker(
                             location=[radon['latitude'], radon['longitude']],
-                            radius=7,
-                            color='green',
+                            radius=radon_radius,
+                            color=radon_color,
                             fill=True,
-                            fill_color='green',
+                            fill_color=radon_color,
                             fill_opacity=0.7,
-                            popup=folium.Popup(radon_popup_html, max_width=250),
-                            tooltip=f"Radon: {radon.get('station_id', 'Unknown')}"
+                            weight=2,
+                            popup=folium.Popup(radon_popup_html, max_width=300),
+                            tooltip=f"Radon: {radon.get('station_id', 'Unknown')} ({level_text})"
                         ).add_to(radon_layer)
             
             # Add the layers to the map
@@ -169,33 +300,75 @@ def create_volcano_map(volcano_df, include_monitoring_data=False):
             ash_layer.add_to(m)
             radon_layer.add_to(m)
             
+            # Add a legend for the monitoring data
+            legend_html = """
+            <div style="position: fixed; 
+                bottom: 50px; left: 50px; width: 180px; height: 150px; 
+                border: 2px solid grey; z-index: 9999; background-color: white;
+                padding: 8px; font-size: 14px;">
+                <h4 style="margin-top: 0;">Monitoring Data</h4>
+                <div style="display: flex; align-items: center; margin: 3px;">
+                    <span style="background: #9400d3; width: 15px; height: 15px; display: inline-block; margin-right: 5px; border-radius: 50%;"></span>
+                    <span>SO<sub>2</sub> (High)</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 3px;">
+                    <span style="background: #696969; width: 15px; height: 15px; display: inline-block; margin-right: 5px; border-radius: 50%;"></span>
+                    <span>Ash Cloud</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 3px;">
+                    <span style="background: #228b22; width: 15px; height: 15px; display: inline-block; margin-right: 5px; border-radius: 50%;"></span>
+                    <span>Radon Station</span>
+                </div>
+            </div>
+            """
+            m.get_root().html.add_child(folium.Element(legend_html))
+            
         except Exception as e:
             st.error(f"Error loading monitoring data: {str(e)}")
     
     # Create a marker cluster group for volcanoes
     marker_cluster = MarkerCluster(name="Volcanoes").add_to(m)
     
-    # Add volcano markers
+    # Add volcano markers with enhanced visualization
     for idx, volcano in volcano_df.iterrows():
-        # Define icon color based on alert level
+        # Define icon color based on alert level and add more alert levels for warnings
         alert_level = volcano.get('alert_level', 'Unknown')
+        
+        # Extended alert level color scheme
         icon_color = {
             'Normal': 'green',
-            'Advisory': 'orange',
+            'Advisory': 'beige',
+            'Yellow': 'orange',
+            'Orange': 'orange',
             'Watch': 'orange',
+            'Red': 'red',
             'Warning': 'red',
-            'Unknown': 'gray'
-        }.get(alert_level, 'gray')
+            'Eruption': 'darkred',
+            'Erupting': 'darkred',
+            'Major': 'darkred',
+            'Unknown': 'lightgray'
+        }.get(alert_level, 'lightgray')
         
-        # Create popup HTML
+        # Icon based on volcano type/status
+        icon_type = 'fire'
+        if 'Erupting' in alert_level or 'Eruption' in alert_level or 'Major' in alert_level:
+            icon_type = 'exclamation-triangle'
+        elif 'glacier' in str(volcano.get('type', '')).lower():
+            icon_type = 'snowflake-o'
+        elif 'submarine' in str(volcano.get('type', '')).lower():
+            icon_type = 'ship'
+        elif 'caldera' in str(volcano.get('type', '')).lower():
+            icon_type = 'dot-circle-o'
+            
+        # Create enhanced popup HTML
         popup_html = create_popup_html(volcano)
         
-        # Create marker
+        # Create marker with proper color and icon
         marker = folium.Marker(
             location=[volcano['latitude'], volcano['longitude']],
-            popup=folium.Popup(popup_html, max_width=300),
-            tooltip=volcano['name'],
-            icon=folium.Icon(color=icon_color, icon='fire', prefix='fa')
+            popup=folium.Popup(popup_html, max_width=350),
+            tooltip=f"{volcano['name']} ({alert_level})",
+            icon=folium.Icon(color=icon_color, icon=icon_type, prefix='fa')
         )
         
         # Add click event JavaScript to update Streamlit session state
@@ -224,7 +397,7 @@ def create_volcano_map(volcano_df, include_monitoring_data=False):
 
 def create_popup_html(volcano):
     """
-    Create HTML content for the volcano popup
+    Create HTML content for the volcano popup with professional styling
     
     Args:
         volcano (pd.Series): Series containing volcano data
@@ -232,58 +405,154 @@ def create_popup_html(volcano):
     Returns:
         str: HTML content for the popup
     """
-    # Alert level with color
+    # Enhanced alert level with color scale
     alert_level = volcano.get('alert_level', 'Unknown')
     alert_color = {
-        'Normal': 'green',
-        'Advisory': 'orange',
-        'Watch': 'orange',
-        'Warning': 'red',
-        'Unknown': 'gray'
-    }.get(alert_level, 'gray')
+        'Normal': '#4caf50',      # Green
+        'Advisory': '#ffeb3b',    # Yellow
+        'Yellow': '#ffeb3b',      # Yellow
+        'Orange': '#ff9800',      # Orange
+        'Watch': '#ff9800',       # Orange
+        'Red': '#f44336',         # Red
+        'Warning': '#f44336',     # Red
+        'Eruption': '#b71c1c',    # Dark Red
+        'Erupting': '#b71c1c',    # Dark Red
+        'Major': '#b71c1c',       # Dark Red
+        'Unknown': '#9e9e9e'      # Gray
+    }.get(alert_level, '#9e9e9e')
     
-    # Monitoring indicators
+    # Monitoring indicators with modern SVG icons instead of emojis
     has_insar = volcano.get('has_insar', False)
     has_so2 = volcano.get('has_so2', False)
     has_lava = volcano.get('has_lava', False)
     
-    # Construct HTML
+    # Get additional volcano properties with fallbacks
+    country = volcano.get('country', 'Unknown')
+    volcano_type = volcano.get('type', 'Unknown')
+    elevation = volcano.get('elevation', 'Unknown')
+    last_eruption = volcano.get('last_eruption', 'Unknown')
+    population_5km = volcano.get('population_5km', 'N/A')
+    population_10km = volcano.get('population_10km', 'N/A')
+    population_30km = volcano.get('population_30km', 'N/A')
+    population_100km = volcano.get('population_100km', 'N/A')
+    
+    # Define monitoring SVG icons
+    insar_icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1976d2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h18"></path><path d="M5 4.5a9.16 9.16 0 0 1-.5 5.24"></path><path d="M7 4.5a5.89 5.89 0 0 0 .5 5.24"></path><path d="M4.24 10.24a9.45 9.45 0 0 0 7.5 2.75"></path><circle cx="14.5" cy="13" r="4"></circle><path d="m17 15.5 3.5 3.5"></path></svg>'
+    so2_icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#673ab7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15a6 6 0 0 0 12 0"></path><path d="M15 15a6 6 0 0 0 12 0"></path><path d="M3 9a6 6 0 0 1 12 0"></path><path d="M15 9a6 6 0 0 1 12 0"></path></svg>'
+    lava_icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f44336" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>'
+    
+    # Construct HTML with professional styling
     html = f"""
-    <div style="font-family: Arial; width: 250px;">
-        <h3>{volcano['name']}</h3>
-        <p><b>Country:</b> {volcano['country']}</p>
-        <p><b>Type:</b> {volcano['type']}</p>
-        <p><b>Elevation:</b> {volcano['elevation']} m</p>
-        <p><b>Alert Level:</b> <span style="color: {alert_color}; font-weight: bold;">{alert_level}</span></p>
+    <div style="font-family: Arial, sans-serif; width: 320px;">
+        <div style="background-color: #f5f5f5; padding: 10px; border-left: 5px solid {alert_color}; margin-bottom: 10px;">
+            <h3 style="margin-top: 0; margin-bottom: 5px; color: #333;">{volcano['name']}</h3>
+            <div style="color: #666; font-size: 0.9em; margin-bottom: 5px;">{country} • {volcano_type}</div>
+            <div style="display: inline-block; padding: 3px 8px; border-radius: 3px; background-color: {alert_color}; color: white; font-weight: bold; font-size: 0.8em;">
+                {alert_level}
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                <tr style="border-bottom: 1px solid #e0e0e0;">
+                    <td style="padding: 5px 0; font-weight: bold; width: 40%;">Elevation</td>
+                    <td style="padding: 5px 0;">{elevation} m</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e0e0e0;">
+                    <td style="padding: 5px 0; font-weight: bold;">Last Eruption</td>
+                    <td style="padding: 5px 0;">{last_eruption}</td>
+                </tr>
     """
     
-    if 'last_eruption' in volcano and volcano['last_eruption']:
-        html += f"<p><b>Last Known Eruption:</b> {volcano['last_eruption']}</p>"
-    else:
-        html += "<p><b>Last Known Eruption:</b> Unknown</p>"
+    # Add population data if available
+    if population_5km != 'N/A' or population_10km != 'N/A' or population_30km != 'N/A' or population_100km != 'N/A':
+        html += f"""
+                <tr style="border-bottom: 1px solid #e0e0e0;">
+                    <td style="padding: 5px 0; font-weight: bold;">Population (5km)</td>
+                    <td style="padding: 5px 0;">{population_5km}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e0e0e0;">
+                    <td style="padding: 5px 0; font-weight: bold;">Population (100km)</td>
+                    <td style="padding: 5px 0;">{population_100km}</td>
+                </tr>
+        """
     
-    # Add monitoring indicators
-    html += "<p><b>Monitoring Data:</b> "
+    html += """
+            </table>
+        </div>
+    """
     
-    if has_insar or has_so2 or has_lava:
-        if has_insar:
-            html += '<span title="InSAR data available">📡 </span>'
-        if has_so2:
-            html += '<span title="SO2 gas data available">☁️ </span>'
-        if has_lava:
-            html += '<span title="Lava/eruption data available">🔥 </span>'
-    else:
-        html += "<span>Limited data available</span>"
+    # Add monitoring indicators section with professional styling
+    html += """
+        <div style="margin-bottom: 15px;">
+            <h4 style="margin-top: 0; margin-bottom: 8px; color: #424242; font-size: 0.95em;">MONITORING DATA</h4>
+            <div style="display: flex; gap: 10px;">
+    """
     
-    html += "</p>"
-        
+    # Add icons with tooltips
+    if has_insar:
+        html += f"""
+                <div title="InSAR deformation data available" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background-color: #e3f2fd; border-radius: 4px;">
+                    {insar_icon}
+                </div>
+        """
+    
+    if has_so2:
+        html += f"""
+                <div title="SO2 gas monitoring data available" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background-color: #f3e5f5; border-radius: 4px;">
+                    {so2_icon}
+                </div>
+        """
+    
+    if has_lava:
+        html += f"""
+                <div title="Lava/eruption monitoring data available" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background-color: #ffebee; border-radius: 4px;">
+                    {lava_icon}
+                </div>
+        """
+    
+    if not (has_insar or has_so2 or has_lava):
+        html += """
+                <div style="font-size: 0.9em; color: #757575; padding: 8px 0;">Limited monitoring data available</div>
+        """
+    
+    html += """
+            </div>
+        </div>
+    """
+    
+    # Add external links with professional styling
+    html += """
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
+    """
+    
     # Add WOVOdat link if available
     if 'wovodat_id' in volcano and volcano['wovodat_id']:
-        html += f'<p><a href="https://wovodat.org/gvmid/volcano.php?name={volcano["name"].replace(" ", "%20")}" target="_blank">WOVOdat Profile</a></p>'
+        html += f"""
+            <a href="https://wovodat.org/gvmid/volcano.php?name={volcano['name'].replace(' ', '%20')}" target="_blank" style="text-decoration: none; font-size: 0.85em; color: #1976d2; padding: 5px 10px; border: 1px solid #1976d2; border-radius: 4px; display: inline-flex; align-items: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                WOVOdat Data
+            </a>
+        """
     
-    # Add a button to select this volcano in the dashboard
+    # Add Smithsonian link
     html += f"""
-        <button onclick="selectVolcano()" style="background-color: #0366d6; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">View Details</button>
+            <a href="https://volcano.si.edu/volcano.cfm?vn={volcano.get('smithsonian_id', volcano['name'].replace(' ', '%20'))}" target="_blank" style="text-decoration: none; font-size: 0.85em; color: #e91e63; padding: 5px 10px; border: 1px solid #e91e63; border-radius: 4px; display: inline-flex; align-items: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                Smithsonian
+            </a>
+    """
+    
+    html += """
+        </div>
+    """
+    
+    # Add action button with modern styling
+    html += f"""
+        <button onclick="selectVolcano()" style="width: 100%; background-color: #2196f3; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            View Complete Data
+        </button>
         <script>
             function selectVolcano() {{
                 var volcano = {volcano.to_json()};
