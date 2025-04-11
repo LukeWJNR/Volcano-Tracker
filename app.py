@@ -374,6 +374,11 @@ warning_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
 if st.sidebar.button(f"{warning_icon} Early Warning System", help="Subscribe to volcano alert notifications"):
     switch_page("early_warning")
 
+# Volcano Animations page link
+animations_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path><path d="M5 3v4"></path><path d="M19 17v4"></path><path d="M3 5h4"></path><path d="M17 19h4"></path></svg>"""
+if st.sidebar.button(f"{animations_icon} Volcano Animations", help="Explore interactive volcano visualizations"):
+    switch_page("volcano_animations")
+
 # Sound Profiles page link
 sound_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14l.001 7a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-7"></path><path d="M8 9v-.956a6 6 0 0 1 2.671-4.972L12 2l1.329 1.072A6 6 0 0 1 16 8.044V9"></path><path d="M18 9h-12a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1a2 2 0 0 0-2-2z"></path></svg>"""
 if st.sidebar.button(f"{sound_icon} Volcano Sound Profiles", help="Explore volcanic acoustic signatures"):
