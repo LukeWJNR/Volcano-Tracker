@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 # SQLAlchemy setup
 Base = declarative_base()
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///volcano_alerts.db")
+DATABASE_URL = os.environ.get("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 
@@ -404,10 +404,13 @@ def get_subscriber_volcanoes(email: str = None, phone: str = None) -> List[Dict]
     
     try:
         # Find the subscriber
-        subscriber = session.query(Subscriber).filter(
-            (Subscriber.email == email) if email else False |
-            (Subscriber.phone == phone) if phone else False
-        ).first()
+        query_conditions = []
+        if email:
+            query_conditions.append(Subscriber.email == email)
+        if phone:
+            query_conditions.append(Subscriber.phone == phone)
+            
+        subscriber = session.query(Subscriber).filter(sa.or_(*query_conditions)).first()
         
         if not subscriber:
             return []
