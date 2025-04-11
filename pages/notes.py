@@ -17,7 +17,54 @@ st.set_page_config(
     page_title="Your Volcano Notes",
     page_icon="📝",
     layout="wide",
+    menu_items={
+        'Get Help': 'https://github.com/openvolcano/data',
+        'About': 'Volcano Monitoring Dashboard providing real-time information about active volcanoes worldwide with InSAR satellite imagery links.'
+    }
 )
+
+# Custom CSS for iframe embedding
+st.markdown("""
+<style>
+    /* Make the app more compact for iframe embedding */
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    /* Adjust header sizes for compact display */
+    h1 {
+        font-size: 1.8rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    h2 {
+        font-size: 1.5rem !important;
+    }
+    
+    h3 {
+        font-size: 1.2rem !important;
+    }
+    
+    /* Make sidebar narrower to maximize map space */
+    [data-testid="stSidebar"] {
+        min-width: 250px !important;
+        max-width: 250px !important;
+    }
+    
+    /* Responsive adjustments for iframe */
+    @media (max-width: 768px) {
+        .block-container {
+            padding: 0.5rem !important;
+        }
+        
+        [data-testid="stSidebar"] {
+            min-width: 200px !important;
+            max-width: 200px !important;
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # Page header
 st.title("📝 Your Volcano Notes")

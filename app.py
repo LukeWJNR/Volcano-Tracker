@@ -27,7 +27,54 @@ st.set_page_config(
     page_title="Volcano Monitoring Dashboard",
     page_icon="🌋",
     layout="wide",
+    menu_items={
+        'Get Help': 'https://github.com/openvolcano/data',
+        'About': 'Volcano Monitoring Dashboard providing real-time information about active volcanoes worldwide with InSAR satellite imagery links.'
+    }
 )
+
+# Custom CSS for iframe embedding
+st.markdown("""
+<style>
+    /* Make the app more compact for iframe embedding */
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    /* Adjust header sizes for compact display */
+    h1 {
+        font-size: 1.8rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    h2 {
+        font-size: 1.5rem !important;
+    }
+    
+    h3 {
+        font-size: 1.2rem !important;
+    }
+    
+    /* Make sidebar narrower to maximize map space */
+    [data-testid="stSidebar"] {
+        min-width: 250px !important;
+        max-width: 250px !important;
+    }
+    
+    /* Responsive adjustments for iframe */
+    @media (max-width: 768px) {
+        .block-container {
+            padding: 0.5rem !important;
+        }
+        
+        [data-testid="stSidebar"] {
+            min-width: 200px !important;
+            max-width: 200px !important;
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # App title and description
 st.title("🌋 Volcano Monitoring Dashboard")
@@ -196,8 +243,8 @@ with col1:
     # Create the map
     m = create_volcano_map(filtered_df)
     
-    # Display the map
-    folium_static(m, width=800, height=500)
+    # Display the map with responsive size for iframe
+    folium_static(m, width="100%", height=450)
 
 with col2:
     st.subheader("Volcano Information")
