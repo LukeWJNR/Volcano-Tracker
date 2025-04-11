@@ -34,16 +34,17 @@ def ensure_valid_color(color: Any) -> str:
     Ensures that a color value is in a valid format for Plotly.
     
     Args:
-        color: Color value as string ('rgb(r,g,b)') or tuple/list of RGB values
+        color: Color value as string ('rgb(r,g,b)' or 'rgba(r,g,b,a)') or tuple/list of RGB/RGBA values
         
     Returns:
-        str: Validated color string in 'rgb(r,g,b)' format
+        str: Validated color string in 'rgb(r,g,b)' or 'rgba(r,g,b,a)' format
     """
+    import re
+    
     # If already a valid RGB string, check and validate the values
     if isinstance(color, str) and color.startswith('rgb(') and color.endswith(')'):
         try:
             # Extract the RGB values
-            import re
             rgb_values = re.findall(r'\d+', color)
             if len(rgb_values) == 3:
                 r, g, b = map(int, rgb_values)
@@ -52,12 +53,41 @@ def ensure_valid_color(color: Any) -> str:
         except Exception:
             pass
     
-    # If a tuple or list of RGB values
-    elif isinstance(color, (tuple, list)) and len(color) == 3:
+    # If already a valid RGBA string, check and validate the values
+    elif isinstance(color, str) and color.startswith('rgba(') and color.endswith(')'):
         try:
-            r, g, b = map(int, color)
-            r, g, b = validate_rgb(r, g, b)
-            return f'rgb({r}, {g}, {b})'
+            # Extract all values from the string
+            values = re.findall(r'[\d\.]+', color)
+            if len(values) == 4:
+                # RGB values should be integers
+                r, g, b = map(int, values[:3])
+                # Alpha should be a float between 0 and 1
+                a = float(values[3])
+                
+                # Validate RGB
+                r, g, b = validate_rgb(r, g, b)
+                # Validate alpha
+                a = max(0.0, min(1.0, a))
+                
+                return f'rgba({r}, {g}, {b}, {a})'
+        except Exception:
+            pass
+    
+    # If a tuple or list of RGB values
+    elif isinstance(color, (tuple, list)):
+        try:
+            if len(color) == 3:
+                # RGB values
+                r, g, b = map(int, color)
+                r, g, b = validate_rgb(r, g, b)
+                return f'rgb({r}, {g}, {b})'
+            elif len(color) == 4:
+                # RGBA values
+                r, g, b = map(int, color[:3])
+                a = float(color[3])
+                r, g, b = validate_rgb(r, g, b)
+                a = max(0.0, min(1.0, a))
+                return f'rgba({r}, {g}, {b}, {a})'
         except Exception:
             pass
     
@@ -653,13 +683,13 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
         lava_flow_type = "aa"  # A'a flows (rough, blocky surface)
     
     # Eruption column colors
-    eruption_color = 'rgba(255, 69, 0, 0.8)'  # Semi-transparent orange-red for eruption column
+    eruption_color = ensure_valid_color('rgba(255, 69, 0, 0.8)')  # Semi-transparent orange-red for eruption column
     
     # Ash colors - darker for more silicic compositions (stratovolcanoes)
     if volcano_type in ['stratovolcano', 'caldera']:
-        ash_color = 'rgba(80, 80, 80, 0.7)'  # Darker gray for silicic ash
+        ash_color = ensure_valid_color('rgba(80, 80, 80, 0.7)')  # Darker gray for silicic ash
     else:
-        ash_color = 'rgba(120, 120, 120, 0.7)'  # Lighter gray for basaltic ash
+        ash_color = ensure_valid_color('rgba(120, 120, 120, 0.7)')  # Lighter gray for basaltic ash
     
     for frame_idx in range(frames):
         # Get data for this frame
@@ -704,7 +734,7 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
             frame_data.append(
                 go.Surface(
                     x=deep_res_X, y=deep_res_Y, z=deep_res_Z,
-                    colorscale=[[0, 'rgb(255, 30, 0)'], [1, 'rgb(255, 30, 0)']],  # Deeper red for deep magma
+                    colorscale=[[0, deep_magma_color], [1, deep_magma_color]],  # Deeper red for deep magma
                     showscale=False,
                     opacity=0.6  # More translucent
                 )
@@ -774,7 +804,7 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
             frame_data.append(
                 go.Surface(
                     x=shallow_X, y=shallow_Y, z=shallow_Z,
-                    colorscale=[[0, 'rgb(255, 100, 0)'], [1, 'rgb(255, 100, 0)']],  # Brighter orange for shallow magma
+                    colorscale=[[0, shallow_magma_color], [1, shallow_magma_color]],  # Brighter orange for shallow magma
                     showscale=False,
                     opacity=0.75
                 )
