@@ -33,11 +33,38 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
     # Create figure with appropriate aspect ratio for cinematic view
     fig = go.Figure()
     
-    # Set up the scene with appropriate dimensions
-    # For most volcanoes, we need more vertical space
-    x_range = [-10, 10]
-    y_range = [-10, 10]
-    z_range = [-8, 20]  # Extra height for ash clouds and eruption columns
+    # Set up the scene with appropriate dimensions based on volcano type
+    # Each volcano type needs different viewing parameters to show their proportions
+    if volcano_type == 'shield':
+        # Shield volcanoes are very wide with gentle slopes
+        x_range = [-20, 20]  # Wide viewing range
+        y_range = [-20, 20]  
+        z_range = [-8, 15]   # Less height needed
+    elif volcano_type == 'stratovolcano':
+        # Stratovolcanoes are tall with narrower base
+        x_range = [-15, 15]
+        y_range = [-15, 15]
+        z_range = [-10, 25]  # Need more height for tall eruption columns
+    elif volcano_type == 'caldera':
+        # Calderas are wide with a depression
+        x_range = [-20, 20]
+        y_range = [-20, 20]
+        z_range = [-8, 25]   # Need height for large eruption columns
+    elif volcano_type == 'cinder_cone':
+        # Cinder cones are small
+        x_range = [-8, 8]
+        y_range = [-8, 8]
+        z_range = [-5, 15]   # Less height overall
+    elif volcano_type == 'lava_dome':
+        # Lava domes are small but can have tall eruption columns
+        x_range = [-8, 8]
+        y_range = [-8, 8]
+        z_range = [-8, 15]
+    else:
+        # Default dimensions
+        x_range = [-15, 15]
+        y_range = [-15, 15]
+        z_range = [-8, 20]  # Extra height for ash clouds and eruption columns
     
     # Generate ground surface based on volcano type
     resolution = 50
@@ -48,50 +75,73 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
     # Calculate distance from center
     R = np.sqrt(X**2 + Y**2)
     
-    # Base surface shape depends on volcano type
+    # Base surface shape depends on volcano type with more realistic proportions
     if volcano_type == 'shield':
-        # Shield volcanoes have gently sloping sides
-        Z_surface = 5 * np.exp(-0.05 * R**2)
+        # Shield volcanoes: Very wide base with gently sloping sides (like Hawaiian volcanoes)
+        # Typically 1:20 height to width ratio
+        base_width = 20.0  # Wide base
+        height = 3.0       # Moderate height
+        Z_surface = height * np.exp(-0.02 * (R**2 / base_width))
     elif volcano_type == 'stratovolcano':
-        # Stratovolcanoes are steeper
-        Z_surface = 10 * np.exp(-0.15 * R**2)
+        # Stratovolcanoes: Steep conical shape with height to width ratio of 1:3 (like Mt. Fuji)
+        base_width = 8.0   # Medium-wide base
+        height = 7.0       # Tall
+        # More realistic steep sides with slightly concave shape
+        Z_surface = height * np.exp(-0.2 * (R**2 / base_width))
     elif volcano_type == 'caldera':
-        # Calderas have a depression
-        Z_surface = 4 * np.exp(-0.05 * R**2) - 2 * np.exp(-0.5 * R**2)
+        # Calderas: Wide with a depression in the middle (like Yellowstone)
+        base_width = 15.0  # Wide base
+        rim_height = 2.5   # Moderate rim height
+        depression_width = 6.0  # Size of the central depression
+        # Rim with central depression
+        Z_surface = rim_height * np.exp(-0.05 * (R**2 / base_width)) - 2.0 * np.exp(-1.0 * (R**2 / depression_width))
     elif volcano_type == 'cinder_cone':
-        # Cinder cones are steep and smaller
-        Z_surface = 6 * np.exp(-0.3 * R**2) - 2 * np.exp(-2.0 * R**2)
+        # Cinder cones: Small, steep sides, height to width ratio around 1:4 (like Paricutin)
+        base_width = 4.0   # Narrow base
+        height = 3.0       # Small height
+        # Steep sides with very small summit crater
+        Z_surface = height * np.exp(-0.5 * (R**2 / base_width)) - 0.5 * np.exp(-10.0 * R**2)
     elif volcano_type == 'lava_dome':
-        # Lava domes are bulbous
-        Z_surface = 4 * np.exp(-0.25 * R**2)
+        # Lava domes: Small, bulbous, steep-sided (like Mount St. Helens dome)
+        base_width = 3.0   # Very narrow base
+        height = 2.5       # Small height
+        # Bulbous shape with steep sides
+        Z_surface = height * (np.exp(-0.8 * (R**2 / base_width)) + 0.3 * np.exp(-4.0 * R**2))
     else:
-        # Default
-        Z_surface = 8 * np.exp(-0.1 * R**2)
+        # Default - generic volcano shape
+        Z_surface = 5 * np.exp(-0.1 * R**2)
     
-    # Generate magma chamber (make it more prominent)
+    # Generate magma chamber with realistic dimensions
     if volcano_type == 'stratovolcano':
-        chamber_depth = -5  # Deeper for stratovolcanoes
-        chamber_width = 5   # Wider chamber
-        chamber_height = 2  # Taller chamber
+        # Stratovolcano magma chambers are typically deep (5-10km) and ellipsoidal
+        # Scale down for visualization purposes
+        chamber_depth = -8  # Deep magma chamber
+        chamber_width = 7   # Wide chamber but not as wide as shield volcanoes
+        chamber_height = 3  # Tall chamber for rising magma bodies
     elif volcano_type == 'shield':
-        chamber_depth = -3  # Shallower for shield volcanoes
-        chamber_width = 6   # Very wide chamber for shield volcanoes
-        chamber_height = 1.5  # Flatter chamber
+        # Shield volcano magma chambers are typically shallow, wide, and sill-like
+        chamber_depth = -4  # Shallow magma chamber for shield volcanoes
+        chamber_width = 15  # Very wide, horizontally extensive chamber
+        chamber_height = 2  # Relatively flat chamber (high width to height ratio)
     elif volcano_type == 'caldera':
-        chamber_depth = -3.5  # Medium depth for calderas
-        chamber_width = 7   # Very wide chamber for calderas
-        chamber_height = 2.5  # Taller chamber for large magma reservoir
+        # Caldera systems have large, shallow magma chambers
+        chamber_depth = -5  # Moderate depth for calderas
+        chamber_width = 14  # Very wide chamber system
+        chamber_height = 4  # Substantial vertical extent
     elif volcano_type == 'cinder_cone':
-        chamber_depth = -2.5  # Shallow for cinder cones
-        chamber_width = 3   # Smaller chamber for cinder cones
-        chamber_height = 1.2  # Small chamber
+        # Cinder cones typically have small, shallow magma chambers
+        chamber_depth = -3  # Very shallow for cinder cones
+        chamber_width = 2   # Small chamber for cinder cones
+        chamber_height = 1  # Small vertical extent
     elif volcano_type == 'lava_dome':
-        chamber_depth = -4  # Medium-deep for lava domes
+        # Lava dome complexes often have smaller, moderately deep chambers
+        chamber_depth = -6  # Moderately deep for lava domes
         chamber_width = 4   # Medium width chamber
         chamber_height = 2  # Medium height
     else:
-        chamber_depth = -4  # Default
-        chamber_width = 5   # Default
+        # Default values
+        chamber_depth = -5  # Default
+        chamber_width = 6   # Default
         chamber_height = 2  # Default
     
     # Create a detailed magma chamber with more points for better visibility
@@ -618,6 +668,27 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
         )
     
     # Update layout
+    # Calculate appropriate aspect ratios based on volcano type
+    if volcano_type == 'shield':
+        # Shield volcanoes are very wide with gentle slopes
+        # Need to exaggerate vertical scale slightly for better visualization
+        aspect_ratio = dict(x=1, y=1, z=0.8)
+    elif volcano_type == 'stratovolcano':
+        # Stratovolcanoes are tall with steeper sides
+        aspect_ratio = dict(x=1, y=1, z=1.5)
+    elif volcano_type == 'caldera':
+        # Calderas are wide with a depression
+        aspect_ratio = dict(x=1, y=1, z=1.0)
+    elif volcano_type == 'cinder_cone':
+        # Cinder cones are steep but small
+        aspect_ratio = dict(x=1, y=1, z=1.2)
+    elif volcano_type == 'lava_dome':
+        # Lava domes are small but tall
+        aspect_ratio = dict(x=1, y=1, z=1.4)
+    else:
+        # Default aspect ratio
+        aspect_ratio = dict(x=1, y=1, z=1.2)
+    
     fig.update_layout(
         title=f"{volcano_name} ({volcano_type.replace('_', ' ').title()}) Eruption Animation",
         autosize=True,
@@ -627,7 +698,7 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
             xaxis=dict(range=x_range, autorange=False),
             yaxis=dict(range=y_range, autorange=False),
             zaxis=dict(range=z_range, autorange=False),
-            aspectratio=dict(x=1, y=1, z=1.2),
+            aspectratio=aspect_ratio,
             camera=camera
         ),
         updatemenus=[{
