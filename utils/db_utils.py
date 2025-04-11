@@ -1248,7 +1248,7 @@ def get_user_sound_preferences():
     Get all user's saved sound preferences
     
     Returns:
-        list: List of sound preferences
+        list: List of sound preferences, or empty list on error
     """
     session = SessionFactory()
     try:
@@ -1267,7 +1267,9 @@ def get_user_sound_preferences():
         
         return result
     except Exception as e:
-        raise e
+        # Log error but don't crash
+        print(f"Database error in get_user_sound_preferences: {str(e)}")
+        return []
     finally:
         session.close()
 
@@ -1281,6 +1283,9 @@ def is_sound_preference(volcano_id):
     Returns:
         bool: True if volcano is in sound preferences, False otherwise
     """
+    if not volcano_id:
+        return False
+        
     session = SessionFactory()
     try:
         preference = session.query(VolcanoSoundPreference).filter_by(
@@ -1289,6 +1294,8 @@ def is_sound_preference(volcano_id):
         
         return preference is not None
     except Exception as e:
-        raise e
+        # Log the error but don't crash the app
+        print(f"Database error in is_sound_preference: {str(e)}")
+        return False
     finally:
         session.close()
