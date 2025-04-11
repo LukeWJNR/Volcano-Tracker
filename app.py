@@ -612,18 +612,26 @@ with col2:
         # Satellite Imagery Section
         st.markdown("### Satellite Imagery")
         
-        # Generate Smithsonian WMS URL
+        # Generate Smithsonian WMS URL with high zoom for detailed view
         smithsonian_wms_url = generate_smithsonian_wms_url(
             latitude=volcano['latitude'], 
             longitude=volcano['longitude'],
             width=800,
             height=600,
-            zoom_level=10
+            zoom_level=12  # Higher zoom for individual volcano (increased from 10 to 12)
         )
         
         # Display the Smithsonian Volcanoes of the World WMS link
         st.markdown("#### Holocene Eruptions Map")
-        st.markdown(f"[View Smithsonian Holocene Eruptions Map]({smithsonian_wms_url})")
+        
+        # Show the Smithsonian WMS map in an iframe for direct viewing
+        st.markdown(f"""
+        <div style="border:1px solid #ddd; padding:5px; border-radius:5px; margin-bottom:10px;">
+            <iframe src="{smithsonian_wms_url}" width="100%" height="400" frameborder="0"></iframe>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown(f"[Open in New Tab]({smithsonian_wms_url})")
         st.markdown("*Data source: Smithsonian Global Volcanism Program*")
         
         # Add button to save the Smithsonian WMS link to the database
