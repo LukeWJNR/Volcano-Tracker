@@ -243,13 +243,31 @@ with col1:
     # Create the map
     m = create_volcano_map(filtered_df)
     
-    # Add custom styling for the map to make it auto-scale
+    # Add custom styling and meta tags for proper iframe embedding
     st.markdown("""
+    <head>
+        <!-- Make sure content can be embedded in iframes -->
+        <meta http-equiv="X-Frame-Options" content="ALLOWALL">
+        <meta http-equiv="Access-Control-Allow-Origin" content="*">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
     <style>
         /* Make the map container responsive */
         iframe {
             width: 100%;
             min-height: 450px;
+        }
+        
+        /* Additional iframe embedding optimization */
+        body {
+            overflow: auto;
+        }
+        
+        /* Make sure the content fits within iframe bounds */
+        .block-container {
+            max-width: 100% !important;
+            padding-left: 5px !important;
+            padding-right: 5px !important;
         }
     </style>
     """, unsafe_allow_html=True)
