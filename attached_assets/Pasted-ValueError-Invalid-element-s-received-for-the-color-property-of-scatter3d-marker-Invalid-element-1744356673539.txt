@@ -1,0 +1,43 @@
+ValueError: Invalid element(s) received for the 'color' property of scatter3d.marker Invalid elements include: ['rgb(-883, -80, 0)', 'rgb(-238, -21, 0)', 'rgb(-88, -8, 0)', 'rgb(-760, -69, 0)', 'rgb(-887, -80, 0)', 'rgb(-162, -14, 0)', 'rgb(-443, -40, 0)', 'rgb(-315, -28, 0)', 'rgb(-337, -30, 0)', 'rgb(-391, -35, 0)'] The 'color' property is a color and may be specified as: - A hex string (e.g. '#ff0000') - An rgb/rgba string (e.g. 'rgb(255,0,0)') - An hsl/hsla string (e.g. 'hsl(0,100%,50%)') - An hsv/hsva string (e.g. 'hsv(0,100%,100%)') - A named CSS color: aliceblue, antiquewhite, aqua, aquamarine, azure, beige, bisque, black, blanchedalmond, blue, blueviolet, brown, burlywood, cadetblue, chartreuse, chocolate, coral, cornflowerblue, cornsilk, crimson, cyan, darkblue, darkcyan, darkgoldenrod, darkgray, darkgrey, darkgreen, darkkhaki, darkmagenta, darkolivegreen, darkorange, darkorchid, darkred, darksalmon, darkseagreen, darkslateblue, darkslategray, darkslategrey, darkturquoise, darkviolet, deeppink, deepskyblue, dimgray, dimgrey, dodgerblue, firebrick, floralwhite, forestgreen, fuchsia, gainsboro, ghostwhite, gold, goldenrod, gray, grey, green, greenyellow, honeydew, hotpink, indianred, indigo, ivory, khaki, lavender, lavenderblush, lawngreen, lemonchiffon, lightblue, lightcoral, lightcyan, lightgoldenrodyellow, lightgray, lightgrey, lightgreen, lightpink, lightsalmon, lightseagreen, lightskyblue, lightslategray, lightslategrey, lightsteelblue, lightyellow, lime, limegreen, linen, magenta, maroon, mediumaquamarine, mediumblue, mediumorchid, mediumpurple, mediumseagreen, mediumslateblue, mediumspringgreen, mediumturquoise, mediumvioletred, midnightblue, mintcream, mistyrose, moccasin, navajowhite, navy, oldlace, olive, olivedrab, orange, orangered, orchid, palegoldenrod, palegreen, paleturquoise, palevioletred, papayawhip, peachpuff, peru, pink, plum, powderblue, purple, red, rosybrown, royalblue, rebeccapurple, saddlebrown, salmon, sandybrown, seagreen, seashell, sienna, silver, skyblue, slateblue, slategray, slategrey, snow, springgreen, steelblue, tan, teal, thistle, tomato, turquoise, violet, wheat, white, whitesmoke, yellow, yellowgreen - A number that will be interpreted as a color according to scatter3d.marker.colorscale - A list or array of any of the above
+Traceback:
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 121, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 639, in code_to_exec
+    _mpa_v1(self._main_script_path)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 159, in _mpa_v1
+    page.run()
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/navigation/page.py", line 297, in run
+    exec(code, module.__dict__)
+File "/home/runner/workspace/pages/cinematic_eruption.py", line 387, in <module>
+    app()
+File "/home/runner/workspace/pages/cinematic_eruption.py", line 169, in app
+    eruption_animation = generate_cinematic_eruption(
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/utils/cinematic_animation.py", line 1280, in generate_cinematic_eruption
+    go.Scatter3d(
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/plotly/graph_objs/_scatter3d.py", line 2697, in __init__
+    self["marker"] = _v
+    ~~~~^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/plotly/basedatatypes.py", line 4852, in __setitem__
+    self._set_compound_prop(prop, value)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/plotly/basedatatypes.py", line 5263, in _set_compound_prop
+    val = validator.validate_coerce(val, skip_invalid=self._skip_invalid)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/_plotly_utils/basevalidators.py", line 2504, in validate_coerce
+    v = self.data_class(v, skip_invalid=skip_invalid, _validate=_validate)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/plotly/graph_objs/scatter3d/_marker.py", line 1255, in __init__
+    self["color"] = _v
+    ~~~~^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/plotly/basedatatypes.py", line 4860, in __setitem__
+    self._set_prop(prop, value)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/plotly/basedatatypes.py", line 5204, in _set_prop
+    raise err
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/plotly/basedatatypes.py", line 5199, in _set_prop
+    val = validator.validate_coerce(val)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/_plotly_utils/basevalidators.py", line 1399, in validate_coerce
+    self.raise_invalid_elements(invalid_els)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/_plotly_utils/basevalidators.py", line 315, in raise_invalid_elements
+    raise ValueError(
