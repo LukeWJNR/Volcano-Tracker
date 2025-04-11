@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import folium
-from streamlit_folium import folium_static
+from streamlit_folium import st_folium
 from datetime import datetime
 import time
 import os
@@ -346,7 +346,7 @@ with col1:
     """, unsafe_allow_html=True)
     
     # Display the map with full container width
-    folium_static(m)
+    st_folium(m, width=800, height=450)
 
 with col2:
     st.subheader("Volcano Information")
