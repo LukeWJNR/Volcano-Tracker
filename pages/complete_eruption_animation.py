@@ -145,7 +145,65 @@ def app():
                 }]
             )
             
+            # Display the timeline animation
             st.plotly_chart(eruption_animation['figure'], use_container_width=True)
+        
+        # Add the 3D Visualization section with detailed plumbing structure
+        st.subheader("3D Magma Plumbing System Visualization")
+        st.markdown("""
+        Below is a detailed 3D visualization of the volcanic plumbing system showing:
+        - Deep magma reservoirs
+        - Interconnected magma chambers
+        - Conduit networks
+        - Dike and sill structures
+        - Lava flow pathways
+        - Ash emission patterns
+        
+        Different alert levels show how the volcanic system changes during eruption phases.
+        """)
+        
+        # Create tabs for different alert levels/eruption phases
+        alert_tabs = st.tabs(["Normal", "Advisory", "Watch", "Warning"])
+        
+        # Display the 3D visualization for each alert level
+        for i, alert in enumerate(["Normal", "Advisory", "Watch", "Warning"]):
+            with alert_tabs[i]:
+                if alert in eruption_animation['magma_chamber_visualizations']:
+                    magma_data = eruption_animation['magma_chamber_visualizations'][alert]
+                    
+                    # Create columns for visualization and metrics
+                    viz_col, metrics_col = st.columns([3, 1])
+                    
+                    with viz_col:
+                        st.plotly_chart(magma_data['figure'], use_container_width=True)
+                    
+                    with metrics_col:
+                        st.markdown(f"### {alert} Phase Metrics")
+                        metrics = magma_data['metrics']
+                        
+                        # Display metrics in a formatted way
+                        st.markdown(f"**Chamber Depth:** {metrics.get('chamber_depth', 'N/A')} km")
+                        st.markdown(f"**Chamber Width:** {metrics.get('chamber_width', 'N/A')} km")
+                        st.markdown(f"**Magma Volume:** {metrics.get('magma_volume', 'N/A'):.1f} km³")
+                        st.markdown(f"**Accumulation Rate:** {metrics.get('accumulation_rate', 'N/A'):.2f} km³/month")
+                        
+                        # Display lava flow information if in eruption phase
+                        if alert in ["Watch", "Warning"]:
+                            st.markdown("### Lava Flow Properties")
+                            st.markdown(f"**Type:** {eruption_animation['lava_flow']['type'].replace('_', ' ').title()}")
+                            
+                            # Additional eruption info based on alert level
+                            if alert == "Warning":
+                                st.markdown("**Eruption Status:** Active with significant output")
+                                st.markdown(f"**Est. VEI Range:** {metrics.get('est_vei_range', 'N/A')}")
+                            else:
+                                st.markdown("**Eruption Status:** Beginning phase")
+                                
+                        # Display the probability of eruption
+                        if 'eruption_probability' in metrics:
+                            st.markdown(f"**Eruption Probability:** {metrics['eruption_probability']}")
+                else:
+                    st.warning(f"No visualization available for {alert} alert level")
     
     # Scientific explanation section
     with st.expander("Scientific Explanation", expanded=False):

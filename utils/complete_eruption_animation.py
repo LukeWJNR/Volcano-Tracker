@@ -10,18 +10,21 @@ import pandas as pd
 from typing import Dict, List, Tuple, Any, Optional
 
 from utils.animation_utils import determine_volcano_type, VOLCANO_TYPES, ALERT_LEVELS
+from utils.magma_chamber_viz import generate_3d_magma_chamber
 
 def generate_complete_eruption_animation(volcano_data: Dict, time_steps: int = 100) -> Dict:
     """
     Generate a comprehensive eruption animation showing the full cycle from 
     magma buildup through seismic events to lava flow and ash emission.
+    Includes detailed 3D visualization of magma plumbing structure with
+    connected deep and shallow reservoirs and realistic lava flows and ash emissions.
     
     Args:
         volcano_data (Dict): Volcano data dictionary
         time_steps (int): Number of time steps in the animation
         
     Returns:
-        Dict: Dictionary with animation figure and metadata
+        Dict: Dictionary with animation figures (timeline and 3D visualization) and metadata
     """
     # Determine volcano type and alert level
     volcano_type = determine_volcano_type(volcano_data)
@@ -359,6 +362,34 @@ def generate_complete_eruption_animation(volcano_data: Dict, time_steps: int = 1
     # Add frames to figure
     fig.frames = frames
     
+    # Generate 3D magma chamber visualization based on the volcano type
+    # Create different alert level visualizations based on eruption phase
+    alert_levels = ['Normal', 'Advisory', 'Watch', 'Warning']
+    magma_chamber_figs = {}
+    
+    # Generate 3D visualization for each alert level
+    for alert in alert_levels:
+        magma_fig, chamber_metrics = generate_3d_magma_chamber(volcano_type, alert)
+        magma_chamber_figs[alert] = {
+            'figure': magma_fig,
+            'metrics': chamber_metrics
+        }
+    
+    # Create lava flow patterns based on volcano type
+    lava_flows = {}
+    if volcano_type == 'shield':
+        lava_color = 'rgb(255, 80, 0)'  # Bright orange for hot basaltic lava
+        lava_flow_type = "pahoehoe_to_aa"  # Pahoehoe (smooth) to A'a (rough) transition
+    elif volcano_type in ['stratovolcano', 'caldera']:
+        lava_color = 'rgb(220, 20, 0)'  # Darker red for cooler, more viscous lava
+        lava_flow_type = "blocky"  # Blocky or A'a flows
+    elif volcano_type == 'lava_dome':
+        lava_color = 'rgb(180, 10, 0)'  # Darker red for cooler, highly viscous lava
+        lava_flow_type = "viscous_dome"  # Slow-moving, thick flows forming a dome
+    else:  # cinder_cone or other
+        lava_color = 'rgb(230, 25, 0)'  # Intermediate red color
+        lava_flow_type = "aa"  # A'a flows (rough, blocky surface)
+    
     # Prepare output dictionary
     animation_data = {
         'figure': fig,
@@ -366,7 +397,12 @@ def generate_complete_eruption_animation(volcano_data: Dict, time_steps: int = 1
         'phases': phases,
         'parameters': parameters,
         'data': data,
-        'volcano_name': volcano_data.get('name', 'Unknown')
+        'volcano_name': volcano_data.get('name', 'Unknown'),
+        'magma_chamber_visualizations': magma_chamber_figs,
+        'lava_flow': {
+            'color': lava_color,
+            'type': lava_flow_type
+        }
     }
     
     return animation_data
