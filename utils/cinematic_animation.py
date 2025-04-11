@@ -115,6 +115,7 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
     # Based on research from "Volcanic and igneous plumbing systems"
     
     # Initialize default values for all parameters to avoid any unbound variables
+    # Magma chamber parameters
     chamber_depth = -5  
     chamber_width = 6   
     chamber_height = 2  
@@ -127,6 +128,13 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
     shallow_chamber_width = 4
     shallow_chamber_height = 1
     conduit_complexity = "simple"
+    
+    # Default volcano parameters for all volcano types
+    # These will be used if not specifically set for a volcano type above
+    height = 5.0
+    base_width = 10.0
+    rim_height = 3.0
+    depression_width = 5.0
     
     # Then set specific values based on volcano type
     if volcano_type == 'stratovolcano':
@@ -565,12 +573,44 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
     # Create the animation frames
     animation_frames = []
     
-    # Colors for different elements
+    # Colors for different elements - based on scientific references
     ground_color = 'rgb(120, 108, 89)'  # Brown for ground
-    magma_color = 'rgb(255, 69, 0)'     # Orange-red for magma
-    lava_color = 'rgb(255, 0, 0)'       # Red for fresh lava
+    
+    # Magma colors vary with depth and composition
+    deep_magma_color = 'rgb(200, 0, 0)'     # Deeper red for deep magma
+    magma_color = 'rgb(255, 69, 0)'     # Orange-red for main chamber magma
+    shallow_magma_color = 'rgb(255, 100, 0)'  # Brighter orange for shallow magma
+    
+    # Lava colors vary by temperature and composition (Basaltic vs. Rhyolitic)
+    # From Wikipedia: Lava temperatures can range from 800 °C (1,470 °F) to 1,200 °C (2,190 °F)
+    if volcano_type == 'shield':
+        # Shield volcanoes like Hawaii typically have basaltic lava (higher temperature)
+        # Basaltic lavas are more fluid with temperatures of 1,100 to 1,200 °C
+        lava_color = 'rgb(255, 30, 0)'  # Brighter red-orange for hot basaltic lava
+        lava_flow_type = "pahoehoe_to_aa"  # Pahoehoe (smooth) to A'a (rough) transition
+    elif volcano_type in ['stratovolcano', 'caldera']:
+        # Stratovolcanoes often have more viscous andesitic to dacitic lava
+        # With temperatures of 800 to 1,000 °C
+        lava_color = 'rgb(220, 20, 0)'  # Darker red for cooler, more viscous lava
+        lava_flow_type = "blocky"  # Blocky or A'a flows
+    elif volcano_type == 'lava_dome':
+        # Lava domes have extremely viscous rhyolitic or dacitic lava
+        # With lower temperatures around 800 °C
+        lava_color = 'rgb(180, 10, 0)'  # Darker red for cooler, highly viscous lava
+        lava_flow_type = "viscous_dome"  # Slow-moving, thick flows forming a dome
+    else:  # cinder_cone or other
+        # Cinder cones often have basaltic to andesitic lava
+        lava_color = 'rgb(230, 25, 0)'  # Intermediate red color
+        lava_flow_type = "aa"  # A'a flows (rough, blocky surface)
+    
+    # Eruption column colors
     eruption_color = 'rgba(255, 69, 0, 0.8)'  # Semi-transparent orange-red for eruption column
-    ash_color = 'rgba(105, 105, 105, 0.7)'  # Semi-transparent gray for ash
+    
+    # Ash colors - darker for more silicic compositions (stratovolcanoes)
+    if volcano_type in ['stratovolcano', 'caldera']:
+        ash_color = 'rgba(80, 80, 80, 0.7)'  # Darker gray for silicic ash
+    else:
+        ash_color = 'rgba(120, 120, 120, 0.7)'  # Lighter gray for basaltic ash
     
     for frame_idx in range(frames):
         # Get data for this frame
@@ -883,77 +923,358 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
         
         # 5. Lava flows if present
         if lava_flow > 0:
-            # Generate lava flow points radiating from summit
+            # Generate lava flow points based on volcano type and lava flow type
             flow_points = []
             
-            # Number of flow directions depends on volcano type
+            # Number of flow directions and characteristics depend on volcano type and lava type
             if volcano_type == 'shield':
-                flow_directions = 8  # More flows for shield
+                # Shield volcanoes (e.g., Hawaii) have extensive, fluid basaltic flows
+                # Often beginning as pahoehoe (smooth, ropy) and transitioning to a'a (rough, blocky)
+                flow_directions = 8  # Many flow directions due to low viscosity
+                max_flow_width = 0.8  # Wider flows
+                flow_sinuosity = 0.1  # Fairly straight flows
+                
+                # Increase max distance for shield volcanoes which have longer flows
+                flow_length = lava_flow * 1.5  
+                
             elif volcano_type == 'caldera':
-                flow_directions = 6  # Multiple flows for caldera
+                # Caldera eruptions can produce both explosive products and effusive lava flows
+                flow_directions = 6  # Multiple flows from ring fissures or rim
+                max_flow_width = 0.6  # Moderate width flows
+                flow_sinuosity = 0.15  # Moderate sinuosity
+                flow_length = lava_flow * 1.2
+                
             elif volcano_type == 'stratovolcano':
+                # Stratovolcanoes (e.g., Mt. Fuji) have steeper sides and more viscous andesitic lava
+                # Producing shorter, thicker flows that often follow channels/valleys
                 flow_directions = 4  # Fewer, channelized flows
-            else:
-                flow_directions = 2  # Minimal flows for dome or cinder cone
+                max_flow_width = 0.5  # Narrower flows, confined to channels
+                flow_sinuosity = 0.25  # More sinuous due to topography
+                flow_length = lava_flow
+                
+            elif volcano_type == 'lava_dome':
+                # Lava domes (e.g., Mount St. Helens dome) have extremely viscous lava
+                # Often barely flowing, instead piling up at the vent
+                flow_directions = 2  # Very limited flow directions
+                max_flow_width = 0.9  # Very thick, bulbous flows
+                flow_sinuosity = 0.05  # Minimal sinuosity due to high viscosity
+                flow_length = lava_flow * 0.6  # Much shorter flows
+                
+            else:  # cinder_cone or other
+                # Cinder cones often have a'a flows of moderate viscosity
+                flow_directions = 3  # Limited flow directions
+                max_flow_width = 0.4  # Moderate width
+                flow_sinuosity = 0.2  # Moderate sinuosity
+                flow_length = lava_flow * 0.8  # Moderately short flows
             
             # Create flows in different directions
             for direction in range(flow_directions):
                 angle = direction * (2 * np.pi / flow_directions)
                 
-                # Flow length depends on lava_flow parameter
-                flow_length = lava_flow
+                # Apply an artificial "preferred" direction based on topography
+                # In nature, flows follow the path of least resistance downslope
+                if direction == 0:
+                    # Make one direction the "preferred" flow path (longer/wider)
+                    path_preference = 1.3
+                elif direction == 1:
+                    path_preference = 1.2
+                else:
+                    path_preference = np.random.uniform(0.7, 1.0)
                 
-                # Points along flow path
-                n_points = 15
-                for i in range(n_points):
-                    # Distance from center
-                    dist = flow_length * ((i+1) / n_points)
+                # Adjust flow length by preference factor
+                adjusted_flow_length = flow_length * path_preference
+                
+                # Different flow pattern based on lava_flow_type
+                if lava_flow_type == "pahoehoe_to_aa":
+                    # Pahoehoe transitions to a'a with distance from vent
+                    # Characteristics: Smooth near vent, rougher with distance
+                    n_points = 20  # More points for detailed flows
                     
-                    # Add some randomness to flow path
-                    angle_jitter = angle + np.random.uniform(-0.2, 0.2)
-                    dist_jitter = dist * np.random.uniform(0.8, 1.2)
+                    # Create the flow path with some meandering
+                    # Pahoehoe flows often have smooth, curved edges
+                    path_x = [0]  # Start at origin
+                    path_y = [0]
                     
-                    # Calculate position
-                    x = dist_jitter * np.cos(angle_jitter)
-                    y = dist_jitter * np.sin(angle_jitter)
-                    
-                    # Calculate z based on ground elevation at this point
-                    # Simplified - just follow slope downward
-                    r = np.sqrt(x**2 + y**2)
-                    
-                    # Find approximate surface height at this position
-                    # For simplicity, we use the radial function
-                    if volcano_type == 'shield':
-                        z = 5 * np.exp(-0.05 * r**2)
-                    elif volcano_type == 'stratovolcano':
-                        z = 10 * np.exp(-0.15 * r**2)
-                    elif volcano_type == 'caldera':
-                        z = 4 * np.exp(-0.05 * r**2) - 2 * np.exp(-0.5 * r**2)
-                    elif volcano_type == 'cinder_cone':
-                        z = 6 * np.exp(-0.3 * r**2) - 2 * np.exp(-2.0 * r**2)
-                    elif volcano_type == 'lava_dome':
-                        z = 4 * np.exp(-0.25 * r**2)
-                    else:
-                        z = 8 * np.exp(-0.1 * r**2)
-                    
-                    # Add small offset for visibility
-                    z += 0.1
-                    
-                    # Multiple points across flow width
-                    width_points = 3
-                    for w in range(width_points):
-                        # Perpendicular to flow direction
-                        width_offset = 0.3 * (w - (width_points-1)/2)
-                        perp_x = width_offset * np.cos(angle_jitter + np.pi/2)
-                        perp_y = width_offset * np.sin(angle_jitter + np.pi/2)
+                    # Generate a meandering path
+                    for i in range(1, n_points):
+                        relative_dist = i / n_points
+                        # More meandering in middle distances
+                        meander = flow_sinuosity * np.sin(relative_dist * np.pi * 3) 
                         
-                        flow_points.append((x + perp_x, y + perp_y, z))
+                        # Calculate next point with some meandering
+                        next_angle = angle + np.random.uniform(-0.1, 0.1) + meander
+                        step_length = adjusted_flow_length / n_points
+                        
+                        # Add to path
+                        path_x.append(path_x[-1] + step_length * np.cos(next_angle))
+                        path_y.append(path_y[-1] + step_length * np.sin(next_angle))
+                    
+                    # Now create points along this path
+                    for i in range(n_points):
+                        # Calculate position along path
+                        x = path_x[i]
+                        y = path_y[i]
+                        
+                        # Calculate distance from origin for later use
+                        r = np.sqrt(x**2 + y**2)
+                        relative_dist = r / adjusted_flow_length
+                        
+                        # Pahoehoe is smoother and more uniform near vent,
+                        # becoming rougher (a'a) with distance
+                        # This affects the width variability and point distribution
+                        if relative_dist < 0.3:  # Near vent - smooth pahoehoe
+                            width_variability = 0.1
+                            point_randomness = 0.1
+                            width_scaling = max_flow_width * (0.8 + 0.4 * relative_dist)
+                        elif relative_dist < 0.7:  # Transition zone
+                            width_variability = 0.2 + 0.3 * (relative_dist - 0.3) / 0.4
+                            point_randomness = 0.2 + 0.4 * (relative_dist - 0.3) / 0.4
+                            width_scaling = max_flow_width * (0.9 + 0.2 * relative_dist)
+                        else:  # Distal - a'a flow
+                            width_variability = 0.5
+                            point_randomness = 0.6
+                            width_scaling = max_flow_width * (0.7 - 0.4 * (relative_dist - 0.7) / 0.3)
+                        
+                        # Find appropriate z-height based on volcano surface
+                        if volcano_type == 'shield':
+                            z = height * np.exp(-0.02 * (r**2 / base_width))
+                        elif volcano_type == 'stratovolcano':
+                            z = height * np.exp(-0.2 * (r**2 / base_width))
+                        elif volcano_type == 'caldera':
+                            z = rim_height * np.exp(-0.05 * (r**2 / base_width)) - 2.0 * np.exp(-1.0 * (r**2 / depression_width))
+                        elif volcano_type == 'cinder_cone':
+                            z = height * np.exp(-0.5 * (r**2 / base_width)) - 0.5 * np.exp(-10.0 * r**2)
+                        elif volcano_type == 'lava_dome':
+                            z = height * (np.exp(-0.8 * (r**2 / base_width)) + 0.3 * np.exp(-4.0 * r**2))
+                        else:
+                            z = 5 * np.exp(-0.1 * r**2)
+                        
+                        # Add small height offset for visibility
+                        z += 0.1 + 0.2 * (1 - relative_dist)  # Thicker near vent
+                        
+                        # Multiple points across flow width to show flow morphology
+                        width_points = 5 if relative_dist < 0.7 else 7  # More points for a'a (rougher texture)
+                        
+                        # Calculate flow direction for width
+                        flow_angle = np.arctan2(path_y[i] - path_y[i-1] if i > 0 else path_y[i+1] - path_y[i], 
+                                                path_x[i] - path_x[i-1] if i > 0 else path_x[i+1] - path_x[i])
+                        perp_angle = flow_angle + np.pi/2
+                        
+                        for w in range(width_points):
+                            # Calculate perpendicular offset with variability
+                            width_factor = (w - (width_points-1)/2) / ((width_points-1)/2)
+                            width_offset = width_scaling * width_factor * (1 + np.random.uniform(-width_variability, width_variability))
+                            
+                            # Apply width offset
+                            x_offset = x + width_offset * np.cos(perp_angle)
+                            y_offset = y + width_offset * np.sin(perp_angle)
+                            
+                            # Add some random height variation (greater for a'a)
+                            z_offset = z + np.random.uniform(-0.1, 0.1) * point_randomness
+                            
+                            # Add point
+                            flow_points.append((x_offset, y_offset, z_offset))
+                
+                elif lava_flow_type == "blocky" or lava_flow_type == "aa":
+                    # A'a or blocky flows have rough, jagged surfaces
+                    # Characteristics: Thicker, rough, and more channelized
+                    n_points = 15
+                    
+                    # Path characteristics: More jagged and channelized
+                    path_x = [0]
+                    path_y = [0]
+                    
+                    # Generate a more structured, channelized path
+                    channel_direction = angle + np.random.uniform(-0.15, 0.15)  # Initial direction
+                    
+                    for i in range(1, n_points):
+                        relative_dist = i / n_points
+                        
+                        # More abrupt direction changes for blocky flows
+                        if np.random.random() < 0.2:  # Occasional more significant direction change
+                            channel_direction += np.random.uniform(-0.3, 0.3)
+                        else:
+                            channel_direction += np.random.uniform(-0.1, 0.1)
+                        
+                        step_length = adjusted_flow_length / n_points
+                        
+                        # Add to path
+                        path_x.append(path_x[-1] + step_length * np.cos(channel_direction))
+                        path_y.append(path_y[-1] + step_length * np.sin(channel_direction))
+                    
+                    # Create points along path
+                    for i in range(n_points):
+                        x = path_x[i]
+                        y = path_y[i]
+                        r = np.sqrt(x**2 + y**2)
+                        relative_dist = r / adjusted_flow_length
+                        
+                        # Blocky/a'a flows maintain relatively consistent width but have variable height
+                        width_scaling = max_flow_width * (1.0 - 0.3 * relative_dist)  # Slightly narrower with distance
+                        
+                        # Find appropriate z-height based on volcano surface
+                        if volcano_type == 'shield':
+                            z = height * np.exp(-0.02 * (r**2 / base_width))
+                        elif volcano_type == 'stratovolcano':
+                            z = height * np.exp(-0.2 * (r**2 / base_width))
+                        elif volcano_type == 'caldera':
+                            z = rim_height * np.exp(-0.05 * (r**2 / base_width)) - 2.0 * np.exp(-1.0 * (r**2 / depression_width))
+                        elif volcano_type == 'cinder_cone':
+                            z = height * np.exp(-0.5 * (r**2 / base_width)) - 0.5 * np.exp(-10.0 * r**2)
+                        elif volcano_type == 'lava_dome':
+                            z = height * (np.exp(-0.8 * (r**2 / base_width)) + 0.3 * np.exp(-4.0 * r**2))
+                        else:
+                            z = 5 * np.exp(-0.1 * r**2)
+                        
+                        # Add height offset for visibility - thicker and more variable for a'a/blocky flows
+                        z += 0.2 + 0.3 * np.random.uniform(0, 1)
+                        
+                        # Calculate flow direction for width
+                        flow_angle = np.arctan2(path_y[i] - path_y[i-1] if i > 0 else path_y[i+1] - path_y[i], 
+                                                path_x[i] - path_x[i-1] if i > 0 else path_x[i+1] - path_x[i])
+                        perp_angle = flow_angle + np.pi/2
+                        
+                        # More points for rougher texture
+                        width_points = 6
+                        
+                        for w in range(width_points):
+                            # Significant width variation for blocky/a'a texture
+                            width_factor = (w - (width_points-1)/2) / ((width_points-1)/2)
+                            width_offset = width_scaling * width_factor * (1 + np.random.uniform(-0.4, 0.4))
+                            
+                            # Apply width offset
+                            x_offset = x + width_offset * np.cos(perp_angle)
+                            y_offset = y + width_offset * np.sin(perp_angle)
+                            
+                            # Very irregular height for blocky texture
+                            z_offset = z + np.random.uniform(-0.2, 0.4)
+                            
+                            # Add point
+                            flow_points.append((x_offset, y_offset, z_offset))
+                
+                elif lava_flow_type == "viscous_dome":
+                    # Viscous dome flows are very short, thick, and barely move from the vent
+                    # Characteristics: Very thick, bulbous, limited extent
+                    n_points = 10  # Fewer points needed due to limited extent
+                    
+                    # For viscous domes, flows are more radial bulges than channel-like
+                    for i in range(n_points):
+                        # Calculate position with limited range
+                        relative_dist = (i+1) / n_points
+                        dist = adjusted_flow_length * relative_dist * 0.6  # Limited flow length
+                        
+                        # Add some randomness to flow direction
+                        angle_jitter = angle + np.random.uniform(-0.1, 0.1)
+                        
+                        # Calculate position
+                        x = dist * np.cos(angle_jitter)
+                        y = dist * np.sin(angle_jitter)
+                        r = np.sqrt(x**2 + y**2)
+                        
+                        # Find appropriate z-height
+                        if volcano_type == 'lava_dome':
+                            z = height * (np.exp(-0.8 * (r**2 / base_width)) + 0.3 * np.exp(-4.0 * r**2))
+                        else:
+                            z = 5 * np.exp(-0.25 * r**2)
+                        
+                        # Significant height offset for thick dome flows
+                        # Decreasing with distance from vent
+                        z += 0.5 * (1 - relative_dist)
+                        
+                        # Multiple points across to create bulbous appearance
+                        width_points = 6
+                        width_scaling = max_flow_width * (1.1 - 0.5 * relative_dist)
+                        
+                        for w in range(width_points):
+                            # Significant width variation for bulbous texture
+                            width_factor = (w - (width_points-1)/2) / ((width_points-1)/2)
+                            width_offset = width_scaling * width_factor * (1 + np.random.uniform(-0.3, 0.3))
+                            
+                            # Apply width offset
+                            perp_angle = angle + np.pi/2
+                            x_offset = x + width_offset * np.cos(perp_angle)
+                            y_offset = y + width_offset * np.sin(perp_angle)
+                            
+                            # Bulbous height variation
+                            bulb_factor = 1 - 4 * (width_factor * width_factor)  # More height in center
+                            z_offset = z + 0.3 * bulb_factor
+                            
+                            # Add point 
+                            flow_points.append((x_offset, y_offset, z_offset))
+                
+                else:
+                    # Generic flow type (fallback)
+                    n_points = 15
+                    for i in range(n_points):
+                        # Distance from center
+                        dist = adjusted_flow_length * ((i+1) / n_points)
+                        
+                        # Add some randomness to flow path
+                        angle_jitter = angle + np.random.uniform(-0.2, 0.2)
+                        dist_jitter = dist * np.random.uniform(0.8, 1.2)
+                        
+                        # Calculate position
+                        x = dist_jitter * np.cos(angle_jitter)
+                        y = dist_jitter * np.sin(angle_jitter)
+                        r = np.sqrt(x**2 + y**2)
+                        
+                        # Find appropriate z-height based on volcano shape function
+                        if volcano_type == 'shield':
+                            z = height * np.exp(-0.02 * (r**2 / base_width))
+                        elif volcano_type == 'stratovolcano':
+                            z = height * np.exp(-0.2 * (r**2 / base_width))
+                        elif volcano_type == 'caldera':
+                            z = rim_height * np.exp(-0.05 * (r**2 / base_width)) - 2.0 * np.exp(-1.0 * (r**2 / depression_width))
+                        elif volcano_type == 'cinder_cone':
+                            z = height * np.exp(-0.5 * (r**2 / base_width)) - 0.5 * np.exp(-10.0 * r**2)
+                        elif volcano_type == 'lava_dome':
+                            z = height * (np.exp(-0.8 * (r**2 / base_width)) + 0.3 * np.exp(-4.0 * r**2))
+                        else:
+                            z = 5 * np.exp(-0.1 * r**2)
+                        
+                        # Add small offset for visibility
+                        z += 0.1
+                        
+                        # Multiple points across flow width
+                        width_points = 3
+                        for w in range(width_points):
+                            # Calculate perpendicular offset
+                            width_factor = (w - (width_points-1)/2) / ((width_points-1)/2)
+                            perp_angle = angle + np.pi/2
+                            width_offset = 0.3 * width_factor
+                            
+                            # Apply width offset
+                            x_offset = x + width_offset * np.cos(perp_angle)
+                            y_offset = y + width_offset * np.sin(perp_angle)
+                            
+                            # Add point
+                            flow_points.append((x_offset, y_offset, z))
             
-            # Add lava flows to frame
+            # Add lava flow to frame
             if flow_points:
                 flow_x = [p[0] for p in flow_points]
                 flow_y = [p[1] for p in flow_points]
                 flow_z = [p[2] for p in flow_points]
+                
+                # For each point, calculate distance from center to create color gradient
+                # Lava cools and darkens with distance
+                flow_colors = []
+                for i in range(len(flow_x)):
+                    dist = np.sqrt(flow_x[i]**2 + flow_y[i]**2) / flow_length
+                    
+                    # Parse the RGB components from the lava color
+                    base_color = lava_color.strip('rgb(').strip(')').split(',')
+                    r = int(base_color[0])
+                    g = int(base_color[1])
+                    b = int(base_color[2])
+                    
+                    # Darken with distance (cooling lava)
+                    cooling_factor = 1.0 - 0.5 * dist
+                    r_cooled = int(r * cooling_factor)
+                    g_cooled = int(g * cooling_factor)
+                    b_cooled = int(b * cooling_factor)
+                    
+                    flow_colors.append(f'rgb({r_cooled}, {g_cooled}, {b_cooled})')
                 
                 frame_data.append(
                     go.Scatter3d(
@@ -961,7 +1282,7 @@ def generate_cinematic_eruption(volcano_data: Dict, frames: int = 120) -> Dict:
                         mode='markers',
                         marker=dict(
                             size=8,
-                            color=lava_color,
+                            color=flow_colors,
                             opacity=0.9
                         ),
                         showlegend=False
