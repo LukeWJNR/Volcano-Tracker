@@ -163,8 +163,9 @@ def simulate_gas_emissions(
     elif not eruption_occurs:
         eruption_days = []
     
-    # Baseline values for gas emissions (in tonnes/day for SO2, CO2; kg/day for others)
-    baseline = {
+    # Base values for gas emissions (in tonnes/day for SO2, CO2; kg/day for others)
+    # These will be modified based on volcano type
+    base_values = {
         'so2': 1000,   # SO2 flux in tonnes/day (typical for moderate degassing)
         'co2': 8000,   # CO2 flux in tonnes/day
         'h2s': 100,    # H2S flux in kg/day
@@ -173,8 +174,8 @@ def simulate_gas_emissions(
         'radon': 1.0   # Radon activity (relative units)
     }
     
-    # Maximum values during eruption
-    max_values = {
+    # Base maximum values during eruption
+    base_max_values = {
         'so2': 10000,   # SO2 flux in tonnes/day during eruption
         'co2': 50000,   # CO2 flux in tonnes/day
         'h2s': 1000,    # H2S flux in kg/day
@@ -182,6 +183,62 @@ def simulate_gas_emissions(
         'hf': 500,      # HF flux in kg/day
         'radon': 50.0   # Radon activity during eruption
     }
+    
+    # Apply volcano type-specific modifiers
+    baseline = base_values.copy()
+    max_values = base_max_values.copy()
+    
+    volcano_type = volcano_type.lower()
+    
+    # Modify gas signatures based on volcano type
+    if 'shield' in volcano_type:
+        # Shield volcanoes (e.g., Hawaiian) - high SO2, lower HCl/HF, high CO2/SO2 ratio
+        baseline['so2'] *= 1.5
+        baseline['co2'] *= 2.0
+        baseline['hcl'] *= 0.7
+        baseline['hf'] *= 0.6
+        max_values['so2'] *= 1.2
+        max_values['co2'] *= 1.5
+        
+    elif 'stratovolcano' in volcano_type:
+        # Stratovolcanoes (e.g., Fuji, Vesuvius) - higher HCl, HF, moderate SO2
+        baseline['hcl'] *= 1.4
+        baseline['hf'] *= 1.3
+        max_values['hcl'] *= 1.5
+        max_values['hf'] *= 1.6
+        
+    elif 'caldera' in volcano_type:
+        # Caldera systems (e.g., Yellowstone) - high CO2, high H2S/SO2 ratio
+        baseline['co2'] *= 2.5
+        baseline['h2s'] *= 1.8
+        baseline['radon'] *= 1.3
+        max_values['co2'] *= 1.8
+        max_values['h2s'] *= 2.0
+        
+    elif 'fissure' in volcano_type or 'system' in volcano_type:
+        # Fissure systems (common in Iceland) - high volume SO2, moderate HCl
+        baseline['so2'] *= 1.8
+        baseline['co2'] *= 1.2
+        max_values['so2'] *= 2.0
+        
+    elif 'subglacial' in volcano_type or 'jökull' in volcano_type:
+        # Subglacial volcanoes - reduced gas emissions due to ice, but sudden release
+        baseline['so2'] *= 0.7
+        baseline['co2'] *= 0.8
+        baseline['hcl'] *= 0.6
+        baseline['hf'] *= 0.6
+        max_values['so2'] *= 2.2  # Sudden large release during eruption
+        max_values['h2s'] *= 1.8
+    
+    # Iceland-specific modifications
+    if 'iceland' in volcano_type or 'reykjanes' in volcano_type:
+        # Icelandic volcanoes typically have higher fluorine content
+        baseline['hf'] *= 1.4
+        max_values['hf'] *= 1.5
+        
+        # And often higher radon precursors due to extensive fracture systems
+        baseline['radon'] *= 1.2
+        max_values['radon'] *= 1.3
     
     # Create gas emission time series based on scenario
     for i in range(simulation_days):
