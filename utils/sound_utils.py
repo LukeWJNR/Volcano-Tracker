@@ -42,7 +42,7 @@ VOLCANO_TYPE_PROFILES = {
         'attack': 0.3,  # Slower attack
         'sustain': 0.6,  # Longer sustain for continuous lava flows
         'release': 0.4,  # Moderate release
-        'duration': 7.0,  # Sound duration in seconds
+        'duration': 30.0,  # Sound duration in seconds (extended to 30s as requested)
         'rumble_freq': 8.0,  # Very low rumble
         'rumble_strength': 0.2  # Less rumbling
     },
@@ -53,7 +53,7 @@ VOLCANO_TYPE_PROFILES = {
         'attack': 0.01,  # Very fast attack based on caldera collapse events
         'sustain': 0.15,  # Shorter sustain
         'release': 0.9,  # Very long release
-        'duration': 8.0,  # Sound duration in seconds
+        'duration': 30.0,  # Sound duration in seconds (extended to 30s as requested)
         'rumble_freq': 5.0,  # Very deep rumbling
         'rumble_strength': 0.6  # Strong rumbling
     },
@@ -64,7 +64,7 @@ VOLCANO_TYPE_PROFILES = {
         'attack': 0.08,  # Moderate attack
         'sustain': 0.15,  # Short sustain
         'release': 0.35,  # Moderate release
-        'duration': 4.0,  # Sound duration in seconds
+        'duration': 30.0,  # Sound duration in seconds (extended to 30s as requested)
         'rumble_freq': 15.0,  # Higher rumble frequency
         'rumble_strength': 0.25  # Moderate rumbling
     },
