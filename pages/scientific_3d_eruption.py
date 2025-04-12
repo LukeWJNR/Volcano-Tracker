@@ -334,13 +334,30 @@ def app():
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
     const renderer = new THREE.WebGLRenderer({{ antialias: true, alpha: true }});
+    
+    // Make sure container exists before proceeding
     const container = document.getElementById("volcano-container");
+    if (!container) {
+        console.error("Volcano container element not found. Cannot initialize 3D visualization.");
+        return; // Exit early if container doesn't exist
+    }
+    
     const clock = new THREE.Clock();
     
     // Global objects to track
     let volcano, magmaChamber, deepReservoir, mainConduit, secondaryChambers = [];
     let lavaFlows = [], ashCloud, eruption_column;
-    let currentPhase = document.getElementById("selected_phase").value || "buildup";
+    
+    // Safely get the selected phase, with fallback
+    let currentPhase = "buildup";
+    try {
+        const selectedPhaseElement = document.getElementById("selected_phase");
+        if (selectedPhaseElement) {
+            currentPhase = selectedPhaseElement.value || "buildup";
+        }
+    } catch (e) {
+        console.log("Error getting selected phase, using default:", e);
+    }
     let phaseProgress = 0;
     
     // Optimize for performance based on quality setting
@@ -350,7 +367,14 @@ def app():
     const geometryDetail = {{'Low': 8, 'Medium': 16, 'High': 32, 'Ultra': 64}}[quality] || 16;
     
     // Performance optimization for embedded views
-    const isEmbedded = window !== window.top;
+    let isEmbedded = false;
+    try {
+        isEmbedded = window !== window.top;
+    } catch (e) {
+        // If we can't access window.top due to cross-origin issues, assume we're embedded
+        isEmbedded = true;
+    }
+    
     if (isEmbedded && quality !== 'Ultra') {{
         console.log("Detected embedded view - optimizing performance");
     }}
