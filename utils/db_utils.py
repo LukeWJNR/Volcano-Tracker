@@ -484,8 +484,8 @@ def save_volcano_characteristics(
     volcano_id: str, 
     observation_type: str, 
     value: str, 
-    confidence: float = None, 
-    source: str = None
+    confidence: Optional[float] = None, 
+    source: Optional[str] = None
 ) -> bool:
     """
     Save a volcano characteristic.
@@ -562,9 +562,9 @@ def get_volcano_eruption_history(volcano_id: str) -> List[Dict[str, Any]]:
 def add_eruption_event(
     volcano_id: str, 
     eruption_date: str, 
-    vei: int = None, 
-    description: str = None, 
-    data_source: str = None
+    vei: Optional[int] = None, 
+    description: Optional[str] = None, 
+    data_source: Optional[str] = None
 ) -> bool:
     """
     Add an eruption event to history.
