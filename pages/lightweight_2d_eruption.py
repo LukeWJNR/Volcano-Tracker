@@ -355,6 +355,9 @@ def app():
             name='Underground'
         ))
         
+        # Define conduit_top here for use in eruption visualization, regardless of whether plumbing is shown
+        conduit_top = max(y_ground[np.abs(x_ground) < conduit_width/2])
+        
         # Add magma chambers if enabled
         if show_plumbing:
             # Magma chamber parameters
@@ -375,7 +378,7 @@ def app():
             # Magma conduit
             conduit_left = -conduit_width/2
             conduit_right = conduit_width/2
-            conduit_top = max(y_ground[np.abs(x_ground) < conduit_width/2])
+            # conduit_top is now defined outside the if block to be available for all visualizations
             conduit_bottom = chamber_y
             
             # Draw magma conduit

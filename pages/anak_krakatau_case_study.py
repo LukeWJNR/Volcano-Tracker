@@ -92,15 +92,42 @@ def app():
         "Post-collapse": "#669900"
     }
     
-    # Create the timeline figure
-    fig = px.timeline(timeline_df, x_start="date", x_end="date", y="event", color="phase",
-                     color_discrete_map=phase_colors, height=400)
+    # Create a bar chart timeline instead of using px.timeline
+    # This works better with varied date formats
+    fig = go.Figure()
+    
+    # Reverse the dataframe to show events chronologically from bottom to top
+    timeline_df_rev = timeline_df.iloc[::-1].reset_index(drop=True)
+    
+    # Create a categorical y-axis with the events
+    for i, phase in enumerate(timeline_df_rev['phase'].unique()):
+        phase_data = timeline_df_rev[timeline_df_rev['phase'] == phase]
+        
+        fig.add_trace(go.Bar(
+            x=[1] * len(phase_data),  # Use fixed width bars
+            y=phase_data['event'],
+            orientation='h',
+            name=phase,
+            marker_color=phase_colors[phase],
+            text=phase_data['date'],  # Show date as text
+            textposition='inside',
+            insidetextanchor='middle',
+            hovertemplate='<b>%{y}</b><br>Date: %{text}<br><extra></extra>'
+        ))
+    
     fig.update_layout(
         title="Anak Krakatau Collapse Sequence",
-        xaxis_title="Date/Time",
+        xaxis_title="",
+        xaxis=dict(
+            showticklabels=False,  # Hide x-axis labels
+            showgrid=False,
+        ),
         yaxis_title="Event",
         legend_title="Phase",
-        showlegend=True
+        showlegend=True,
+        barmode='stack',
+        height=500,
+        bargap=0.3,
     )
     
     # Display the timeline
