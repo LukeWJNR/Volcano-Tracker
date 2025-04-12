@@ -1,9 +1,11 @@
 """
-Data file containing known glaciated volcanoes or volcanoes affected by glacial melting.
-This data is used in the Climate & Volcanoes page to show the connection between 
-glacial retreat and volcanic activity.
+Data file containing known glaciated volcanoes or volcanoes affected by glacial melting,
+plus special cases of climate-related volcanic activity such as the Mayotte submarine volcano.
 
-Data sourced from Global Volcanism Program (GVP) and enhanced with glacial impact analysis.
+This data is used in the Climate & Volcanoes page to show the connection between 
+glacial retreat, climate change, and volcanic activity.
+
+Data sourced from Global Volcanism Program (GVP) and enhanced with climate impact analysis.
 """
 
 # Volcanoes affected by glacial melting, derived from GVP data
@@ -201,6 +203,17 @@ GLACIAL_VOLCANOES = [
         "elevation": 2732,
         "notes": "Active Antarctic volcano entirely covered by ice. Provides valuable data on subglacial volcanic processes.",
         "risk_level": "Low"
+    },
+    
+    # Special cases: Climate-related volcanism not directly involving glaciers
+    {
+        "name": "Mayotte Submarine Volcano",
+        "country": "France (Mayotte)",
+        "lat": -12.84,
+        "lng": 45.42,
+        "elevation": -3000,
+        "notes": "Discovered in 2018-2019 after seismic swarm. Research suggests link between submarine volcanism and climate-related oceanic changes. Largest underwater eruption ever documented.",
+        "risk_level": "Medium"
     }
 ]
 
