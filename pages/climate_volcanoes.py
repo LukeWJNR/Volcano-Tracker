@@ -409,9 +409,24 @@ def app():
             fig = px.line(rainfall_df, x='date', y='rainfall', 
                      title='Daily Rainfall Preceding Kilauea Eruption (2018)')
             
-            # Add eruption marker - using string date instead of Timestamp object
-            fig.add_vline(x='2018-05-03', line_width=2, line_dash="dash", line_color="red",
-                     annotation_text="Eruption Begins", annotation_position="top right")
+            # Add eruption marker - using shape approach instead of vline to avoid timestamp issues
+            fig.add_shape(
+                type="line",
+                x0=pd.Timestamp("2018-05-03"),
+                x1=pd.Timestamp("2018-05-03"),
+                y0=0,
+                y1=45,  # Max height of the line
+                line=dict(color="red", width=2, dash="dash")
+            )
+            
+            # Add annotation for the eruption
+            fig.add_annotation(
+                x=pd.Timestamp("2018-05-03"),
+                y=45,
+                text="Eruption Begins",
+                showarrow=False,
+                yshift=10
+            )
             
             # Update layout
             fig.update_layout(
@@ -570,9 +585,24 @@ def app():
             fig = px.line(drought_df, x="date", y="drought_index", 
                      title="La Palma Drought Index (2020-2021)")
             
-            # Add eruption start - using string date instead of Timestamp object
-            fig.add_vline(x='2021-09-19', line_width=2, line_dash="dash", line_color="red",
-                     annotation_text="Eruption Begins", annotation_position="top right")
+            # Add eruption marker - using shape approach instead of vline
+            fig.add_shape(
+                type="line",
+                x0=pd.Timestamp("2021-09-19"),
+                x1=pd.Timestamp("2021-09-19"),
+                y0=-3,  # Bottom of chart
+                y1=0,   # Top position for annotation
+                line=dict(color="red", width=2, dash="dash")
+            )
+            
+            # Add annotation for the eruption
+            fig.add_annotation(
+                x=pd.Timestamp("2021-09-19"),
+                y=0,
+                text="Eruption Begins",
+                showarrow=False,
+                yshift=10
+            )
             
             # Add zone lines
             fig.add_hline(y=0, line_width=1, line_color="gray")
