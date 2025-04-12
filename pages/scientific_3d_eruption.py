@@ -347,7 +347,13 @@ def app():
     const quality = volcanoData.quality || 'Medium';
     const particleCount = {{'Low': 2000, 'Medium': 5000, 'High': 10000, 'Ultra': 20000}}[quality] || 5000;
     const segmentCount = {{'Low': 16, 'Medium': 24, 'High': 32, 'Ultra': 64}}[quality] || 24;
-    const geometryDetail = {{'Low': 8, 'Medium': 16, 'High': 32}}[quality];
+    const geometryDetail = {{'Low': 8, 'Medium': 16, 'High': 32, 'Ultra': 64}}[quality] || 16;
+    
+    // Performance optimization for embedded views
+    const isEmbedded = window !== window.top;
+    if (isEmbedded && quality !== 'Ultra') {{
+        console.log("Detected embedded view - optimizing performance");
+    }}
     
     // Initial setup
     function init() {{
