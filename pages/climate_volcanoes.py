@@ -27,10 +27,11 @@ def app():
     """)
     
     # Create tabs for different sections
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "🗓️ Timeline", 
         "🌋 Interactive Map", 
-        "📉 Soil Erosion", 
+        "📉 Soil Erosion",
+        "🧊 Glacial Effects",
         "🛰️ Satellite Data",
         "📚 Research Library"
     ])
@@ -370,6 +371,71 @@ def app():
         """)
     
     with tab4:
+        st.header("🧊 Melting Glaciers & Volcanic Eruption Risk")
+        
+        st.markdown("""
+        As glaciers melt due to global warming, the crust underneath responds — it rises and destabilizes.
+        This phenomenon, called **isostatic rebound**, reduces pressure on magma chambers,
+        potentially **triggering geothermal and volcanic activity**.
+        """)
+        
+        # Two-column layout for image and bullet points
+        col1, col2 = st.columns([3, 2])
+        
+        with col1:
+            # Show diagram of isostatic rebound
+            st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/PIA15099_print.jpg/640px-PIA15099_print.jpg",
+                   caption="Satellite view of retreating glaciers (USGS)",
+                   use_container_width=True)
+        
+        with col2:
+            st.markdown("""
+            ### Key Regions at Risk
+            
+            * **Iceland:** Post-glacial rebound has increased volcanic eruptions in the last 10,000 years.
+            * **Alaska & Greenland:** Glacier retreat may expose geothermal systems and activate magma.
+            * **Antarctica:** Heat from below is suspected beneath West Antarctic ice sheets, where crustal rebound may trigger future eruptions.
+            """)
+        
+        st.markdown("""
+        ## Scientific Mechanism
+        
+        The release of glacial weight lowers the melting point of rock and creates space for magma to rise,
+        making deglaciated regions vulnerable to volcanic reactivation. The process works through several mechanisms:
+        
+        1. **Pressure Release Melting:** The removal of ice weight can lower the melting point of rock in the upper mantle.
+        2. **Magma Chamber Decompression:** As pressure decreases, gases in magma expand, potentially triggering eruptions.
+        3. **Fault Activation:** Crustal adjustments from glacial unloading can reactivate faults and create magma pathways.
+        4. **Hydrothermal System Changes:** Meltwater can penetrate deeper into newly exposed crust, reaching magma systems.
+        """)
+        
+        # Add volcano & glacier map
+        st.header("Interactive Volcano-Glacier Map")
+        
+        # Add HTML for a lightweight Leaflet.js map since we can't use React components directly
+        glacier_volcano_map = """
+        <div style="height:400px; border:1px solid #ccc; border-radius:5px; margin:10px 0;">
+          <iframe src="https://www.google.com/maps/d/embed?mid=1-8Fwr7zxDo_kMxA_p3_ahcFSIxRyh3A&ehbc=2E312F" 
+                 width="100%" height="100%" frameborder="0" style="border:0;" allowfullscreen=""></iframe>
+        </div>
+        """
+        st.components.v1.html(glacier_volcano_map, height=420)
+        
+        st.markdown("""
+        ### Example Case: Iceland
+        
+        Iceland sits on both the Mid-Atlantic Ridge and above a mantle plume, making it particularly sensitive to glacial changes.
+        Since 1890, Iceland has lost approximately 2,000 km² of glacier coverage (~20% of its total).
+        
+        **Research findings:**
+        
+        * Vatnajökull ice cap has thinned by 0.5-1.5m per year since 1994
+        * Crustal uplift of 20-25mm per year measured near Vatnajökull
+        * Eight volcanic systems lie partially or completely beneath ice
+        * Periods of increased volcanism correlate with periods of rapid deglaciation
+        """)
+    
+    with tab5:
         st.header("Satellite Imagery of Climate-Volcano Interactions")
         st.markdown("""
         The satellite animations below show key events where climate factors and volcanic 
