@@ -20,6 +20,12 @@ import os
 from streamlit.runtime.scriptrunner import get_script_run_ctx
 from streamlit.runtime.state import SessionStateProxy
 
+# Import analytics utilities
+from utils.analytics import inject_ga_tracking, track_event
+
+# Inject Google Analytics tracking code
+inject_ga_tracking()
+
 # Load custom CSS
 with open("assets/custom.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
