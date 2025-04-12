@@ -390,6 +390,11 @@ sar_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" vie
 if st.sidebar.button(f"{sar_icon} SAR Animations", help="View SAR data and animations from COMET Volcano Portal"):
     switch_page("sar_animations")
 
+# 2D Eruption Animation (Lightweight)
+eruption_2d_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>"""
+if st.sidebar.button(f"{eruption_2d_icon} 2D Eruption (Lightweight)", help="View lightweight 2D eruption visualization"):
+    switch_page("lightweight_2d_eruption")
+
 # Scientific 3D Eruption page link
 scientific_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"></path><path d="M21 8V5a2 2 0 0 0-2-2H8"></path><path d="M3 16v3a2 2 0 0 0 2 2h8"></path><path d="M16 21h5a2 2 0 0 0 2-2V8"></path><path d="M7 10v11"></path><path d="M14 13l3 3"></path><path d="M14 19l3-3"></path></svg>"""
 if st.sidebar.button(f"{scientific_icon} Scientific 3D Eruption", help="Explore scientifically accurate 3D eruption model"):
