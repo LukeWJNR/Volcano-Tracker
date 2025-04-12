@@ -3,7 +3,7 @@ version: '3.8'
 services:
   app:
     build: .
-    restart: unless-stopped
+    restart: always
     ports:
       - "5000:5000"
     environment:
@@ -22,17 +22,47 @@ services:
       # Mount specific directories that need write access
       - ./data:/app/data:ro      # Mount data directory as read-only
       - app_logs:/app/logs       # Volume for logs (writable)
+      - ./backups:/app/backups   # Mount backups directory
     deploy:
       resources:
         limits:
           cpus: '1'
           memory: 1G
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    # Health check to monitor container health
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     # Set read-only file system for enhanced security
     read_only: true
     # Allow these specific paths to be writable
     tmpfs:
       - /tmp
       - /var/run
+
+  # Watchtower for automatic container updates
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 86400 --cleanup
+    restart: always
+    environment:
+      - TZ=UTC
+    # Only restart once per day to avoid disruption
+    deploy:
+      restart_policy:
+        condition: any
+        delay: 10s
+        max_attempts: 3
+        window: 120s
 
 volumes:
   app_logs:

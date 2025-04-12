@@ -1,0 +1,17 @@
+[Unit]
+Description=Volcano Dashboard System Monitoring
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/opt/volcano-dashboard
+ExecStart=/opt/volcano-dashboard/scripts/monitor-system.sh
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=volcano-monitor
+
+[Install]
+WantedBy=multi-user.target
