@@ -494,9 +494,8 @@ with col1:
         width=800, 
         height=450,
         returned_objects=["last_active_drawing"],
-        feature_group_to_add=None,
-        add_layer_control=True,
-        bidirectional=False  # Reduce iframe sandboxing issues
+        key="main_map",
+        use_container_width=True
     )
 
 with col2:
