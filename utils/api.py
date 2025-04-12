@@ -92,6 +92,15 @@ def get_volcano_by_name(volcano_name: str) -> Optional[Dict[str, Any]]:
     
     return None
 
+def get_known_volcano_data() -> pd.DataFrame:
+    """
+    Get data for known volcanoes from our database.
+    
+    Returns:
+        pd.DataFrame: DataFrame containing volcano data
+    """
+    return get_volcano_data()
+
 def get_iceland_volcanoes() -> pd.DataFrame:
     """
     Get data specifically for Icelandic volcanoes with additional fields.
