@@ -40,14 +40,23 @@ def create_volcano_map(volcano_df, include_monitoring_data=False):
     )
     
     # Add tile layer control with proper attributions
-    folium.TileLayer(
-        'Stamen Terrain',
-        attr='Map tiles by Stamen Design, CC BY 3.0 — Map data © OpenStreetMap contributors'
-    ).add_to(m)
-    
+    # Use more reliable tile sources that work well in containerized environments
     folium.TileLayer(
         'CartoDB positron',
         attr='Map tiles by <a href="https://carto.com/">CartoDB</a>, under <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
+    ).add_to(m)
+    
+    folium.TileLayer(
+        'CartoDB dark_matter',
+        attr='Map tiles by <a href="https://carto.com/">CartoDB</a>, under <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
+    ).add_to(m)
+    
+    # Add a satellite layer that's more reliable than Stamen Terrain
+    folium.TileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+        name='Satellite',
+        overlay=False
     ).add_to(m)
     
     # Add NASA GIBS satellite imagery for atmospheric SO2 (if available)
