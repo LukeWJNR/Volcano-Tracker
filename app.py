@@ -404,10 +404,10 @@ paper_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" v
 if st.sidebar.button(f"{paper_icon} Scientific Paper Reader", help="Analyze scientific papers on volcanology"):
     switch_page("scientific_paper_reader")
 
-# Risk Map page link
-risk_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 19 21 12 17 5 21 12 2"></polygon></svg>"""
-if st.sidebar.button(f"{risk_icon} Risk Heat Map", help="View volcanic risk assessment heat map"):
-    switch_page("risk_map")
+# Risk Map page link - removed as requested
+# risk_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 19 21 12 17 5 21 12 2"></polygon></svg>"""
+# if st.sidebar.button(f"{risk_icon} Risk Heat Map", help="View volcanic risk assessment heat map"):
+#     switch_page("risk_map")
     
 # Volcano News page link
 news_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path><path d="M18 14h-8"></path><path d="M15 18h-5"></path><path d="M10 6h8v4h-8V6Z"></path></svg>"""
