@@ -142,13 +142,87 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# App title and description
+# App title and introduction
 st.title("🌋 Volcano Monitoring Dashboard")
-st.markdown("""
-This dashboard displays real-time data about active volcanoes around the world, 
-sourced from the USGS Volcano Hazards Program. You can explore the map, filter volcanoes, 
-and access InSAR satellite imagery data for research and monitoring purposes.
-""")
+
+# Two-column layout for intro text and features
+col1, col2 = st.columns([3, 2])
+
+with col1:
+    st.markdown("""
+    This dashboard displays real-time data about active volcanoes around the world, 
+    sourced from the USGS Volcano Hazards Program. You can explore the map, filter volcanoes, 
+    and access InSAR satellite imagery data for research and monitoring purposes.
+    """)
+
+with col2:
+    st.markdown("""
+    ### Key Features
+    - 🌎 **Interactive Global Map** with 1,400+ volcanoes
+    - 🔍 **Region & Name Filtering** for precise research
+    - 🛰️ **InSAR Satellite Data** integration for deformation monitoring
+    - 📊 **Scientific Visualizations** showing eruption processes
+    - 🧪 **Eruption Simulator** with risk assessment
+    - 🧊 **Climate Connection** analysis of glaciated volcanoes
+    """)
+
+# Add horizontal rule for visual separation
+st.markdown("---")
+
+# Create the main map section immediately after introduction
+# Create two columns with map taking more space
+map_col1, map_col2 = st.columns([7, 3])
+
+with map_col1:
+    # Create and display the map
+    st.subheader("Active Volcano Map")
+    
+    # Display a message about the number of volcanos shown
+    try:
+        # Load volcano data for the map
+        with st.spinner("Loading volcano data..."):
+            volcanos_df = get_volcano_data()
+            if st.session_state.last_update is None:
+                st.session_state.last_update = datetime.now()
+                
+        # Apply filters
+        filtered_df = volcanos_df.copy()
+        if 'selected_region' in locals() and selected_region != "All":
+            filtered_df = filtered_df[filtered_df['region'] == selected_region]
+            
+        if 'volcano_name_filter' in locals() and volcano_name_filter:
+            filtered_df = filtered_df[filtered_df['name'].str.contains(volcano_name_filter, case=False)]
+            
+        st.markdown(f"Showing {len(filtered_df)} volcanos")
+        
+        # Create the map with optional monitoring data layers
+        include_monitoring_data = False
+        m = create_volcano_map(filtered_df, include_monitoring_data=include_monitoring_data)
+        
+        # Add custom styling for proper iframe embedding
+        st.markdown("""
+        <style>
+            /* Make the map container responsive */
+            iframe {
+                width: 100%;
+                min-height: 450px;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Display the map
+        st_folium(
+            m,
+            height=500,
+            width=700,
+            returned_objects=[],
+            use_container_width=True
+        )
+    except Exception as e:
+        st.error(f"Error displaying volcano map: {str(e)}")
+
+# Additional horizontal rule for visual separation
+st.markdown("---")
 
 # Define our professional icons using SVG format
 icons = {
