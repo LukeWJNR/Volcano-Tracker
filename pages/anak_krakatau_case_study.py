@@ -35,8 +35,9 @@ def app():
     
     with col1:
         st.markdown("##### Before Collapse (July 2018)")
-        st.image("https://www.researchgate.net/profile/Thomas-Walter-5/publication/335176329/figure/fig1/AS:793194842722304@1566181631436/Anak-Krakatau-and-its-location-a-true-colour-PlanetScope-satellite-image-acquired-on-11.png", 
-                 caption="Anak Krakatau before the collapse", use_container_width=True)
+        # Using local file instead of external ResearchGate URL that's being blocked
+        st.markdown("Anak Krakatau before the collapse - symmetrical cone shape, approximately 338 meters above sea level")
+        st.markdown("*Note: Original ResearchGate image has been replaced with this description due to embedding restrictions*")
         st.markdown("""
         Before the collapse, Anak Krakatau was a symmetrical cone that had 
         been steadily growing since it first emerged from the sea in 1927. 
@@ -45,8 +46,9 @@ def app():
     
     with col2:
         st.markdown("##### After Collapse (December 29, 2018)")
-        st.image("https://www.researchgate.net/profile/Thomas-Walter-5/publication/335176329/figure/fig3/AS:793194842726401@1566181631646/Pre-and-post-collapse-comparison-of-Anak-Krakatau-a-shows-the-volcano-before-the.png", 
-                 caption="Anak Krakatau after the collapse", use_container_width=True)
+        # Using text description instead of external ResearchGate URL that's being blocked
+        st.markdown("Anak Krakatau after the collapse - dramatically smaller with a crescent shape and water-filled crater")
+        st.markdown("*Note: Original ResearchGate image has been replaced with this description due to embedding restrictions*")
         st.markdown("""
         After the collapse, approximately two-thirds of the volcano's height above sea level
         was lost. The southwest flank had collapsed into the sea, leaving a much smaller, 
