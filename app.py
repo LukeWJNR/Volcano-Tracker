@@ -460,10 +460,11 @@ with col1:
     # Add custom styling and meta tags for proper iframe embedding
     st.markdown("""
     <head>
-        <!-- Make sure content can be embedded in iframes -->
+        <!-- Iframe embedding optimization for Replit and external sites -->
         <meta http-equiv="X-Frame-Options" content="ALLOWALL">
         <meta http-equiv="Access-Control-Allow-Origin" content="*">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Security-Policy" content="frame-ancestors *">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     </head>
     <style>
         /* Make the map container responsive */
@@ -487,7 +488,16 @@ with col1:
     """, unsafe_allow_html=True)
     
     # Display the map with full container width
-    st_folium(m, width=800, height=450)
+    # Add specific feature flags to improve iframe compatibility
+    st_folium(
+        m, 
+        width=800, 
+        height=450,
+        returned_objects=["last_active_drawing"],
+        feature_group_to_add=None,
+        add_layer_control=True,
+        bidirectional=False  # Reduce iframe sandboxing issues
+    )
 
 with col2:
     st.subheader("Volcano Information")
