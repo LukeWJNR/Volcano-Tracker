@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+import math
 from utils.api import get_volcano_data
 from utils.animation_utils import determine_volcano_type, VOLCANO_TYPES, ALERT_LEVELS
 

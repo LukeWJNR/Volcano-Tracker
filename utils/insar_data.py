@@ -1,150 +1,99 @@
 """
-Utilities for handling InSAR satellite data links
+InSAR data utilities for the Volcano Monitoring Dashboard.
+
+This module provides functions for accessing and processing InSAR
+(Interferometric Synthetic Aperture Radar) data for volcano monitoring.
 """
-import json
-import os
-import requests
-from typing import Dict, List, Optional, Any
 
+from typing import Dict, List, Any, Optional, Tuple
 
-def fetch_insar_links() -> List[Dict[str, Any]]:
+def get_insar_url_for_volcano(volcano_id: str, volcano_name: str) -> str:
     """
-    Fetch InSAR links from GitHub repository or use cached data
-    
-    Returns:
-        List[Dict[str, Any]]: List of InSAR links with volcano names and URLs
-    """
-    # First, try to load from GitHub
-    try:
-        response = requests.get(
-            "https://raw.githubusercontent.com/openvolcano/data/main/insar_links.json",
-            timeout=5
-        )
-        if response.status_code == 200:
-            return response.json()
-    except Exception as e:
-        print(f"Could not fetch InSAR links from GitHub: {e}")
-    
-    # If GitHub fails, use local fallback data
-    return [
-        {
-            "name": "Mauna Loa",
-            "insarUrl": "https://apps.sentinel-hub.com/eo-browser/?zoom=6&lat=19.5&lng=-155.6"
-        },
-        {
-            "name": "Etna",
-            "insarUrl": "https://apps.sentinel-hub.com/eo-browser/?zoom=6&lat=37.7&lng=15.0"
-        },
-        {
-            "name": "Mount Erebus",
-            "insarUrl": "https://apps.sentinel-hub.com/eo-browser/?zoom=6&lat=-77.5&lng=167.2"
-        },
-        {
-            "name": "Mount St. Helens",
-            "insarUrl": "https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/applications/land-monitoring/geological-hazards"
-        },
-        {
-            "name": "Kilauea",
-            "insarUrl": "https://volcano.si.edu/volcano.cfm?vn=332010"
-        }
-    ]
-
-
-def get_insar_url_for_volcano(volcano_name: str) -> Optional[str]:
-    """
-    Get the InSAR URL for a specific volcano by name
+    Get the URL for InSAR data for a specific volcano.
     
     Args:
-        volcano_name (str): Name of the volcano
+        volcano_id (str): Volcano ID
+        volcano_name (str): Volcano name
         
     Returns:
-        Optional[str]: URL to InSAR data if available, None otherwise
+        str: URL to InSAR data
     """
-    insar_links = fetch_insar_links()
+    # In a production environment, this would use a mapping table or API
+    # For now, use a generic URL format
     
-    # Find a match by name
-    match = next((link for link in insar_links if link["name"] == volcano_name), None)
+    # Format the volcano name for the URL
+    formatted_name = volcano_name.lower().replace(" ", "_")
     
-    if match and "insarUrl" in match:
-        return match["insarUrl"]
-    
-    return None
-
+    # Return the COMET Volcano Portal URL
+    return f"https://comet.nerc.ac.uk/volcanoes/{formatted_name}/"
 
 def generate_sentinel_hub_url(latitude: float, longitude: float) -> str:
     """
-    Generate a URL to Sentinel Hub for the given coordinates
+    Generate a URL to view the volcano area in Sentinel Hub.
     
     Args:
-        latitude (float): Latitude of the volcano
-        longitude (float): Longitude of the volcano
+        latitude (float): Volcano latitude
+        longitude (float): Volcano longitude
         
     Returns:
-        str: URL to Sentinel Hub
+        str: Sentinel Hub URL
     """
-    return (
-        f"https://www.sentinel-hub.com/explore/sentinelplayground/"
-        f"?zoom=12&lat={latitude}&lng={longitude}"
-        f"&preset=1_NATURAL_COLOR&layers=B01,B02,B03"
-        f"&maxcc=20&gain=1.0&gamma=1.0&time=2021-06-01%7C2021-12-01"
-        f"&atmFilter=&showDates=false"
-    )
-
+    return f"https://apps.sentinel-hub.com/eo-browser/?zoom=12&lat={latitude}&lng={longitude}&themeId=DEFAULT-THEME"
 
 def generate_copernicus_url(latitude: float, longitude: float) -> str:
     """
-    Generate a URL to ESA Copernicus for the given coordinates
+    Generate a URL to view the volcano area in Copernicus Open Access Hub.
     
     Args:
-        latitude (float): Latitude of the volcano
-        longitude (float): Longitude of the volcano
+        latitude (float): Volcano latitude
+        longitude (float): Volcano longitude
         
     Returns:
-        str: URL to ESA Copernicus
+        str: Copernicus URL
     """
-    return (
-        f"https://scihub.copernicus.eu/dhus/#/home"
-        f"?latitude={latitude}&longitude={longitude}&zoom=12"
-    )
+    # Calculate a small bounding box around the volcano
+    lat_delta = 0.1
+    lon_delta = 0.1
+    
+    min_lat = latitude - lat_delta
+    max_lat = latitude + lat_delta
+    min_lon = longitude - lon_delta
+    max_lon = longitude + lon_delta
+    
+    # Format the coordinates for the Copernicus query string
+    footprint = f"POLYGON(({min_lon} {min_lat}, {max_lon} {min_lat}, {max_lon} {max_lat}, {min_lon} {max_lat}, {min_lon} {min_lat}))"
+    
+    return f"https://scihub.copernicus.eu/dhus/#/search?footprint={footprint}&platformname=Sentinel-1"
 
-
-def generate_smithsonian_wms_url(latitude: float, longitude: float, width: int = 800, height: int = 600, zoom_level: int = 8) -> str:
+def generate_smithsonian_wms_url(volcano_id: str) -> str:
     """
-    Generate a URL to the Smithsonian Volcanoes of the World WMS layer centered on given coordinates
+    Generate a URL to access Smithsonian's WMS data for a volcano.
     
     Args:
-        latitude (float): Latitude of the volcano
-        longitude (float): Longitude of the volcano
-        width (int): Width of the map in pixels
-        height (int): Height of the map in pixels
-        zoom_level (int): Zoom level (1-20, higher numbers = more zoomed in)
+        volcano_id (str): Volcano ID
         
     Returns:
-        str: URL to the Smithsonian WMS map
+        str: Smithsonian WMS URL
     """
-    # Calculate the bounding box based on coordinates and zoom level
-    # This is a simple approximation that works reasonably well for medium latitudes
-    # Adjusted formula to provide better zoom control
-    zoom_factor = 8 / (2 ** (zoom_level / 2))  # More gradual zoom scaling
+    return f"https://volcano.si.edu/geoserver/GVP-VSWMS/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&FORMAT=image/png&TRANSPARENT=true&LAYERS=GVP-VSWMS:Volcanoes&SRS=EPSG:4326&STYLES=&WIDTH=768&HEIGHT=384&BBOX=-180,-90,180,90&QUERY_LAYERS=GVP-VSWMS:Volcanoes&FEATURE_COUNT=1&INFO_FORMAT=application/json&FILTER=GVP-VSWMS:Volcanoes/volcano_id={volcano_id}"
+
+def get_recent_insar_data(volcano_id: str) -> List[Dict[str, Any]]:
+    """
+    Get recent InSAR data for a volcano.
     
-    # For higher zoom levels (individual volcanoes), narrow the bounding box
-    if zoom_level >= 10:
-        zoom_factor = 2 / (2 ** (zoom_level / 4))
+    In a production environment, this would fetch data from an API or database.
+    For now, we'll return a placeholder message.
     
-    min_lon = longitude - zoom_factor
-    max_lon = longitude + zoom_factor
-    min_lat = latitude - zoom_factor * (height / width)
-    max_lat = latitude + zoom_factor * (height / width)
-    
-    # Format the bounding box
-    bbox = f"{min_lon}%2C{min_lat}%2C{max_lon}%2C{max_lat}"
-    
-    # Generate the WMS URL with additional parameters for better rendering
-    return (
-        f"https://geoserver-apia.sprep.org/geoserver/global/wms"
-        f"?service=WMS&version=1.1.0&request=GetMap"
-        f"&layers=global%3AGlobal_2013_HoloceneEruptions_SmithsonianVOTW"
-        f"&bbox={bbox}&width={width}&height={height}"
-        f"&srs=EPSG%3A4326&format=application/openlayers"
-        f"&transparent=true&tiled=true"  # Added parameters for better display
-    )
+    Args:
+        volcano_id (str): Volcano ID
+        
+    Returns:
+        List[Dict[str, Any]]: List of InSAR data entries
+    """
+    return [
+        {
+            'volcano_id': volcano_id,
+            'message': 'InSAR data would be fetched from a real API in production.',
+            'source': 'Placeholder'
+        }
+    ]
