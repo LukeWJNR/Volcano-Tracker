@@ -1,315 +1,256 @@
-/* Custom CSS for Volcano Dashboard */
+/* Custom CSS for the Volcano Monitoring Dashboard */
 
-/* Main layout enhancements */
-.main .block-container {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-}
-
-/* Main navigation styling */
+/* Navigation bar styles */
 .nav-link {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-decoration: none;
-    color: #333;
-    font-weight: 500;
-    padding: 8px 5px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
+    display: inline-block;
     text-align: center;
-}
-
-.nav-link svg {
-    margin-bottom: 4px;
-    stroke: #FF5A5F;
+    margin: 0 5px;
+    padding: 8px 12px;
+    color: #333;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.2s;
 }
 
 .nav-link:hover {
-    background-color: rgba(255, 90, 95, 0.1);
-    transform: translateY(-2px);
+    background-color: #f5f5f5;
+}
+
+.nav-link svg {
+    display: block;
+    margin: 0 auto 4px auto;
 }
 
 .nav-link span {
-    font-size: 0.8rem;
-    white-space: nowrap;
-}
-
-@media (max-width: 768px) {
-    .nav-link span {
-        font-size: 0.7rem;
-    }
-}
-
-/* Title and header styles */
-h1, h2, h3, h4, h5, h6 {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-}
-
-h1 {
-    font-size: 2.5rem !important;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid rgba(255, 90, 95, 0.3);
-    margin-bottom: 1.5rem;
-}
-
-h2 {
-    font-size: 1.8rem !important;
-    color: #2C3E50;
-    margin-top: 1.5rem;
-}
-
-h3 {
-    font-size: 1.4rem !important;
-    color: #34495E;
-    margin-top: 1.2rem;
-}
-
-/* Dashboard cards for better visual organization */
-.stCard {
-    border-radius: 10px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-}
-
-.stCard:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    font-size: 12px;
 }
 
 /* Info panel styling */
 .info-panel {
-    background-color: #FFFFFF;
-    border-radius: 10px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    margin-bottom: 1.5rem;
-    border-left: 4px solid #FF5A5F;
+    background-color: #fff;
+    border-radius: 5px;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
 }
 
-.info-panel h3 {
-    margin-top: 0 !important;
-    color: #2C3E50;
-    font-weight: 600;
-    border-bottom: 1px solid #EEEEEE;
-    padding-bottom: 0.5rem;
-    margin-bottom: 1rem;
-}
-
-.info-section {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #F5F5F5;
-}
-
-.info-section h4 {
-    font-size: 1.1rem !important;
-    color: #34495E;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-}
-
-.info-section:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-}
-
+/* Alert level tags */
 .info-tag {
     display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 50px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    margin-right: 0.5rem;
-    margin-bottom: 0.5rem;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
 }
 
 .tag-normal {
-    background-color: rgba(46, 204, 113, 0.15);
-    color: #27ae60;
+    background-color: #4CAF50;
 }
 
 .tag-advisory {
-    background-color: rgba(241, 196, 15, 0.15);
-    color: #f39c12;
+    background-color: #2196F3;
 }
 
 .tag-watch {
-    background-color: rgba(230, 126, 34, 0.15);
-    color: #d35400;
+    background-color: #FF9800;
 }
 
 .tag-warning {
-    background-color: rgba(231, 76, 60, 0.15);
-    color: #c0392b;
+    background-color: #F44336;
 }
 
 .tag-uncertain {
-    background-color: rgba(149, 165, 166, 0.15);
-    color: #7f8c8d;
+    background-color: #9E9E9E;
 }
 
-/* Stat cards for volcano info */
+/* Stat cards container */
 .stat-container {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 1rem;
+    justify-content: space-between;
+    margin: 15px 0;
 }
 
+/* Individual stat card */
 .stat-card {
-    flex: 1;
-    min-width: 120px;
-    background-color: #F8FAFB;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    padding: 10px;
+    width: 30%;
     text-align: center;
 }
 
 .stat-value {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: #2C3E50;
-    margin-bottom: 0.2rem;
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 5px;
 }
 
 .stat-label {
-    font-size: 0.75rem;
-    color: #7F8C8D;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Section styling */
+.info-section {
+    margin-bottom: 15px;
+}
+
+.info-section h4 {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+    .stat-container {
+        flex-direction: column;
+    }
+    
+    .stat-card {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+/* Embedding-specific optimizations */
+.embedded-view {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.embedded-view .block-container {
+    padding: 0 !important;
+    max-width: 100% !important;
+}
+
+/* Animation container styling */
+.animation-container {
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 15px 0;
+    background-color: #f9f9f9;
+}
+
+/* Control panel styling */
+.control-panel {
+    background-color: #f0f2f6;
+    border-radius: 5px;
+    padding: 15px;
+    margin: 15px 0;
 }
 
 /* Button styling */
-.stButton > button {
-    border-radius: 6px;
-    padding: 0.25rem 0.75rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.stButton > button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Sidebar enhancements */
-.sidebar .sidebar-content {
-    background-color: #FAFAFA;
-}
-
-/* Dashboard widget improvements */
-.stMetric {
-    background-color: #FFFFFF;
-    padding: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-}
-
-/* Tabs styling */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 1px;
-}
-
-.stTabs [data-baseweb="tab"] {
-    padding: 10px 24px;
-    font-size: 14px;
-    font-weight: 500;
-    background-color: #F8F9FA;
-    border-radius: 6px 6px 0 0;
-}
-
-.stTabs [aria-selected="true"] {
-    background-color: #FFFFFF;
-    border-top: 2px solid #FF5A5F;
-}
-
-/* Improve slider appearance */
-.stSlider [data-baseweb="slider"] {
-    height: 6px;
-    background-color: #E0E0E0;
-}
-
-.stSlider [data-baseweb="slider"] [data-testid="stThumbValue"] {
-    background-color: #FF5A5F;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Table improvements */
-table {
-    font-family: 'SF Pro Text', Arial, sans-serif;
-    border-collapse: separate;
-    border-spacing: 0;
-    border-radius: 6px;
-    overflow: hidden;
-}
-
-table th {
-    background-color: #F5F7F9;
-    padding: 12px 16px;
-    font-weight: 600;
-    color: #34495E;
-    text-align: left;
-    border-bottom: 2px solid #E0E0E0;
-}
-
-table td {
-    padding: 12px 16px;
-    border-bottom: 1px solid #E0E0E0;
-}
-
-table tr:last-child td {
-    border-bottom: none;
-}
-
-table tr:hover {
-    background-color: #F8F9FA;
-}
-
-/* Better navigation */
-.stApp a {
-    color: #FF5A5F;
+.custom-button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    text-align: center;
     text-decoration: none;
-    font-weight: 500;
+    display: inline-block;
+    font-size: 14px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s;
 }
 
-.stApp a:hover {
-    text-decoration: underline;
+.custom-button:hover {
+    background-color: #45a049;
 }
 
-/* Better selectbox */
-.stSelectbox div[data-baseweb="select"] > div:first-child {
+/* Tooltip styling */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
     border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
-/* Better dataframes */
-.dataframe-container {
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    h1 {
-        font-size: 2rem !important;
-    }
-    
-    h2 {
-        font-size: 1.5rem !important;
-    }
-    
-    h3 {
-        font-size: 1.2rem !important;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        padding: 8px 16px;
-        font-size: 12px;
-    }
+/* Phase button styling for 2D eruption visualization */
+.phase-button {
+    background-color: #f0f2f6;
+    border: 1px solid #d0d7de;
+    color: #24292f;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 5px 2px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.phase-button:hover {
+    background-color: #e0e3e9;
+}
+
+.phase-button.active {
+    background-color: #0366d6;
+    color: white;
+    border-color: #0366d6;
+}
+
+/* Phase timeline styling */
+.phase-timeline {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.timeline-phase {
+    flex: 1;
+    text-align: center;
+    position: relative;
+}
+
+.timeline-phase::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 3px;
+    background-color: #d0d7de;
+    top: 50%;
+    right: -50%;
+    z-index: 1;
+}
+
+.timeline-phase:last-child::after {
+    display: none;
+}
+
+.timeline-dot {
+    width: 15px;
+    height: 15px;
+    background-color: #d0d7de;
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    position: relative;
+    z-index: 2;
+}
+
+.timeline-dot.active {
+    background-color: #0366d6;
 }
