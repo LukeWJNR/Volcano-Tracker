@@ -519,66 +519,8 @@ st.sidebar.markdown("""
 - Additional information: [Climate Links - Volcanoes](https://climatelinks.weebly.com/volcanoes.html)
 """)
 
-# Create two columns for the layout
+# Create two columns for the volcano information section
 col1, col2 = st.columns([7, 3])
-
-with col1:
-    # Create and display the map
-    st.subheader("Active Volcano Map")
-    
-    # Display a message about the number of volcanos shown
-    st.markdown(f"Showing {len(filtered_df)} volcanos")
-    
-    # Create the map with optional monitoring data layers
-    m = create_volcano_map(filtered_df, include_monitoring_data=include_monitoring_data)
-    
-    # Display info about monitoring layers if enabled
-    if include_monitoring_data:
-        st.markdown("""
-        **Monitoring Data Layers:**
-        - **NASA AIRS SO2 Column**: Global atmospheric SO2 measurements (toggle in layer control)
-        - **SO2 Emissions**: Local SO2 emission points detected by satellites
-        - **Volcanic Ash**: Ash clouds and advisories from Volcanic Ash Advisory Centers
-        - **Radon Gas Levels**: Radon gas measurements from monitoring stations (where available)
-        """)
-    
-    # Add custom styling for proper iframe embedding
-    st.markdown("""
-    <head>
-        <!-- Iframe embedding optimization for Replit and external sites -->
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    </head>
-    <style>
-        /* Make the map container responsive */
-        iframe {
-            width: 100%;
-            min-height: 450px;
-        }
-        
-        /* Additional iframe embedding optimization */
-        body {
-            overflow: auto;
-        }
-        
-        /* Make sure the content fits within iframe bounds */
-        .block-container {
-            max-width: 100% !important;
-            padding-left: 5px !important;
-            padding-right: 5px !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Display the map with full container width
-    # Add specific feature flags to improve iframe compatibility
-    st_folium(
-        m, 
-        width=800, 
-        height=450,
-        returned_objects=["last_active_drawing"],
-        key="main_map",
-        use_container_width=True
-    )
 
 with col2:
     st.subheader("Volcano Information")
