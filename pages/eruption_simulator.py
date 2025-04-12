@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
-from utils.api import get_known_volcano_data
+from utils.api import get_volcano_data
 from utils.risk_assessment import generate_risk_levels
 from utils.analytics import inject_ga_tracking, track_event
 from utils.gas_monitoring import (
@@ -46,7 +46,7 @@ def app():
     """)
     
     # Load volcano data
-    volcano_data = get_known_volcano_data()
+    volcano_data = get_volcano_data()
     # Add risk assessment data
     volcano_data = generate_risk_levels(volcano_data)
     
