@@ -15,6 +15,7 @@ import folium
 from streamlit_folium import st_folium
 
 from utils.api import get_known_volcano_data
+from data.glacial_volcanoes import get_glacial_volcanoes
 
 def app():
     st.title("🌋 Climate Change & Volcanic Activity")
@@ -412,14 +413,51 @@ def app():
         # Add volcano & glacier map
         st.header("Interactive Volcano-Glacier Map")
         
-        # Add HTML for a lightweight Leaflet.js map since we can't use React components directly
-        glacier_volcano_map = """
-        <div style="height:400px; border:1px solid #ccc; border-radius:5px; margin:10px 0;">
-          <iframe src="https://www.google.com/maps/d/embed?mid=1-8Fwr7zxDo_kMxA_p3_ahcFSIxRyh3A&ehbc=2E312F" 
-                 width="100%" height="100%" frameborder="0" style="border:0;" allowfullscreen=""></iframe>
-        </div>
-        """
-        st.components.v1.html(glacier_volcano_map, height=420)
+        # Get the glacial volcanoes data
+        glacial_volcanoes = get_glacial_volcanoes()
+        
+        # Create Folium map centered on Iceland (since many glacial volcanoes are there)
+        m = folium.Map(location=[55, -10], zoom_start=2, tiles="cartodbpositron")
+        
+        # Add volcano markers
+        for volcano in glacial_volcanoes:
+            # Determine marker color based on risk level
+            color = {
+                "High": "red",
+                "Medium": "orange",
+                "Low": "blue"
+            }.get(volcano.get("risk_level", "Medium"), "gray")
+            
+            # Create popup content
+            popup_html = f"""
+            <h4>{volcano['name']}</h4>
+            <p><b>Country:</b> {volcano['country']}</p>
+            <p><b>Elevation:</b> {volcano['elevation']}m</p>
+            <p><b>Risk Level:</b> {volcano.get('risk_level', 'Medium')}</p>
+            <p><em>{volcano['notes']}</em></p>
+            """
+            
+            # Create popup and add to marker
+            popup = folium.Popup(popup_html, max_width=300)
+            
+            # Add marker with icon
+            folium.Marker(
+                location=[volcano['lat'], volcano['lng']],
+                popup=popup,
+                tooltip=f"{volcano['name']} - {volcano['country']}",
+                icon=folium.Icon(color=color, icon="mountain", prefix="fa")
+            ).add_to(m)
+            
+        # Display the map
+        st_folium(m, width=700, height=500)
+        
+        # Add legend
+        st.markdown("""
+        **Risk Legend:**
+        - <span style='color: red;'>●</span> High risk from glacial effects
+        - <span style='color: orange;'>●</span> Medium risk from glacial effects
+        - <span style='color: blue;'>●</span> Low risk from glacial effects
+        """, unsafe_allow_html=True)
         
         st.markdown("""
         ### Example Case: Iceland
