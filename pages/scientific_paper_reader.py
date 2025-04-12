@@ -376,7 +376,7 @@ def display_extracted_content(text, images, metadata, filename):
         image_cols = st.columns(3)
         for i, img_data in enumerate(images):
             with image_cols[i % 3]:
-                st.image(img_data['image'], caption=f"Figure from page {img_data['page']}", use_column_width=True)
+                st.image(img_data['image'], caption=f"Figure from page {img_data['page']}", use_container_width=True)
                 
                 # If we have PyMuPDF, provide option to download images
                 if pymupdf_available:
