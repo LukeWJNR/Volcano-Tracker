@@ -11,6 +11,7 @@ Before deploying, ensure you have:
 - Database credentials for PostgreSQL
 - Twilio account for SMS alerts (if using early warning system)
 - Root or sudo access to the server
+- Domain name (for HTTPS setup, optional)
 
 ## Step 1: Server Preparation
 
@@ -69,36 +70,85 @@ sudo docker-compose --version
    
    Update all fields marked with `your_*_here` with your actual credentials.
 
-## Step 4: Run the Deployment Script
+## Step 4: Basic Deployment
 
-Execute the deployment script:
+For a basic deployment:
 
 ```bash
 sudo ./deploy.sh
 ```
 
-The script will:
+This will:
 - Build the Docker container
 - Configure permissions
 - Start the application
 - Verify it's running correctly
 
-## Step 5: Verify Deployment
+## Step 5: Production Enhancements (Optional but Recommended)
+
+For a fully production-ready deployment with all security and reliability enhancements:
+
+```bash
+# For all enhancements:
+sudo ./setup-production.sh --all --domain=yourdomain.com --email=your@email.com
+
+# OR install specific enhancements:
+sudo ./setup-production.sh --nginx --domain=yourdomain.com --email=your@email.com
+sudo ./setup-production.sh --backups
+sudo ./setup-production.sh --monitoring
+```
+
+This will set up:
+1. **HTTPS with Nginx**: Secure access via HTTPS
+2. **Automated Database Backups**: Daily backups with retention management
+3. **System Monitoring**: CPU, memory, disk, and application monitoring with alerts
+4. **Container Auto-Restart**: Automatic recovery from failures
+
+## Step 6: Verify Deployment
 
 1. Check if the application is running:
    ```bash
    sudo docker-compose ps
    ```
    
-   You should see the `app` container running.
+   You should see the `app` container running (and `watchtower` if using production enhancements).
 
-2. Access the dashboard at `http://your-server-ip:5000`
+2. Access the dashboard:
+   - Basic deployment: `http://your-server-ip:5000`
+   - With HTTPS: `https://yourdomain.com`
+
+## Monitoring and Maintenance
+
+### Checking Application Logs
+
+```bash
+sudo docker-compose logs -f app
+```
+
+### Checking Monitoring Status
+
+```bash
+sudo systemctl status volcano-monitor
+sudo journalctl -u volcano-monitor
+```
+
+### Viewing Database Backups
+
+```bash
+ls -la /var/backups/volcano-dashboard
+```
+
+### Manually Running a Backup
+
+```bash
+sudo /usr/local/bin/backup-database.sh
+```
 
 ## Troubleshooting
 
 If the deployment fails:
 
-1. Check logs:
+1. Check container logs:
    ```bash
    sudo docker-compose logs
    ```
@@ -107,9 +157,16 @@ If the deployment fails:
 
 3. Verify network connectivity to the database
 
-4. Make sure ports are not blocked by firewall:
+4. Check file permissions:
    ```bash
-   sudo ufw allow 5000/tcp
+   sudo ls -la /opt/volcano-dashboard/data
+   sudo ls -la /opt/volcano-dashboard/backups
+   ```
+
+5. If using HTTPS, check Nginx logs:
+   ```bash
+   sudo journalctl -u nginx
+   sudo cat /var/log/nginx/error.log
    ```
 
 ## Updating the Application
@@ -126,20 +183,19 @@ When updates are available:
    sudo ./deploy.sh
    ```
 
-This will pull the latest code, rebuild the container, and restart the application.
+The Watchtower service (if installed) will also automatically check for container updates daily.
 
-## Security Measures
+## Security Features
 
 This deployment includes several security features:
 
-- The application runs in a read-only container
-- Environment variables are used for secrets
-- The application runs as a non-root user
-- Network access is limited to required ports only
-- Data directories have strict permissions
-
-For additional security, consider:
-
-- Setting up SSL/TLS using a reverse proxy (Nginx/Apache)
-- Implementing IP restrictions for admin pages
-- Regular security updates for the host system
+- **Read-only container**: The application runs in a read-only filesystem
+- **Environment variables**: Secrets are stored securely in environment variables
+- **Non-root user**: The application runs as a non-privileged user
+- **Resource limits**: CPU and memory constraints are applied
+- **Health checks**: Automatic detection of application issues
+- **Auto-restart**: Automatic recovery from failures
+- **HTTPS encryption**: Secure communication with TLS (if enabled)
+- **Security headers**: Protection against common web vulnerabilities
+- **Regular backups**: Protection against data loss
+- **System monitoring**: Early detection of resource issues

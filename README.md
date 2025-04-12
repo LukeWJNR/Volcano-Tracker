@@ -49,6 +49,23 @@ The script will:
 
 Your application will be available at `http://localhost:5000`
 
+### Production Enhancements
+
+For a fully production-ready deployment with enhanced security and reliability:
+
+```bash
+# Install all production enhancements
+sudo ./setup-production.sh --all --domain=yourdomain.com --email=your@email.com
+```
+
+This sets up:
+- HTTPS with Nginx and Let's Encrypt
+- Automated database backups with retention management
+- System monitoring with alerts
+- Container auto-restart policies
+
+See `DEPLOYMENT_GUIDE.md` for complete details.
+
 ### Manual Deployment with Docker
 
 If you prefer to deploy manually:
