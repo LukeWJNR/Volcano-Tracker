@@ -405,15 +405,12 @@ def app():
             rainfall_df.loc[(rainfall_df['date'] >= '2018-04-14') & 
                          (rainfall_df['date'] <= '2018-04-15'), 'rainfall'] = [35, 42]
             
-            # Add eruption marker
-            eruption_date = pd.to_datetime('2018-05-03')
-            
             # Create plotly figure
             fig = px.line(rainfall_df, x='date', y='rainfall', 
                      title='Daily Rainfall Preceding Kilauea Eruption (2018)')
             
-            # Add eruption marker
-            fig.add_vline(x=eruption_date, line_width=2, line_dash="dash", line_color="red",
+            # Add eruption marker - using string date instead of Timestamp object
+            fig.add_vline(x='2018-05-03', line_width=2, line_dash="dash", line_color="red",
                      annotation_text="Eruption Begins", annotation_position="top right")
             
             # Update layout
@@ -573,9 +570,8 @@ def app():
             fig = px.line(drought_df, x="date", y="drought_index", 
                      title="La Palma Drought Index (2020-2021)")
             
-            # Add eruption start
-            eruption_date = pd.to_datetime('2021-09-19')
-            fig.add_vline(x=eruption_date, line_width=2, line_dash="dash", line_color="red",
+            # Add eruption start - using string date instead of Timestamp object
+            fig.add_vline(x='2021-09-19', line_width=2, line_dash="dash", line_color="red",
                      annotation_text="Eruption Begins", annotation_position="top right")
             
             # Add zone lines
