@@ -67,6 +67,31 @@ def get_volcano_details(volcano_id: str) -> Dict[str, Any]:
         "population_100km": "Unknown",
     }
 
+def get_volcano_by_name(volcano_name: str) -> Optional[Dict[str, Any]]:
+    """
+    Get volcano data for a specific volcano by name.
+    
+    Args:
+        volcano_name (str): Name of the volcano
+        
+    Returns:
+        Optional[Dict[str, Any]]: Dictionary containing volcano data, or None if not found
+    """
+    df = get_volcano_data()
+    
+    # Find the volcano by name (case-insensitive)
+    matches = df[df['name'].str.lower() == volcano_name.lower()]
+    
+    if len(matches) == 0:
+        # Try partial match
+        matches = df[df['name'].str.lower().str.contains(volcano_name.lower())]
+    
+    if len(matches) > 0:
+        # Return the first match as a dictionary
+        return matches.iloc[0].to_dict()
+    
+    return None
+
 def get_iceland_volcanoes() -> pd.DataFrame:
     """
     Get data specifically for Icelandic volcanoes with additional fields.

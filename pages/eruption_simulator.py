@@ -17,6 +17,7 @@ import plotly.express as px
 from datetime import datetime, timedelta
 from utils.api import get_known_volcano_data
 from utils.risk_assessment import generate_risk_levels
+from utils.analytics import inject_ga_tracking, track_event
 from utils.gas_monitoring import (
     simulate_gas_emissions, 
     plot_gas_emissions, 
@@ -26,7 +27,13 @@ from utils.gas_monitoring import (
 )
 
 def app():
+    # Inject Google Analytics tracking
+    inject_ga_tracking()
+    
     st.title("Volcano Eruption Risk Simulator")
+    
+    # Track page view
+    track_event('page_view', 'eruption_simulator')
     
     st.markdown("""
     This interactive tool simulates potential volcanic eruption scenarios based on 
@@ -151,6 +158,11 @@ def app():
     
     # Run simulation button
     if st.button("Run Simulation", type="primary"):
+        # Track simulation run event
+        track_event('simulation_run', 'eruption_simulator', 
+                    f"volcano:{selected_volcano_name}", 
+                    eruption_probability)
+                    
         with st.spinner("Running eruption simulation..."):
             # Run the simulation
             simulation_results = run_eruption_simulation(
