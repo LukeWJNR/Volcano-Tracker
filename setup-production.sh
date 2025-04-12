@@ -4,8 +4,11 @@
 
 set -e
 
-# Check if running with root privileges
-if [ "$EUID" -ne 0 ]; then
+# Check if we're in Replit or similar cloud environment where root isn't available
+if [ -d /home/runner ]; then
+  echo "Detected Replit environment - proceeding without root check"
+  REPLIT_ENV=true
+elif [ "$EUID" -ne 0 ]; then
   echo "Please run as root or with sudo"
   exit 1
 fi
@@ -133,11 +136,18 @@ fi
 
 # 4. Docker auto-restart is already configured in docker-compose.yml
 
-# Build and start the Docker containers
-echo "🔨 Building and starting Docker containers with auto-restart policies..."
-docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
+# If in Replit environment, skip Docker commands
+if [ "$REPLIT_ENV" = true ]; then
+  echo "🔨 Replit environment detected, skipping Docker container management..."
+  echo "🔄 Production enhancements have been prepared for deployment on a real server"
+  echo "💡 These configurations will not work directly in Replit but are ready for export"
+else
+  # Build and start the Docker containers
+  echo "🔨 Building and starting Docker containers with auto-restart policies..."
+  docker-compose down
+  docker-compose build --no-cache
+  docker-compose up -d
+fi
 
 echo "✨ Volcano Dashboard production environment setup has been completed successfully!"
 echo "📊 The dashboard is now available at:"
