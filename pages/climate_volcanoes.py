@@ -256,10 +256,12 @@ def app():
         erosion issues.
         """)
         
-        # Add Madagascar soil erosion image
-        st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Madagascar_soil_erosion.jpg/640px-Madagascar_soil_erosion.jpg",
-               caption="Severe soil erosion in Madagascar (Source: Wikimedia Commons)",
-               use_container_width=True)
+        # Add Madagascar soil erosion description since image may not load
+        st.info("""
+        📷 **Image description:** Aerial view of severe soil erosion in Madagascar, showing distinctive 
+        red soil "lavaka" formations caused by heavy rainfall on deforested hillsides. The image shows 
+        deep gullies and channels carved into the landscape.
+        """, icon="🖼️")
         
         st.markdown("""
         Madagascar represents an extreme example of climate-driven soil erosion, with distinctive red soil features 
@@ -384,10 +386,13 @@ def app():
         col1, col2 = st.columns([3, 2])
         
         with col1:
-            # Show diagram of isostatic rebound
-            st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/PIA15099_print.jpg/640px-PIA15099_print.jpg",
-                   caption="Satellite view of retreating glaciers (USGS)",
-                   use_container_width=True)
+            # Show diagram of isostatic rebound as text description since image has loading issues
+            st.info("""
+            📷 **Image description:** Satellite imagery from USGS showing significant glacier retreat, 
+            where blue ice has dramatically receded over a 10-year period. The image shows exposed 
+            bedrock where glacier coverage previously existed, highlighting the rapid rate of melting 
+            in glaciated volcanic regions.
+            """, icon="🧊")
         
         with col2:
             st.markdown("""
