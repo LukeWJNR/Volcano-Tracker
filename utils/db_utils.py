@@ -657,7 +657,7 @@ def add_satellite_image(
     image_url: str, 
     image_date: str, 
     image_type: str, 
-    description: str = None
+    description: Optional[str] = None
 ) -> bool:
     """
     Add a satellite image.
