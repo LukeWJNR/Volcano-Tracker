@@ -68,12 +68,12 @@ def app():
         help="Control how fast the eruption animation plays"
     )
     
-    # Quality settings
+    # Quality settings with performance optimization
     quality = st.sidebar.select_slider(
         "Visualization Quality",
-        options=["Low", "Medium", "High"],
+        options=["Low", "Medium", "High", "Ultra"],
         value="Medium",
-        help="Higher quality shows more detail but may be slower on some devices"
+        help="Higher quality shows more detail but may be slower on some devices. Use 'Low' for embedded views."
     )
     
     # Camera position
@@ -345,8 +345,8 @@ def app():
     
     // Optimize for performance based on quality setting
     const quality = volcanoData.quality || 'Medium';
-    const particleCount = {{'Low': 2000, 'Medium': 5000, 'High': 10000}}[quality];
-    const segmentCount = {{'Low': 16, 'Medium': 24, 'High': 32}}[quality];
+    const particleCount = {{'Low': 2000, 'Medium': 5000, 'High': 10000, 'Ultra': 20000}}[quality] || 5000;
+    const segmentCount = {{'Low': 16, 'Medium': 24, 'High': 32, 'Ultra': 64}}[quality] || 24;
     const geometryDetail = {{'Low': 8, 'Medium': 16, 'High': 32}}[quality];
     
     // Initial setup
