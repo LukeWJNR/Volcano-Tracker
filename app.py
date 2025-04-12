@@ -457,13 +457,10 @@ with col1:
         - **Radon Gas Levels**: Radon gas measurements from monitoring stations (where available)
         """)
     
-    # Add custom styling and meta tags for proper iframe embedding
+    # Add custom styling for proper iframe embedding
     st.markdown("""
     <head>
         <!-- Iframe embedding optimization for Replit and external sites -->
-        <meta http-equiv="X-Frame-Options" content="ALLOWALL">
-        <meta http-equiv="Access-Control-Allow-Origin" content="*">
-        <meta http-equiv="Content-Security-Policy" content="frame-ancestors *">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     </head>
     <style>
