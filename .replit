@@ -4,8 +4,8 @@ modules = ["python-3.11"]
 channel = "stable-24_05"
 
 [deployment]
-deploymentTarget = "cloudrun"
-run = ["sh", "-c", "streamlit run app.py --server.port 5000"]
+deploymentTarget = "static"
+publicDir = "https://climatelinks.weebly.com/volcanoes.html"
 
 [workflows]
 runButton = "Project"
