@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PGHOST=${PGHOST}
+      - PGUSER=${PGUSER}
+      - PGPASSWORD=${PGPASSWORD}
+      - PGDATABASE=${PGDATABASE}
+      - PGPORT=${PGPORT}
+      - DATABASE_URL=${DATABASE_URL}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      # Mount specific directories that need write access
+      - ./data:/app/data:ro      # Mount data directory as read-only
+      - app_logs:/app/logs       # Volume for logs (writable)
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    # Set read-only file system for enhanced security
+    read_only: true
+    # Allow these specific paths to be writable
+    tmpfs:
+      - /tmp
+      - /var/run
+
+volumes:
+  app_logs:
+    # Named volume for persistent log storage
