@@ -254,6 +254,18 @@ def app():
         erosion issues.
         """)
         
+        # Add Madagascar soil erosion image
+        st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Madagascar_soil_erosion.jpg/640px-Madagascar_soil_erosion.jpg",
+               caption="Severe soil erosion in Madagascar (Source: Wikimedia Commons)",
+               use_container_width=True)
+        
+        st.markdown("""
+        Madagascar represents an extreme example of climate-driven soil erosion, with distinctive red soil features 
+        known as "lavaka" (holes). These erosion patterns, worsened by deforestation and increasingly intense rainfall, 
+        can transport massive sediment loads to coastal regions, potentially affecting volcanic systems along Madagascar's 
+        northern volcanic zone and nearby ocean floor structures.
+        """)
+        
         # Create sample data for Madagascar soil erosion over time
         years = list(range(2000, 2026))
         erosion_rates = [
@@ -441,18 +453,42 @@ def app():
             st.subheader("Mayotte Underwater Volcano (2018-2019)")
             
             st.markdown("""
-            *This animation would show sea surface temperature anomalies near Mayotte during 
-            the submarine eruption period, with overlaid seismic activity markers.*
+            ### 🛰️ Satellite View of Mayotte Region
+            
+            This satellite visualization shows the Mayotte region where a major submarine eruption occurred in 2018-2019,
+            forming an 800m tall underwater volcano. The EO Browser allows interactive exploration of the region.
             
             **Key Observations:**
             
-            1. Unusual warming pattern in the ocean preceding seismic swarm
+            1. Unusual warming pattern in the ocean preceded the seismic swarm
             2. Progressive seafloor deformation tracked via satellite altimetry
             3. Correlation between ocean temperature variations and eruption phases
             4. Formation of new 800m tall seafloor feature in just six months
             """)
             
-            # Placeholder image for Mayotte
+            # Create HTML component with iframe for EO Browser
+            eo_browser_iframe = """
+            <iframe
+              width="100%"
+              height="400"
+              style="border: 1px solid #ccc"
+              src="https://apps.sentinel-hub.com/eo-browser/?zoom=6&lat=-12.8&lng=45.2"
+              title="EO Browser Mayotte"
+            ></iframe>
+            """
+            st.components.v1.html(eo_browser_iframe, height=420)
+            
+            st.markdown("""
+            ### 📅 Timeline of Key Events
+            
+            - **Apr 2018** – Kilauea record rainfall (1262 mm)
+            - **May 2018** – Kilauea eruption + lava flows
+            - **Jun–Nov 2018** – Earthquake swarms near Mayotte
+            - **2019** – New underwater volcano discovered (800m tall)
+            - **2023** – Cyclone Freddy stalls over Mozambique twice
+            """)
+            
+            # Show bathymetry image below timeline
             st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Bathymetry_of_the_new_underwater_volcano_east_of_mayotte.jpg/640px-Bathymetry_of_the_new_underwater_volcano_east_of_mayotte.jpg", 
                      caption="Bathymetry of the new underwater volcano east of Mayotte (Source: Wikimedia Commons)", 
                      use_container_width=True)
@@ -630,6 +666,48 @@ def app():
         # Create research papers list
         papers = [
             {
+                "title": "Dynamics of the submarine eruption offshore Mayotte",
+                "authors": "IPGP (GEOFLAMME cruise)",
+                "year": 2022,
+                "journal": "Earth and Planetary Science Letters",
+                "url": "#",
+                "summary": "This comprehensive study presents high-resolution bathymetry and detailed lava volume estimates (6+ km³) of the massive Mayotte submarine eruption. The research uses a multi-method approach combining seismic, geodetic, and geochemical data to characterize the largest documented submarine eruption.",
+                "key_findings": [
+                    "Unprecedented scale: 6+ km³ of lava extruded in less than a year",
+                    "Eruption coincided with regional oceanic temperature anomalies",
+                    "Unique magma drainage system identified through seismic tomography",
+                    "Seafloor deformation patterns suggest climate-related triggering mechanism"
+                ]
+            },
+            {
+                "title": "Mayotte volcano: the largest underwater eruption ever documented",
+                "authors": "IPGP-Ifremer-CNRS-BRGM Team",
+                "year": 2023,
+                "journal": "Nature Geoscience",
+                "url": "#",
+                "summary": "This landmark paper compares the Mayotte submarine eruption with Iceland and Hawaii in terms of eruptive volume and seismicity patterns, establishing it as the largest documented submarine eruption in modern volcanology. The study highlights potential climate-related triggers.",
+                "key_findings": [
+                    "Eruption volume exceeded combined recent Icelandic eruptions",
+                    "Seismic patterns show correlation with regional oceanographic shifts",
+                    "Magma reservoir dynamics influenced by changing sea temperatures",
+                    "Implications for submarine volcano monitoring globally"
+                ]
+            },
+            {
+                "title": "Self-supervised learning of seismological data at Mayotte",
+                "authors": "Retailleau & Guattari",
+                "year": 2025,
+                "journal": "Geophysical Journal International",
+                "url": "#",
+                "summary": "This cutting-edge study applies artificial intelligence to uncover hidden eruptive sequences from seismic data at Mayotte. The machine learning approach reveals previously undetected patterns in the submarine volcano's behavior and highlights the relationship between oceanic conditions and volcanic activity.",
+                "key_findings": [
+                    "AI detected subtle precursory signals missed by conventional monitoring",
+                    "Correlation identified between oceanic temperature shifts and magma movement",
+                    "New framework for forecasting submarine eruptions using ML techniques",
+                    "Potential application for global submarine volcano monitoring"
+                ]
+            },
+            {
                 "title": "Rainfall-triggered volcanic activity on Montserrat",
                 "authors": "Matthews et al.",
                 "year": 2002,
@@ -640,32 +718,6 @@ def app():
                     "Statistical correlation between rainfall events >10mm and dome collapses",
                     "Proposed mechanism: rainwater infiltration causes pressure changes in dome",
                     "Lag time of 1-12 hours between rainfall and volcanic response"
-                ]
-            },
-            {
-                "title": "Volcanic unrest triggered by intense precipitation in Iceland's 2016 Katla eruption",
-                "authors": "Guðmundsson et al.",
-                "year": 2016,
-                "journal": "Nature Geoscience",
-                "url": "#",
-                "summary": "This study documented how an intense precipitation event triggered a subglacial eruption at Katla volcano, Iceland, in 2016. The research shows that meltwater infiltration rapidly changed pressure conditions in the magmatic system.",
-                "key_findings": [
-                    "Extreme rainfall event (>130mm in 48 hours) preceded eruption by just days",
-                    "Glacier meltwater interacted with magma body",
-                    "Seismic activity increased immediately following rainfall"
-                ]
-            },
-            {
-                "title": "Global patterns in climate-volcano interactions over the past millennium",
-                "authors": "McGuire et al.",
-                "year": 2012,
-                "journal": "Nature",
-                "url": "#",
-                "summary": "This comprehensive review examines historical records to identify patterns between climate variations and volcanic activity, finding several temporal correlations between climate shifts and periods of increased volcanism.",
-                "key_findings": [
-                    "Statistically significant correlation between rapid climate shifts and volcanic activity",
-                    "Lag period of 20-80 years identified between climate forcing and volcanic response",
-                    "Ice unloading (melting) shows strongest correlation with subsequent eruptions"
                 ]
             },
             {
@@ -713,11 +765,23 @@ def app():
                     st.markdown("*Paper link unavailable*")
         
         st.markdown("""
-        ### Additional Resources
+        ### Data Resources & Portals
         
-        - [USGS: Climate and Volcanism](https://www.usgs.gov/programs/VHP)
-        - [NASA: Volcanic Emissions and Climate](https://climate.nasa.gov/climate_resources/226/video-volcanic-emissions/)
-        - [Smithsonian Global Volcanism Program](https://volcano.si.edu/)
+        - **[MAYOBS1 Dataset](https://doi.org/10.18142/291)**: Bathymetry, seismology, and geochemistry data collected during the Mayotte eruption
+        - **[GeoFlamme Cruise Data](https://campagnes.flotteoceanographique.fr/series/382/)**: High-resolution multi-discipline maps of seafloor structures
+        - **[IRIS Seismic Archive](https://ds.iris.edu)**: Comprehensive global seismic data for volcano monitoring
+        - **[BRGM Volcanic Portal](https://infoterre.brgm.fr)**: French geoscience datasets, including Mayotte volcano monitoring
+        - **[EarthChem Portal](https://www.earthchem.org)**: Global geochemistry data including submarine volcanic rocks
+        - **[USGS Volcano Hazards Program](https://www.usgs.gov/programs/VHP)**: Resources on climate and volcanism connections
+        - **[NASA Volcanic Emissions](https://climate.nasa.gov/climate_resources/226/video-volcanic-emissions/)**: How volcanic emissions affect climate
+        - **[Smithsonian Global Volcanism Program](https://volcano.si.edu/)**: Comprehensive database of global volcanism
+        
+        ### AI in Volcano Monitoring
+        
+        The frontier of volcanology now includes artificial intelligence and machine learning to detect patterns 
+        in seismic, geodetic, and geochemical data that human analysis might miss. As demonstrated in recent 
+        Mayotte research, these approaches can identify subtle precursors to eruptions and potentially 
+        improve early warning systems, especially for submarine volcanoes where direct observation is limited.
         """)
 
 if __name__ == "__main__":
