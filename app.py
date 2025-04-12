@@ -175,10 +175,11 @@ with col3:
     st.markdown(f"""<a href="/pages/sar_animations.py" target="_self" class="nav-link">
                     {icons['satellite']} <span>SAR Data</span>
                 </a>""", unsafe_allow_html=True)
-with col4:
-    st.markdown(f"""<a href="/pages/risk_map.py" target="_self" class="nav-link">
-                    {icons['risk']} <span>Risk Map</span>
-                </a>""", unsafe_allow_html=True)
+# Risk Map removed as requested
+# with col4:
+#     st.markdown(f"""<a href="/pages/risk_map.py" target="_self" class="nav-link">
+#                     {icons['risk']} <span>Risk Map</span>
+#                 </a>""", unsafe_allow_html=True)
 with col5:
     st.markdown(f"""<a href="/pages/volcano_news.py" target="_self" class="nav-link">
                     {icons['news']} <span>News</span>
