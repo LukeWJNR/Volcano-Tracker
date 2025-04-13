@@ -311,7 +311,7 @@ st.sidebar.title("Filters")
 with st.spinner("Loading volcano data..."):
     try:
         volcanos_df = get_volcano_data()
-        if st.session_state.last_update is None:
+        if 'last_update' in st.session_state and st.session_state.last_update is None:
             st.session_state.last_update = datetime.now()
     except Exception as e:
         st.error(f"Error loading volcano data: {str(e)}")
@@ -361,7 +361,7 @@ if volcano_name_filter:
             st.sidebar.warning(f"Could not save search history: {str(e)}")
 
 # Display last update time
-if st.session_state.last_update:
+if 'last_update' in st.session_state and st.session_state.last_update:
     st.sidebar.markdown(f"**Last updated:** {st.session_state.last_update.strftime('%Y-%m-%d %H:%M:%S')}")
 
 # Refresh button
