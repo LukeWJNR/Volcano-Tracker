@@ -368,3 +368,239 @@ def generate_eruption_timeline(
         'eruption_intensity': eruption_intensity.tolist(),
         'eruption_occurred': eruption_occurs
     }
+    
+def generate_magma_chamber_animation(volcano_type: str, time_step: int, max_steps: int = 100) -> dict:
+    """
+    Generate data for animating a magma chamber based on volcano type and time step.
+    
+    Args:
+        volcano_type (str): Type of volcano (shield, stratovolcano, etc)
+        time_step (int): Current time step in the animation sequence
+        max_steps (int): Total number of steps in animation
+        
+    Returns:
+        dict: Dictionary with magma chamber animation data
+    """
+    # Get volcano type characteristics
+    volcano_info = VOLCANO_TYPES.get(volcano_type, VOLCANO_TYPES['stratovolcano'])
+    
+    # Chamber depth varies by volcano type
+    chamber_depth = volcano_info.get('magma_chamber_depth', 5.0)
+    has_secondary = volcano_info.get('secondary_chambers', False)
+    
+    # Calculate fill percentage based on time step
+    progress = min(1.0, time_step / (0.7 * max_steps))  # Magma fills up to 70% of timeline
+    
+    # Chamber dimensions
+    main_chamber = {
+        'width': 3.0 + 1.0 * progress,  # Grows slightly as it fills
+        'height': 1.5 + 0.5 * progress,
+        'depth': chamber_depth,
+        'fill_percent': min(100, progress * 120),  # 0-100%
+        'pressure': progress ** 2 * 100,  # 0-100 MPa
+        'temperature': volcano_info.get('magma_temperature', 1000) * (0.8 + 0.2 * progress)
+    }
+    
+    # Secondary chambers if applicable
+    secondary_chambers = []
+    if has_secondary:
+        # Add a deeper, smaller chamber
+        secondary_chambers.append({
+            'width': 2.0 + 0.5 * progress,
+            'height': 1.0 + 0.2 * progress,
+            'depth': chamber_depth * 1.5,  # Deeper than main chamber
+            'fill_percent': min(100, progress * 150),  # Fills faster than main chamber
+            'pressure': progress ** 2 * 120,  # Slightly higher pressure
+            'temperature': volcano_info.get('magma_temperature', 1000) * (0.9 + 0.15 * progress)
+        })
+    
+    # Calculate conduit dimensions
+    conduit_width = 0.2 + 0.3 * progress
+    
+    # For shield volcanoes, create a wider plumbing system
+    if volcano_type == 'shield':
+        conduit_width *= 1.5
+        main_chamber['width'] *= 1.2
+    
+    # For calderas, create a much larger chamber system
+    elif volcano_type == 'caldera':
+        main_chamber['width'] *= 1.5
+        main_chamber['height'] *= 1.3
+    
+    # Return complete animation data
+    return {
+        'main_chamber': main_chamber,
+        'secondary_chambers': secondary_chambers,
+        'conduit_width': conduit_width,
+        'magma_viscosity': volcano_info.get('magma_viscosity', 'Medium'),
+        'magma_composition': volcano_info.get('magma_composition', 'Andesitic'),
+        'time_step': time_step,
+        'max_steps': max_steps,
+        'progress_percent': progress * 100
+    }
+
+def generate_deformation_plot(volcano_type: str, time_steps: int, max_steps: int) -> dict:
+    """
+    Generate data for ground deformation plot based on volcano type.
+    
+    Args:
+        volcano_type (str): Type of volcano
+        time_steps (int): Current time step
+        max_steps (int): Maximum time steps
+        
+    Returns:
+        dict: Dictionary with deformation data
+    """
+    # Get volcano type characteristics
+    volcano_info = VOLCANO_TYPES.get(volcano_type, VOLCANO_TYPES['stratovolcano'])
+    
+    # Calculate progress as a percentage of total steps
+    progress = min(1.0, time_steps / max_steps)
+    
+    # Initialize distance and deformation arrays
+    distances = np.linspace(-10, 10, 100)  # km from center of volcano
+    deformation = np.zeros_like(distances)
+    
+    # Different volcano types have different deformation patterns
+    max_deform = {
+        'shield': 0.15,          # Less deformation in shield volcanoes
+        'stratovolcano': 0.25,   # Moderate deformation
+        'caldera': 0.4,          # Significant deformation
+        'cinder_cone': 0.1,      # Minor deformation
+        'lava_dome': 0.3         # Significant surface deformation
+    }.get(volcano_type, 0.2)
+    
+    # Shape parameters for the deformation curve
+    width_param = {
+        'shield': 3.5,           # Wider deformation field
+        'stratovolcano': 2.5,    # Medium width
+        'caldera': 4.0,          # Very wide
+        'cinder_cone': 1.8,      # Narrow
+        'lava_dome': 2.0         # Narrow and concentrated
+    }.get(volcano_type, 2.5)
+    
+    # Calculate the deformation curve (bell curve shape)
+    deformation = max_deform * progress * np.exp(-(distances**2) / width_param**2)
+    
+    # Add some random noise to make it look more realistic
+    noise = np.random.normal(0, 0.01, size=len(distances))
+    deformation += noise
+    
+    # Only return what we need
+    return {
+        'distances': distances.tolist(),
+        'deformation': deformation.tolist(),
+        'max_deformation': float(np.max(deformation)),
+        'min_deformation': float(np.min(deformation)),
+        'time_step': time_steps,
+        'max_steps': max_steps,
+        'progress_percent': progress * 100
+    }
+
+def generate_eruption_sequence_animation(volcano_type: str, time_step: int, max_steps: int) -> dict:
+    """
+    Generate eruption sequence animation data.
+    
+    Args:
+        volcano_type (str): Type of volcano
+        time_step (int): Current time step
+        max_steps (int): Maximum time steps
+        
+    Returns:
+        dict: Dictionary with eruption sequence data
+    """
+    # Get volcano type characteristics
+    volcano_info = VOLCANO_TYPES.get(volcano_type, VOLCANO_TYPES['stratovolcano'])
+    
+    # Calculate progress
+    progress = min(1.0, time_step / max_steps)
+    
+    # Define phases of eruption
+    phases = {
+        'pre_eruption': progress < 0.4,
+        'initial_eruption': 0.4 <= progress < 0.6,
+        'main_eruption': 0.6 <= progress < 0.85,
+        'waning': 0.85 <= progress
+    }
+    
+    # Current phase
+    current_phase = next((name for name, is_active in phases.items() if is_active), 'pre_eruption')
+    
+    # Calculate phase-specific progress
+    phase_progress = {
+        'pre_eruption': min(1.0, progress / 0.4),
+        'initial_eruption': min(1.0, (progress - 0.4) / 0.2),
+        'main_eruption': min(1.0, (progress - 0.6) / 0.25),
+        'waning': min(1.0, (progress - 0.85) / 0.15)
+    }
+    
+    # Volcanic plume height (in kilometers)
+    max_plume_height = volcano_info.get('plume_height_max', 10.0)
+    plume_height = 0
+    
+    # Ash columns develop during initial and main phases
+    if current_phase == 'initial_eruption':
+        plume_height = max_plume_height * 0.5 * phase_progress[current_phase]
+    elif current_phase == 'main_eruption':
+        plume_height = max_plume_height * (0.5 + 0.5 * phase_progress[current_phase])
+    elif current_phase == 'waning':
+        plume_height = max_plume_height * (1.0 - 0.7 * phase_progress[current_phase])
+    
+    # Lava flow parameters
+    lava_flow_length = 0
+    max_flow_length = {
+        'shield': 10.0,           # Long flows
+        'stratovolcano': 5.0,     # Medium flows
+        'caldera': 3.0,           # Short flows, more explosive
+        'cinder_cone': 2.0,       # Short flows
+        'lava_dome': 1.0          # Very short flows
+    }.get(volcano_type, 5.0)
+    
+    # Calculate lava flow length
+    if current_phase == 'initial_eruption':
+        lava_flow_length = max_flow_length * 0.2 * phase_progress[current_phase]
+    elif current_phase == 'main_eruption':
+        lava_flow_length = max_flow_length * (0.2 + 0.7 * phase_progress[current_phase])
+    elif current_phase == 'waning':
+        lava_flow_length = max_flow_length * (0.9 + 0.1 * phase_progress[current_phase])
+    
+    # Pyroclastic flows mainly occur in explosive eruptions
+    pyroclastic_flow_length = 0
+    if volcano_type in ['stratovolcano', 'caldera']:
+        if current_phase == 'main_eruption':
+            pyroclastic_flow_length = 4.0 * phase_progress[current_phase]
+    
+    # Ash deposit thickness (in meters)
+    ash_thickness = 0
+    if current_phase in ['initial_eruption', 'main_eruption', 'waning']:
+        ash_accumulation_rate = {
+            'shield': 0.01,        # Minimal ash
+            'stratovolcano': 0.1,  # Moderate ash
+            'caldera': 0.3,        # Heavy ash
+            'cinder_cone': 0.05,   # Light ash
+            'lava_dome': 0.02      # Very light ash
+        }.get(volcano_type, 0.1)
+        
+        # Ash accumulates over time
+        if current_phase == 'initial_eruption':
+            ash_thickness = ash_accumulation_rate * phase_progress[current_phase]
+        elif current_phase == 'main_eruption':
+            ash_thickness = ash_accumulation_rate * (1.0 + 2.0 * phase_progress[current_phase])
+        elif current_phase == 'waning':
+            ash_thickness = ash_accumulation_rate * (3.0 + 0.5 * phase_progress[current_phase])
+    
+    # Return all animation data
+    return {
+        'volcano_type': volcano_type,
+        'time_step': time_step,
+        'max_steps': max_steps,
+        'progress': progress * 100,
+        'current_phase': current_phase,
+        'phase_progress': phase_progress[current_phase] * 100,
+        'plume_height': plume_height,
+        'lava_flow_length': lava_flow_length,
+        'pyroclastic_flow_length': pyroclastic_flow_length,
+        'ash_thickness': ash_thickness,
+        'explosion_intensity': volcano_info.get('explosivity', 'Medium'),
+        'magma_viscosity': volcano_info.get('magma_viscosity', 'Medium')
+    }
