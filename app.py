@@ -242,7 +242,7 @@ icons = {
 }
 
 # Add navigation links with professional SVG icons
-col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 with col1:
     st.markdown(f"""<a href="/" target="_self" class="nav-link">
                     {icons['dashboard']} <span>Dashboard</span>
@@ -254,6 +254,10 @@ with col2:
 with col3:
     st.markdown(f"""<a href="/pages/sar_animations.py" target="_self" class="nav-link">
                     {icons['satellite']} <span>SAR Data</span>
+                </a>""", unsafe_allow_html=True)
+with col4:
+    st.markdown(f"""<a href="/pages/glacial_volcano_cards.py" target="_self" class="nav-link">
+                    {icons['climate']} <span>Glacial</span>
                 </a>""", unsafe_allow_html=True)
 # Risk Map removed as requested
 # with col4:
@@ -271,6 +275,10 @@ with col6:
 with col7:
     st.markdown(f"""<a href="/pages/notes.py" target="_self" class="nav-link">
                     {icons['notes']} <span>Notes</span>
+                </a>""", unsafe_allow_html=True)
+with col8:
+    st.markdown(f"""<a href="/pages/climate_volcanoes.py" target="_self" class="nav-link">
+                    {icons['climate']} <span>Climate</span>
                 </a>""", unsafe_allow_html=True)
 
 st.markdown("---")
@@ -469,6 +477,11 @@ if st.sidebar.button(f"{sound_icon} Volcano Sound Profiles", help="Explore volca
 sar_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="14.31" y1="8" x2="20.05" y2="17.94"></line><line x1="9.69" y1="8" x2="21.17" y2="8"></line><line x1="7.38" y1="12" x2="13.12" y2="2.06"></line><line x1="9.69" y1="16" x2="3.95" y2="6.06"></line><line x1="14.31" y1="16" x2="2.83" y2="16"></line><line x1="16.62" y1="12" x2="10.88" y2="21.94"></line></svg>"""
 if st.sidebar.button(f"{sar_icon} SAR Animations", help="View SAR data and animations from COMET Volcano Portal"):
     switch_page("sar_animations")
+
+# Glacial Volcano Cards page link
+glacier_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 10-10 10 10"></path><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c4.97 0 9 3.58 9 8 0 1.5-.53 2.9-1.43 4.03"></path><path d="M10.17 15A3.98 3.98 0 0 0 12 16c2.2 0 4-1.8 4-4 0-.73-.2-1.41-.54-2"></path><path d="M4.53 17.05A9.12 9.12 0 0 1 3 12c0-1.18.23-2.3.65-3.31"></path><path d="M14.67 9.12c.38-.67.83-1.59 1.33-2.12 1.3-1.3 2.5-1 2.5-1"></path><path d="M12 12c-1.3-1.3-3.17-3.3-3.17-3.3 0 0-.3 3 2.13 3"></path><path d="M13.67 7.12C13.29 7.79 12.4 9 12 9c-1.7 0-1.7-2.5-1.7-2.5"></path><path d="M16.51 11.51 15 10c-1.3-1.3-2-1-2.5 0s-.74 2.87-.5 3.5c.24.63 1 1.5 2 1.5s3-1 3-1"></path></svg>"""
+if st.sidebar.button(f"{glacier_icon} Glacial Volcano Cards", help="View risk assessments for glaciated volcanoes affected by climate change"):
+    switch_page("glacial_volcano_cards")
 
 # 2D Eruption Animation (Lightweight)
 eruption_2d_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>"""
