@@ -242,7 +242,7 @@ def generate_risk_heatmap_data(volcanoes_df: pd.DataFrame) -> List[List[float]]:
     
     return heatmap_data
 
-def calculate_lava_buildup_index(volcano_data: Dict[str, Any]) -> float:
+def calculate_lava_buildup_index(volcano_data: Dict[str, Any], earthquake_data: List = None) -> float:
     """
     Calculate the Lava Build-Up Index for a volcano based on various indicators.
     This index quantifies the potential for lava accumulation in the volcano's magma 
@@ -255,11 +255,19 @@ def calculate_lava_buildup_index(volcano_data: Dict[str, Any]) -> float:
     
     Args:
         volcano_data (Dict[str, Any]): Dictionary containing volcano data
+        earthquake_data (List, optional): List of earthquake data from USGS. If None, will fetch from API.
         
     Returns:
         float: Lava Build-Up Index on a scale of 0.0 to 10.0
     """
-    from utils.map_utils import fetch_usgs_earthquake_data
+    # If no earthquake data provided, fetch it (this is less efficient)
+    if earthquake_data is None:
+        try:
+            from utils.map_utils import fetch_usgs_earthquake_data
+            earthquake_data = fetch_usgs_earthquake_data()
+        except Exception as e:
+            print(f"Error fetching earthquake data: {e}")
+            earthquake_data = []
     
     # Generate a thermal anomaly count based on volcano characteristics
     # In production, this would come from satellite thermal imaging
@@ -338,9 +346,6 @@ def calculate_lava_buildup_index(volcano_data: Dict[str, Any]) -> float:
     lat = volcano_data.get('latitude')
     lon = volcano_data.get('longitude')
     
-    # Get earthquake data from USGS API
-    earthquake_data = fetch_usgs_earthquake_data()
-    
     # Sum up earthquake magnitudes near the volcano
     local_quake_sum = 0
     
@@ -394,6 +399,8 @@ def calculate_volcano_metrics(volcanoes_df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame with added metrics columns
     """
+    from utils.map_utils import fetch_usgs_earthquake_data
+    
     # Create a copy to avoid modifying the original
     df = volcanoes_df.copy()
     
@@ -401,8 +408,22 @@ def calculate_volcano_metrics(volcanoes_df: pd.DataFrame) -> pd.DataFrame:
     if 'risk_factor' not in df.columns:
         df = generate_risk_levels(df)
     
-    # Calculate Lava Build-Up Index for each volcano
-    df['lava_buildup_index'] = df.apply(lambda row: calculate_lava_buildup_index(row.to_dict()), axis=1)
+    # Fetch earthquake data once for all volcanoes
+    try:
+        # Get earthquake data from USGS API
+        earthquake_data = fetch_usgs_earthquake_data()
+    except Exception as e:
+        print(f"Error fetching earthquake data: {e}")
+        earthquake_data = []
+    
+    # Calculate Lava Build-Up Index for each volcano with shared earthquake data
+    def calculate_lbi_with_shared_data(row):
+        row_dict = row.to_dict()
+        # Create a function that uses the shared earthquake data
+        return calculate_lava_buildup_index(row_dict, earthquake_data)
+    
+    # Apply the calculation with shared earthquake data
+    df['lava_buildup_index'] = df.apply(calculate_lbi_with_shared_data, axis=1)
     
     # Add more metrics here as needed
     
