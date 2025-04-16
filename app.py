@@ -200,23 +200,44 @@ with map_col1:
             volcanos_df = get_volcano_data()
             if st.session_state.last_update is None:
                 st.session_state.last_update = datetime.now()
+        
+        # Get filter values from UI with defaults
+        filter_region = selected_region if 'selected_region' in locals() else "All"
+        filter_name = volcano_name_filter if 'volcano_name_filter' in locals() else ""
+        
+        # Get data layer values with defaults
+        show_monitoring = True
+        if 'include_monitoring_data' in locals():
+            show_monitoring = include_monitoring_data
+            
+        show_eq = True
+        if 'show_earthquakes' in locals():
+            show_eq = show_earthquakes
+            
+        show_eq_swarms = True
+        if 'show_swarms' in locals():
+            show_eq_swarms = show_swarms
+            
+        show_deform = True
+        if 'show_deformation' in locals():
+            show_deform = show_deformation
                 
         # Apply filters
         filtered_df = volcanos_df.copy()
-        if 'selected_region' in locals() and selected_region != "All":
-            filtered_df = filtered_df[filtered_df['region'] == selected_region]
+        if filter_region != "All":
+            filtered_df = filtered_df[filtered_df['region'] == filter_region]
             
-        if 'volcano_name_filter' in locals() and volcano_name_filter:
-            filtered_df = filtered_df[filtered_df['name'].str.contains(volcano_name_filter, case=False)]
+        if filter_name:
+            filtered_df = filtered_df[filtered_df['name'].str.contains(filter_name, case=False)]
             
         st.markdown(f"Showing {len(filtered_df)} volcanos")
         
         # Create the map with optional monitoring data layers
         m = create_volcano_map(filtered_df, 
-                             include_monitoring_data=include_monitoring_data,
-                             show_earthquakes=show_earthquakes,
-                             show_swarms=show_swarms,
-                             show_deformation=show_deformation)
+                             include_monitoring_data=show_monitoring,
+                             show_earthquakes=show_eq,
+                             show_swarms=show_eq_swarms,
+                             show_deformation=show_deform)
         
         # Add custom styling for proper iframe embedding
         st.markdown("""
