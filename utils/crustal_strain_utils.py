@@ -257,7 +257,7 @@ def add_strain_data_to_map(m: folium.Map, wsm_data: pd.DataFrame, num_points: in
     HeatMap(
         heatmap_data,
         radius=15,
-        gradient={0.4: 'blue', 0.65: 'lime', 0.8: 'yellow', 1: 'red'},
+        gradient={'0.4': 'blue', '0.65': 'lime', '0.8': 'yellow', '1.0': 'red'},
         min_opacity=0.5,
         blur=10
     ).add_to(heatmap_group)
