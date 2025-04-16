@@ -81,6 +81,7 @@ def switch_page(page_name: str):
             )
 
 from utils.api import get_volcano_data, get_volcano_details
+from utils.risk_assessment import calculate_volcano_metrics, calculate_lava_buildup_index
 from utils.map_utils import create_volcano_map, create_popup_html
 from utils.web_scraper import get_so2_data as get_satellite_so2_data
 from utils.web_scraper import get_volcanic_ash_data, get_radon_data
@@ -198,6 +199,8 @@ with map_col1:
         # Load volcano data for the map
         with st.spinner("Loading volcano data..."):
             volcanos_df = get_volcano_data()
+            # Calculate volcano risk metrics including Lava Build-Up Index
+            volcanos_df = calculate_volcano_metrics(volcanos_df)
             if st.session_state.last_update is None:
                 st.session_state.last_update = datetime.now()
         
@@ -338,6 +341,8 @@ if 'favorites' not in st.session_state:
 with st.spinner("Loading volcano data..."):
     try:
         volcanos_df = get_volcano_data()
+        # Calculate volcano risk metrics including Lava Build-Up Index
+        volcanos_df = calculate_volcano_metrics(volcanos_df)
         if st.session_state.last_update is None:
             st.session_state.last_update = datetime.now()
     except Exception as e:
@@ -438,6 +443,8 @@ if st.sidebar.button("Refresh Data"):
                 
             # Get fresh data
             volcanos_df = get_volcano_data()
+            # Calculate volcano risk metrics including Lava Build-Up Index
+            volcanos_df = calculate_volcano_metrics(volcanos_df)
             st.session_state.last_update = datetime.now()
             
             # Check for alert level changes and notify subscribers if needed

@@ -108,6 +108,8 @@ def create_volcano_map(df: pd.DataFrame, include_monitoring_data: bool = False,
     
     return m
 
+from utils.risk_assessment import calculate_lava_buildup_index
+
 def create_popup_html(volcano: pd.Series) -> str:
     """
     Create HTML content for volcano popup.
@@ -127,6 +129,22 @@ def create_popup_html(volcano: pd.Series) -> str:
         'Warning': '#F44336',
         'Unknown': '#9E9E9E'
     }.get(alert_level, '#9E9E9E')
+    
+    # Calculate Lava Build-Up Index if not already present
+    lava_buildup = volcano.get('lava_buildup_index')
+    if lava_buildup is None:
+        # Calculate it on-the-fly if not pre-calculated
+        lava_buildup = calculate_lava_buildup_index(volcano.to_dict())
+    
+    # Determine color for Lava Build-Up Index
+    if lava_buildup >= 7.0:
+        lava_color = '#F44336'  # Red for high build-up
+    elif lava_buildup >= 5.0:
+        lava_color = '#FF9800'  # Orange for moderate-high build-up
+    elif lava_buildup >= 3.0:
+        lava_color = '#FFEB3B'  # Yellow for moderate build-up
+    else:
+        lava_color = '#4CAF50'  # Green for low build-up
     
     # Create HTML content
     html = f"""
@@ -159,12 +177,19 @@ def create_popup_html(volcano: pd.Series) -> str:
                 <td style="padding: 3px; border-bottom: 1px solid #eee;">{volcano.get('country', 'Unknown')}</td>
             </tr>
             <tr>
-                <td style="font-weight: bold; padding: 3px;">Region:</td>
-                <td style="padding: 3px;">{volcano.get('region', 'Unknown')}</td>
+                <td style="font-weight: bold; padding: 3px; border-bottom: 1px solid #eee;">Region:</td>
+                <td style="padding: 3px; border-bottom: 1px solid #eee;">{volcano.get('region', 'Unknown')}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; padding: 3px;">Lava Build-Up Index:</td>
+                <td style="padding: 3px;">
+                    <span style="color: {lava_color}; font-weight: bold;">{lava_buildup}</span>
+                    <span style="font-size: 10px; color: #666;">/10</span>
+                </td>
             </tr>
         </table>
         <div style="font-size: 12px; color: #666; margin-top: 5px;">
-            <strong>Data Source:</strong> USGS Volcano Hazards Program
+            <strong>Data Sources:</strong> USGS, Volcano Monitoring Dashboard
         </div>
     </div>
     """
