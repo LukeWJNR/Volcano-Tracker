@@ -13,6 +13,9 @@ from typing import Dict, List, Any
 import random
 import json
 import math
+import streamlit as st
+from utils.risk_assessment import calculate_lava_buildup_index
+from utils.crustal_strain_utils import create_strain_graph_component
 
 def create_volcano_map(df: pd.DataFrame, include_monitoring_data: bool = False, 
                   show_earthquakes: bool = True, show_swarms: bool = True, show_deformation: bool = True):
