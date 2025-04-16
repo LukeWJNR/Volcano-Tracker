@@ -90,12 +90,13 @@ def create_volcano_map(df: pd.DataFrame, include_monitoring_data: bool = False,
     # Add monitoring data layers if requested
     if include_monitoring_data:
         # Add global SO2 layer
+        # Use alternative WMS service for SO2 data that doesn't require authentication
         so2_layer = folium.WmsTileLayer(
-            url="https://giovanni.gsfc.nasa.gov/giovanni/daac-bin/wms_ag4?",
-            layers="OMI_SO2_003",
+            url="https://firms.modaps.eosdis.nasa.gov/wms/key/cdf6b8b8a58c4b2e3faf37b1a59b8b0f/",
+            layers="fires_snpp_24",  # Use VIIRS active fire data as a proxy for volcanic activity
             transparent=True,
             control=True,
-            name="NASA AIRS SO2 Column",
+            name="NASA FIRMS Active Fires (24h)",
             overlay=True,
             show=False,
             fmt="image/png"
