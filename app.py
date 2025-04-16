@@ -294,10 +294,7 @@ if 'favorites' not in st.session_state:
         st.session_state.favorites = []
         st.warning(f"Could not load favorites: {str(e)}")
 
-# Sidebar with filters
-st.sidebar.title("Filters")
-
-# Load volcano data
+# Load volcano data first - we'll need this for both the filters and the map
 with st.spinner("Loading volcano data..."):
     try:
         volcanos_df = get_volcano_data()
@@ -309,15 +306,43 @@ with st.spinner("Loading volcano data..."):
 
 # Extract unique regions for filter
 regions = sorted(volcanos_df['region'].unique().tolist())
-selected_region = st.sidebar.selectbox("Select Region", ["All"] + regions)
 
-# Name filter
-volcano_name_filter = st.sidebar.text_input("Filter by Volcano Name")
+# Create top filters and data layers section instead of sidebar
+st.markdown("<div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>", unsafe_allow_html=True)
 
-# Add monitoring data option
+# Use columns for the filters and data layers
+filter_col1, filter_col2, filter_col3 = st.columns([1, 1, 2])
+
+with filter_col1:
+    st.markdown("<h3 style='margin-top: 0px; font-size: 1.2rem;'>Filters</h3>", unsafe_allow_html=True)
+    selected_region = st.selectbox("Select Region", ["All"] + regions, key="region_filter_top")
+
+with filter_col2:
+    st.markdown("<h3 style='margin-top: 0px; font-size: 1.2rem;'>Search</h3>", unsafe_allow_html=True)
+    volcano_name_filter = st.text_input("Filter by Volcano Name", key="name_filter_top")
+
+with filter_col3:
+    st.markdown("<h3 style='margin-top: 0px; font-size: 1.2rem;'>Data Layers</h3>", unsafe_allow_html=True)
+    include_monitoring_data = st.checkbox("Show Monitoring Data", value=True, help="Display SO2, volcanic ash, and radon gas monitoring data layers on the map")
+    
+    # Add additional data layer checkboxes in a row
+    col_eq, col_swarm, col_deform = st.columns(3)
+    with col_eq:
+        st.checkbox("Show Earthquakes", value=True, help="Display recent earthquakes (last 24h)")
+    with col_swarm:
+        st.checkbox("Show Earthquake Swarms", value=True, help="Display earthquake swarm locations and details")
+    with col_deform:
+        st.checkbox("Show Ground Deformation", value=True, help="Display ground uplift and subsidence data")
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+# Keep a copy in the sidebar for compatibility
+st.sidebar.title("Filters")
+st.sidebar.selectbox("Select Region", ["All"] + regions, key="region_filter_sidebar", index=0 if selected_region == "All" else regions.index(selected_region) + 1)
+st.sidebar.text_input("Filter by Volcano Name", value=volcano_name_filter, key="name_filter_sidebar")
 st.sidebar.markdown("---")
 st.sidebar.subheader("Data Layers")
-include_monitoring_data = st.sidebar.checkbox("Show Monitoring Data", value=False, help="Display SO2, volcanic ash, and radon gas monitoring data layers on the map")
+st.sidebar.checkbox("Show Monitoring Data", value=include_monitoring_data, key="monitoring_sidebar")
 
 # Track search filters
 if 'last_region' not in st.session_state:

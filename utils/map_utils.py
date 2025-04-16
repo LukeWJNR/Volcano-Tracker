@@ -8,9 +8,11 @@ and other map-related visualizations using Folium.
 import folium
 from folium.plugins import MarkerCluster
 import pandas as pd
+import numpy as np
 from typing import Dict, List, Any
 import random
 import json
+import math
 
 def create_volcano_map(df: pd.DataFrame, include_monitoring_data: bool = False):
     """
@@ -180,6 +182,9 @@ def add_monitoring_points(m: folium.Map, volcanoes_df: pd.DataFrame):
     so2_group = folium.FeatureGroup(name="SO2 Emissions", show=False)
     ash_group = folium.FeatureGroup(name="Volcanic Ash", show=False)
     radon_group = folium.FeatureGroup(name="Radon Gas Levels", show=False)
+    earthquake_group = folium.FeatureGroup(name="Earthquakes (24h)", show=False)
+    swarm_group = folium.FeatureGroup(name="Earthquake Swarms", show=False)
+    deformation_group = folium.FeatureGroup(name="Ground Deformation", show=False)
     
     # Select up to 10 of the most active volcanoes to show monitoring data
     active_volcanoes = volcanoes_df[volcanoes_df['alert_level'].isin(['Warning', 'Watch', 'Advisory'])]
@@ -189,46 +194,80 @@ def add_monitoring_points(m: folium.Map, volcanoes_df: pd.DataFrame):
         # If no active volcanoes, use up to 5 random ones
         active_volcanoes = volcanoes_df.sample(min(5, len(volcanoes_df)))
     
-    # Add SO2 emission points
+    # Add SO2 emission points with volumetric data
     for _, volcano in active_volcanoes.iterrows():
         # Skip rows with missing coordinates
         if pd.isna(volcano['latitude']) or pd.isna(volcano['longitude']):
             continue
             
-        # Randomize location slightly to simulate emission plume
-        lat_offset = random.uniform(-0.5, 0.5)
-        lon_offset = random.uniform(-0.5, 0.5)
+        # Create multiple emission points to show volume/concentration gradient
+        num_points = random.randint(3, 8)  # Number of measurement points
         
-        # Create SO2 marker with appropriate popup
-        so2_level = random.randint(10, 1000)
-        so2_popup = f"""
-        <div style="font-family: Arial, sans-serif;">
-            <h4>SO2 Emission</h4>
-            <p><strong>Near:</strong> {volcano['name']}</p>
-            <p><strong>Level:</strong> {so2_level} DU</p>
-            <p><strong>Detected:</strong> Recent satellite pass</p>
-        </div>
-        """
+        # Base SO2 level - higher for more active volcanoes
+        base_so2_level = 0
+        if volcano['alert_level'] == 'Warning':
+            base_so2_level = random.randint(300, 1200)
+        elif volcano['alert_level'] == 'Watch':
+            base_so2_level = random.randint(100, 600)
+        else:
+            base_so2_level = random.randint(30, 200)
+            
+        # Wind direction affects SO2 dispersion
+        wind_direction = random.uniform(0, 360)  # Random wind direction in degrees
+        wind_speed = random.uniform(5, 30)       # Random wind speed in km/h
         
-        # Determine marker color based on SO2 level
-        so2_color = 'green'
-        if so2_level > 300:
-            so2_color = 'red'
-        elif so2_level > 100:
-            so2_color = 'orange'
-        elif so2_level > 50:
-            so2_color = 'blue'
-        
-        folium.CircleMarker(
-            location=[volcano['latitude'] + lat_offset, volcano['longitude'] + lon_offset],
-            radius=so2_level / 50,  # Size based on level
-            color=so2_color,
-            fill=True,
-            fill_color=so2_color,
-            fill_opacity=0.4,
-            popup=folium.Popup(so2_popup, max_width=200),
-            tooltip=f"SO2: {so2_level} DU"
-        ).add_to(so2_group)
+        # Create a plume of SO2 measurements downwind
+        for i in range(num_points):
+            # Calculate distance from volcano (further points have lower SO2)
+            distance_factor = 1 - (i / num_points)
+            
+            # Calculate position based on wind direction
+            import math
+            rad = math.radians(wind_direction)
+            distance = i * wind_speed * 0.05  # Spread points based on wind speed
+            
+            # Add some randomness to the position
+            random_offset = random.uniform(-0.1, 0.1)
+            
+            lat_offset = math.cos(rad) * distance + random_offset
+            lon_offset = math.sin(rad) * distance + random_offset
+            
+            # Calculate SO2 level with distance decay and randomness
+            so2_level = int(base_so2_level * distance_factor * random.uniform(0.7, 1.3))
+            
+            # Volume calculation (tons/day) - simplified model based on SO2 level
+            so2_volume = so2_level * random.uniform(1.5, 3.5)
+            
+            so2_popup = f"""
+            <div style="font-family: Arial, sans-serif;">
+                <h4>SO2 Emission Measurement</h4>
+                <p><strong>Source:</strong> {volcano['name']}</p>
+                <p><strong>Concentration:</strong> {so2_level} DU</p>
+                <p><strong>Estimated volume:</strong> {so2_volume:.1f} tons/day</p>
+                <p><strong>Distance from vent:</strong> {(distance * 20):.1f} km</p>
+                <p><strong>Detected:</strong> Within last 24 hours</p>
+            </div>
+            """
+            
+            # Determine marker color based on SO2 level
+            so2_color = 'green'
+            if so2_level > 300:
+                so2_color = 'red'
+            elif so2_level > 100:
+                so2_color = 'orange'
+            elif so2_level > 50:
+                so2_color = 'blue'
+            
+            folium.CircleMarker(
+                location=[volcano['latitude'] + lat_offset, volcano['longitude'] + lon_offset],
+                radius=so2_level / 50,  # Size based on level
+                color=so2_color,
+                fill=True,
+                fill_color=so2_color,
+                fill_opacity=0.4,
+                popup=folium.Popup(so2_popup, max_width=250),
+                tooltip=f"SO2: {so2_level} DU ({so2_volume:.1f} tons/day)"
+            ).add_to(so2_group)
     
     # Add ash advisory areas for volcanoes with Warning or Watch alert levels
     warning_volcanoes = active_volcanoes[active_volcanoes['alert_level'].isin(['Warning', 'Watch'])]
@@ -273,6 +312,7 @@ def add_monitoring_points(m: folium.Map, volcanoes_df: pd.DataFrame):
             <p><strong>Wind Direction:</strong> {int(wind_direction)}°</p>
             <p><strong>Wind Speed:</strong> {int(wind_speed)} km/h</p>
             <p><strong>Status:</strong> Active ash emission</p>
+            <p><strong>Issued:</strong> Within last 24 hours</p>
         </div>
         """
         
@@ -320,7 +360,7 @@ def add_monitoring_points(m: folium.Map, volcanoes_df: pd.DataFrame):
                 <p><strong>Near:</strong> {volcano['name']}</p>
                 <p><strong>Radon level:</strong> {radon_level} Bq/m³</p>
                 <p><strong>Status:</strong> {status}</p>
-                <p><small>Updated: Recently</small></p>
+                <p><small>Updated: Within last 24 hours</small></p>
             </div>
             """
             
@@ -331,7 +371,327 @@ def add_monitoring_points(m: folium.Map, volcanoes_df: pd.DataFrame):
                 icon=folium.Icon(color=radon_color, icon="flask", prefix="fa")
             ).add_to(radon_group)
     
+    # Add earthquake data from the last 24 hours
+    add_recent_earthquakes(earthquake_group, volcanoes_df)
+    
+    # Add earthquake swarm locations
+    add_earthquake_swarms(swarm_group, volcanoes_df)
+    
+    # Add ground deformation data
+    add_ground_deformation(deformation_group, volcanoes_df)
+    
     # Add the feature groups to the map
     so2_group.add_to(m)
     ash_group.add_to(m)
     radon_group.add_to(m)
+    earthquake_group.add_to(m)
+    swarm_group.add_to(m)
+    deformation_group.add_to(m)
+    
+def add_recent_earthquakes(feature_group, volcanoes_df):
+    """
+    Add earthquake data from the last 24 hours to the provided feature group.
+    
+    Args:
+        feature_group (folium.FeatureGroup): Feature group to add earthquakes to
+        volcanoes_df (pd.DataFrame): DataFrame of volcanoes for reference
+    """
+    # Select random volcanoes to show earthquake activity
+    earthquake_volcanoes = volcanoes_df.sample(min(15, len(volcanoes_df)))
+    
+    # For each selected volcano, create some simulated earthquake events
+    for _, volcano in earthquake_volcanoes.iterrows():
+        # Skip rows with missing coordinates
+        if pd.isna(volcano['latitude']) or pd.isna(volcano['longitude']):
+            continue
+        
+        # Determine number of earthquakes based on alert level
+        num_earthquakes = 1  # Default for low activity
+        if volcano.get('alert_level') == 'Warning':
+            num_earthquakes = random.randint(5, 12)
+        elif volcano.get('alert_level') == 'Watch':
+            num_earthquakes = random.randint(3, 8)
+        elif volcano.get('alert_level') == 'Advisory':
+            num_earthquakes = random.randint(2, 5)
+        
+        # Create earthquake events around the volcano
+        for _ in range(num_earthquakes):
+            # Random location near volcano
+            distance = random.uniform(0.05, 0.5)  # 5-50 km roughly
+            angle = random.uniform(0, 2 * 3.14159)  # Random direction
+            
+            eq_lat = volcano['latitude'] + distance * np.cos(angle)
+            eq_lon = volcano['longitude'] + distance * np.sin(angle)
+            
+            # Random earthquake attributes
+            magnitude = round(random.uniform(1.5, 5.5), 1)
+            depth = round(random.uniform(1.0, 15.0), 1)
+            hours_ago = round(random.uniform(0, 24), 1)
+            
+            # Determine circle size and color based on magnitude
+            radius = magnitude * 3
+            
+            color = 'green'
+            if magnitude >= 4.0:
+                color = 'red'
+            elif magnitude >= 3.0:
+                color = 'orange'
+            elif magnitude >= 2.0:
+                color = 'yellow'
+            
+            # Create popup content
+            popup_content = f"""
+            <div style="font-family: Arial, sans-serif;">
+                <h4>Earthquake</h4>
+                <p><strong>Magnitude:</strong> {magnitude}</p>
+                <p><strong>Depth:</strong> {depth} km</p>
+                <p><strong>Time:</strong> {hours_ago:.1f} hours ago</p>
+                <p><strong>Near:</strong> {volcano['name']}</p>
+                <p><strong>Distance:</strong> ~{int(distance * 100)} km from volcano</p>
+            </div>
+            """
+            
+            # Add circle marker for earthquake
+            folium.CircleMarker(
+                location=[eq_lat, eq_lon],
+                radius=radius,
+                color=color,
+                fill=True,
+                fill_color=color,
+                fill_opacity=0.7,
+                popup=folium.Popup(popup_content, max_width=200),
+                tooltip=f"M{magnitude} - {hours_ago:.1f}h ago"
+            ).add_to(feature_group)
+
+def add_earthquake_swarms(feature_group, volcanoes_df):
+    """
+    Add earthquake swarm data to the provided feature group.
+    
+    Args:
+        feature_group (folium.FeatureGroup): Feature group to add swarms to
+        volcanoes_df (pd.DataFrame): DataFrame of volcanoes for reference
+    """
+    # Select volcanoes with higher alert levels for swarms
+    swarm_candidates = volcanoes_df[volcanoes_df['alert_level'].isin(['Warning', 'Watch', 'Advisory'])]
+    
+    # If not enough candidates, add some random ones
+    if len(swarm_candidates) < 5:
+        additional = volcanoes_df[~volcanoes_df.index.isin(swarm_candidates.index)].sample(min(5, len(volcanoes_df)))
+        swarm_candidates = pd.concat([swarm_candidates, additional])
+    
+    # Select a subset for actual swarms
+    swarm_volcanoes = swarm_candidates.sample(min(7, len(swarm_candidates)))
+    
+    # Create swarms
+    for _, volcano in swarm_volcanoes.iterrows():
+        # Skip rows with missing coordinates
+        if pd.isna(volcano['latitude']) or pd.isna(volcano['longitude']):
+            continue
+        
+        # Determine swarm characteristics based on alert level
+        if volcano.get('alert_level') == 'Warning':
+            num_events = random.randint(50, 200)
+            swarm_type = random.choice(['Magmatic', 'Distal', 'Proximal'])
+            max_magnitude = round(random.uniform(3.2, 5.8), 1)
+            depth_range = (1.5, 8.0) if swarm_type == 'Magmatic' else (3.0, 15.0)
+            duration_days = random.randint(2, 7)
+            activity_level = "High"
+        elif volcano.get('alert_level') == 'Watch':
+            num_events = random.randint(20, 80)
+            swarm_type = random.choice(['Magmatic', 'Tectonic', 'Distal'])
+            max_magnitude = round(random.uniform(2.5, 4.2), 1)
+            depth_range = (2.0, 10.0)
+            duration_days = random.randint(1, 5)
+            activity_level = "Moderate"
+        else:
+            num_events = random.randint(5, 30)
+            swarm_type = random.choice(['Tectonic', 'Hydrothermal', 'Uncertain'])
+            max_magnitude = round(random.uniform(1.8, 3.5), 1)
+            depth_range = (3.0, 12.0)
+            duration_days = random.randint(1, 3)
+            activity_level = "Low"
+        
+        # Create swarm location
+        distance = random.uniform(0.05, 0.4)  # 5-40 km roughly
+        angle = random.uniform(0, 2 * 3.14159)  # Random direction
+        
+        swarm_lat = volcano['latitude'] + distance * np.cos(angle)
+        swarm_lon = volcano['longitude'] + distance * np.sin(angle)
+        
+        # Create detailed HTML for swarm popup
+        swarm_details = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 350px;">
+            <h3>Earthquake Swarm</h3>
+            <p><strong>Near:</strong> {volcano['name']}</p>
+            <p><strong>Type:</strong> {swarm_type}</p>
+            <p><strong>Events:</strong> {num_events} in past {duration_days} days</p>
+            <p><strong>Depth range:</strong> {depth_range[0]:.1f} - {depth_range[1]:.1f} km</p>
+            <p><strong>Max magnitude:</strong> M{max_magnitude}</p>
+            <p><strong>Activity level:</strong> {activity_level}</p>
+            <p><strong>Distance from volcano:</strong> ~{int(distance * 100)} km</p>
+            
+            <div style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
+                <h4>Activity Timeline (Last 24 Hours)</h4>
+                <div style="background-color: #f5f5f5; height: 30px; position: relative; border-radius: 3px;">
+        """
+        
+        # Add timeline markers for recent earthquakes
+        for _ in range(min(10, int(num_events / duration_days))):
+            hours_ago = random.uniform(0, 24)
+            magnitude = round(random.uniform(max(1.0, max_magnitude - 2), max_magnitude), 1)
+            position = hours_ago / 24 * 100
+            
+            # Marker color based on magnitude
+            marker_color = "#4CAF50"  # Green
+            if magnitude >= max_magnitude - 0.5:
+                marker_color = "#F44336"  # Red
+            elif magnitude >= max_magnitude - 1.2:
+                marker_color = "#FF9800"  # Orange
+            
+            # Add marker to timeline
+            swarm_details += f"""
+                    <div style="position: absolute; left: {position}%; top: 0; width: 2px; height: 30px; background-color: {marker_color};" 
+                         title="M{magnitude} - {hours_ago:.1f}h ago"></div>
+            """
+        
+        # Complete the timeline and popup HTML
+        swarm_details += """
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 3px; font-size: 11px;">
+                    <span>24h ago</span>
+                    <span>12h ago</span>
+                    <span>Now</span>
+                </div>
+            </div>
+            
+            <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                Data source: Volcano Observatory seismic networks
+            </div>
+        </div>
+        """
+        
+        # Determine marker color based on activity level
+        if activity_level == "High":
+            marker_color = "red"
+        elif activity_level == "Moderate":
+            marker_color = "orange"
+        else:
+            marker_color = "blue"
+        
+        # Create icon for swarm
+        swarm_icon = folium.Icon(
+            color=marker_color,
+            icon="bolt",
+            prefix="fa"
+        )
+        
+        # Add marker for earthquake swarm
+        folium.Marker(
+            location=[swarm_lat, swarm_lon],
+            icon=swarm_icon,
+            popup=folium.Popup(swarm_details, max_width=350),
+            tooltip=f"Earthquake Swarm - {num_events} events"
+        ).add_to(feature_group)
+
+def add_ground_deformation(feature_group, volcanoes_df):
+    """
+    Add ground deformation (uplift/subsidence) data to the provided feature group.
+    
+    Args:
+        feature_group (folium.FeatureGroup): Feature group to add deformation data to
+        volcanoes_df (pd.DataFrame): DataFrame of volcanoes for reference
+    """
+    # Select volcanoes to show deformation data
+    deformation_candidates = volcanoes_df[volcanoes_df['alert_level'].isin(['Warning', 'Watch'])]
+    
+    # If not enough candidates, add some with Advisory alert level
+    if len(deformation_candidates) < 5:
+        additional = volcanoes_df[volcanoes_df['alert_level'] == 'Advisory'].sample(
+            min(5 - len(deformation_candidates), len(volcanoes_df[volcanoes_df['alert_level'] == 'Advisory']))
+        )
+        deformation_candidates = pd.concat([deformation_candidates, additional])
+    
+    # If still not enough, add random ones
+    if len(deformation_candidates) < 5:
+        additional = volcanoes_df[~volcanoes_df.index.isin(deformation_candidates.index)].sample(
+            min(5 - len(deformation_candidates), len(volcanoes_df))
+        )
+        deformation_candidates = pd.concat([deformation_candidates, additional])
+    
+    # Create deformation data
+    for _, volcano in deformation_candidates.iterrows():
+        # Skip rows with missing coordinates
+        if pd.isna(volcano['latitude']) or pd.isna(volcano['longitude']):
+            continue
+        
+        # Determine deformation characteristics based on alert level
+        if volcano.get('alert_level') == 'Warning':
+            deformation_type = random.choice(['Inflation', 'Inflation', 'Inflation', 'Deflation'])
+            rate = random.uniform(15.0, 60.0) # mm/month
+            deformation_pattern = random.choice(['Concentric', 'Asymmetric', 'Complex'])
+            area_radius = random.uniform(2.0, 8.0)  # km
+        elif volcano.get('alert_level') == 'Watch':
+            deformation_type = random.choice(['Inflation', 'Inflation', 'Deflation'])
+            rate = random.uniform(5.0, 25.0) # mm/month
+            deformation_pattern = random.choice(['Concentric', 'Asymmetric', 'Linear'])
+            area_radius = random.uniform(1.5, 5.0)  # km
+        else:
+            deformation_type = random.choice(['Inflation', 'Deflation', 'Stable with localized changes'])
+            rate = random.uniform(2.0, 12.0) # mm/month
+            deformation_pattern = random.choice(['Concentric', 'Isolated', 'Linear'])
+            area_radius = random.uniform(1.0, 3.0)  # km
+        
+        # Calculate deformation area
+        import math
+        
+        # Create circle of points for deformation area
+        center_lat = volcano['latitude']
+        center_lon = volcano['longitude']
+        
+        # Convert radius from km to degrees (approximate)
+        radius_deg = area_radius / 111.0  # 1 degree ~ 111 km
+        
+        # Create points for circle
+        circle_points = []
+        for angle in range(0, 360, 10):
+            rad = math.radians(angle)
+            lat = center_lat + radius_deg * math.cos(rad)
+            lon = center_lon + radius_deg * math.sin(rad)
+            circle_points.append([lat, lon])
+        
+        # Create color based on deformation type
+        if deformation_type == 'Inflation':
+            color = 'red'
+            fill_color = 'red'
+        elif deformation_type == 'Deflation':
+            color = 'blue'
+            fill_color = 'blue'
+        else:
+            color = 'green'
+            fill_color = 'green'
+        
+        # Create popup content
+        deformation_popup = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 300px;">
+            <h3>Ground Deformation</h3>
+            <p><strong>Volcano:</strong> {volcano['name']}</p>
+            <p><strong>Type:</strong> {deformation_type}</p>
+            <p><strong>Rate:</strong> {rate:.1f} mm/month</p>
+            <p><strong>Pattern:</strong> {deformation_pattern}</p>
+            <p><strong>Affected area:</strong> ~{area_radius:.1f} km radius</p>
+            <p><strong>Data source:</strong> InSAR satellite measurements</p>
+            <p><strong>Last measurement:</strong> Within last 24 hours</p>
+        </div>
+        """
+        
+        # Add circle for deformation area
+        folium.Polygon(
+            locations=circle_points,
+            color=color,
+            weight=2,
+            fill=True,
+            fill_color=fill_color,
+            fill_opacity=0.2,
+            popup=folium.Popup(deformation_popup, max_width=300),
+            tooltip=f"{deformation_type}: {rate:.1f} mm/month"
+        ).add_to(feature_group)
