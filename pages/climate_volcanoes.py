@@ -12,9 +12,22 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime
 import folium
+from folium.plugins import HeatMap
 from streamlit_folium import st_folium
+import os
+import io
+import base64
+import warnings
 
 from utils.api import get_known_volcano_data
+from utils.crustal_strain_utils import (
+    load_jma_strain_data, 
+    load_wsm_data, 
+    add_strain_data_to_map, 
+    get_strain_data_legend,
+    create_strain_timeseries_plot,
+    get_jma_station_locations
+)
 from data.glacial_volcanoes import get_glacial_volcanoes
 
 def app():
