@@ -245,8 +245,13 @@ def generate_risk_heatmap_data(volcanoes_df: pd.DataFrame) -> List[List[float]]:
 def calculate_lava_buildup_index(volcano_data: Dict[str, Any]) -> float:
     """
     Calculate the Lava Build-Up Index for a volcano based on various indicators.
-    The index quantifies the potential for lava accumulation in the volcano's magma 
+    This index quantifies the potential for lava accumulation in the volcano's magma 
     chamber and conduits, which can be a precursor to eruptions.
+    
+    The formula is based on three key factors:
+    1. Thermal anomaly count (indicator of heat from magma)
+    2. Deformation rate (indicator of ground movement from magma pressure)
+    3. Local earthquake sum (indicator of seismic activity near the volcano)
     
     Args:
         volcano_data (Dict[str, Any]): Dictionary containing volcano data
@@ -254,47 +259,41 @@ def calculate_lava_buildup_index(volcano_data: Dict[str, Any]) -> float:
     Returns:
         float: Lava Build-Up Index on a scale of 0.0 to 10.0
     """
-    # Base value - all volcanoes start with some minimal value
-    base_index = 1.0
+    from utils.map_utils import fetch_usgs_earthquake_data
     
-    # Initialize multipliers and additional factors
-    alert_level_multiplier = 1.0
-    type_multiplier = 1.0
-    recency_factor = 0.0
-    seismic_factor = 0.0
-    deformation_factor = 0.0
-    gas_emission_factor = 0.0
+    # Generate a thermal anomaly count based on volcano characteristics
+    # In production, this would come from satellite thermal imaging
+    thermal_anomaly_count = 0
     
-    # 1. Volcano Type Factor - different volcano types have different lava build-up patterns
+    # Base thermal anomaly count on volcano type and alert level
     volcano_type = str(volcano_data.get('type', '')).lower()
-    
-    # Volcano types with typically high-viscosity lava (more build-up potential)
-    high_buildup_types = ['stratovolcano', 'caldera', 'complex volcano', 'lava dome']
-    # Volcano types with typically medium-viscosity lava
-    medium_buildup_types = ['shield volcano', 'pyroclastic shield', 'volcanic field']
-    # Volcano types with typically low-viscosity lava (less build-up potential)
-    low_buildup_types = ['cinder cone', 'fissure vent', 'lava field']
-    
-    if any(buildup_type in volcano_type for buildup_type in high_buildup_types):
-        type_multiplier = 1.5
-    elif any(buildup_type in volcano_type for buildup_type in medium_buildup_types):
-        type_multiplier = 1.2
-    elif any(buildup_type in volcano_type for buildup_type in low_buildup_types):
-        type_multiplier = 0.8
-    
-    # 2. Alert Level Factor - higher alert levels indicate more active systems
     alert_level = str(volcano_data.get('alert_level', 'Unknown'))
     
-    if alert_level == 'Warning':
-        alert_level_multiplier = 2.0
-    elif alert_level == 'Watch':
-        alert_level_multiplier = 1.5
-    elif alert_level == 'Advisory':
-        alert_level_multiplier = 1.2
-    else:  # Normal or Unknown
-        alert_level_multiplier = 1.0
+    # Volcano types with typically high thermal signatures
+    high_thermal_types = ['stratovolcano', 'caldera', 'complex volcano', 'lava dome']
+    medium_thermal_types = ['shield volcano', 'pyroclastic shield', 'volcanic field']
     
-    # 3. Recency Factor - more recent eruptions indicate systems that have reset
+    # Base thermal anomaly count on volcano type
+    if any(thermal_type in volcano_type for thermal_type in high_thermal_types):
+        thermal_anomaly_count += 5
+    elif any(thermal_type in volcano_type for thermal_type in medium_thermal_types):
+        thermal_anomaly_count += 3
+    else:
+        thermal_anomaly_count += 1
+    
+    # Adjust based on alert level
+    if alert_level == 'Warning':
+        thermal_anomaly_count += 5
+    elif alert_level == 'Watch':
+        thermal_anomaly_count += 3
+    elif alert_level == 'Advisory':
+        thermal_anomaly_count += 2
+    
+    # Generate a deformation rate based on volcano activity
+    # In production, this would come from InSAR or ground-based measurements
+    deformation_rate = 0
+    
+    # Base deformation on recency of eruptions (more recent = more likely to have deformation)
     last_eruption = volcano_data.get('last_eruption', 'Unknown')
     years_since = 100  # Default value for unknown
     
@@ -318,50 +317,66 @@ def calculate_lava_buildup_index(volcano_data: Dict[str, Any]) -> float:
         except (ValueError, TypeError):
             pass
     
-    # Calculate recency factor
+    # Calculate deformation rate based on eruption recency
     if years_since <= 2:
-        # Very recent eruption - system may have reset but could be in a eruptive sequence
-        recency_factor = 1.5
+        deformation_rate = 15  # Very recent eruption - likely still deforming
     elif years_since <= 10:
-        # Recent enough that system is likely still active
-        recency_factor = 2.0
+        deformation_rate = 10  # Recent enough that system may be deforming
     elif years_since <= 30:
-        # Moderate time for build-up
-        recency_factor = 3.0
-    elif years_since <= 100:
-        # Significant time for build-up
-        recency_factor = 4.0
+        deformation_rate = 5   # Moderate time for build-up
     else:
-        # Very long time for build-up, but system may be dormant
-        recency_factor = 3.0
+        deformation_rate = 2   # Older eruptions have less deformation typically
     
-    # 4. Seismic Activity Factor
-    # We'll use the earthquake swarm data as a proxy for seismic activity
-    has_eq_swarm = volcano_data.get('has_eq_swarm', False)
-    eq_swarm_count = volcano_data.get('eq_swarm_count', 0)
+    # Adjust based on alert level
+    if alert_level == 'Warning':
+        deformation_rate *= 1.5
+    elif alert_level == 'Watch':
+        deformation_rate *= 1.3
     
-    if has_eq_swarm and eq_swarm_count > 0:
-        # Scale based on swarm intensity
-        seismic_factor = min(3.0, eq_swarm_count / 10)
+    # Calculate local earthquake sum around the volcano
+    # Get the volcano's coordinates
+    lat = volcano_data.get('latitude')
+    lon = volcano_data.get('longitude')
     
-    # 5. Deformation Factor (from InSAR or other measurements)
-    deformation_rate = volcano_data.get('deformation_rate', 0)  # in mm/month
+    # Get earthquake data from USGS API
+    earthquake_data = fetch_usgs_earthquake_data()
     
-    if deformation_rate > 0:
-        # Positive deformation (inflation) suggests magma influx
-        deformation_factor = min(2.5, deformation_rate / 10)
+    # Sum up earthquake magnitudes near the volcano
+    local_quake_sum = 0
     
-    # 6. Gas Emission Factor (SO2, CO2, etc.)
-    gas_emission = volcano_data.get('so2_emission', 0)  # in tons/day
+    if lat is not None and lon is not None and earthquake_data:
+        for quake in earthquake_data:
+            try:
+                # Extract earthquake coordinates (USGS format is [longitude, latitude, depth])
+                quake_coords = quake['geometry']['coordinates']
+                quake_lon = quake_coords[0]
+                quake_lat = quake_coords[1]
+                
+                # Calculate distance between volcano and earthquake (simple Euclidean distance)
+                distance = ((quake_lat - lat) ** 2 + (quake_lon - lon) ** 2) ** 0.5
+                
+                # If earthquake is within ~200km (approximately 2 degrees), add its magnitude to sum
+                if distance < 2:
+                    magnitude = quake['properties'].get('mag', 0)
+                    if magnitude:
+                        local_quake_sum += magnitude
+            except (KeyError, IndexError, TypeError):
+                # Skip problematic earthquake entries
+                continue
     
-    if gas_emission > 0:
-        gas_emission_factor = min(2.0, gas_emission / 500)
+    # Calculate the Lava Build-Up Index using the formula
+    # This mirrors the TypeScript implementation: (thermalAnomalyCount * deformationRate * localQuakeSum) / 10
+    # We apply a small base value to ensure non-zero results even when data is missing
+    base_value = 1
     
-    # Calculate final index
-    lava_buildup_index = (
-        base_index * type_multiplier * alert_level_multiplier +
-        recency_factor + seismic_factor + deformation_factor + gas_emission_factor
-    )
+    # Scale the quake sum to avoid excessive values
+    scaled_quake_sum = min(10, local_quake_sum / 5)
+    
+    # Formula: (thermal_anomaly_count * deformation_rate * scaled_quake_sum) / 10
+    lava_buildup_raw = (thermal_anomaly_count * deformation_rate * max(1, scaled_quake_sum)) / 10
+    
+    # Adjust with base value to ensure minimal values
+    lava_buildup_index = base_value + lava_buildup_raw
     
     # Ensure index is between 0 and 10
     lava_buildup_index = max(0.0, min(10.0, lava_buildup_index))
