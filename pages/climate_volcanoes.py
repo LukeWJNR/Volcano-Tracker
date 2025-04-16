@@ -159,8 +159,8 @@ def app():
     with tab2:
         st.header("Interactive Climate-Volcano Connection Map")
         st.markdown("""
-        This map shows volcanoes with potential climate connections. Click on a volcano marker 
-        to see information about how climate factors may influence its activity.
+        This map shows volcanoes with potential climate connections and crustal strain data. 
+        Click on markers to see details about climate factors and crustal strain that may influence volcanic activity.
         """)
         
         # Create map with volcanoes
@@ -195,8 +195,50 @@ def app():
             }
         }
         
+        # Create controls for data layers
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            show_climate_connections = st.checkbox("Show Climate Connections", value=True)
+        
+        with col2:
+            show_strain_data = st.checkbox("Show Crustal Strain Data", value=True)
+        
+        with col3:
+            strain_data_samples = st.selectbox("Strain Data Sample Size", 
+                                             options=[500, 1000, 2000, 5000, 10000],
+                                             index=1,
+                                             help="Number of strain measurements to display (more = slower map)")
+        
+        # Load crustal strain data
+        with st.spinner("Loading crustal strain data..."):
+            try:
+                # Load World Stress Map data
+                wsm_data = load_wsm_data('attached_assets/wsm2016.xlsx')
+                
+                # Try to load JMA strain data (if available)
+                try:
+                    jma_data = load_jma_strain_data('data/crustal_strain/202303t4.txt')
+                    st.session_state['jma_data'] = jma_data
+                    has_jma_data = True
+                except Exception as e:
+                    st.warning(f"JMA strain data couldn't be loaded: {str(e)}. Using only WSM data.")
+                    has_jma_data = False
+                    
+            except Exception as e:
+                st.error(f"Error loading strain data: {str(e)}")
+                wsm_data = pd.DataFrame()
+                has_jma_data = False
+        
         # Create Folium map
-        m = folium.Map(location=[0, 0], zoom_start=2, tiles="cartodbpositron")
+        m = folium.Map(location=[20, 0], zoom_start=2, tiles="cartodbpositron")
+        
+        # Add strain data if requested
+        if show_strain_data and not wsm_data.empty:
+            m = add_strain_data_to_map(m, wsm_data, num_points=strain_data_samples)
+        
+        # Add feature group for volcanoes
+        volcano_group = folium.FeatureGroup(name="Volcanoes", show=True)
         
         # Add volcano markers with climate connection info
         for _, volcano in volcanoes_df.iterrows():
@@ -208,7 +250,7 @@ def app():
             has_climate_info = volcano['name'] in climate_connections
             
             # Create marker
-            if has_climate_info:
+            if has_climate_info and show_climate_connections:
                 connection = climate_connections[volcano['name']]
                 
                 # Determine marker color based on confidence level
@@ -237,7 +279,7 @@ def app():
                     popup=popup,
                     tooltip=f"{volcano['name']} - Climate Connection",
                     icon=folium.Icon(color=color, icon="info-sign")
-                ).add_to(m)
+                ).add_to(volcano_group)
             else:
                 # Regular volcano marker (smaller)
                 folium.CircleMarker(
@@ -247,19 +289,93 @@ def app():
                     fill=True,
                     fill_color="#d3d3d3",
                     tooltip=volcano['name']
-                ).add_to(m)
+                ).add_to(volcano_group)
+        
+        # Add volcano layer to map
+        volcano_group.add_to(m)
+        
+        # Add layer control
+        folium.LayerControl().add_to(m)
         
         # Display map
         st_folium(m, width=700, height=500)
         
-        # Add legend
-        st.markdown("""
-        **Legend:**
-        - <span style='color: green;'>●</span> High confidence climate connection
-        - <span style='color: orange;'>●</span> Medium confidence climate connection
-        - <span style='color: blue;'>●</span> Low confidence climate connection
-        - <span style='color: #d3d3d3;'>●</span> No known climate connection
-        """, unsafe_allow_html=True)
+        # Create two columns for legends
+        legend_col1, legend_col2 = st.columns(2)
+        
+        with legend_col1:
+            # Volcano legend
+            st.markdown("""
+            **Volcano Legend:**
+            - <span style='color: green;'>●</span> High confidence climate connection
+            - <span style='color: orange;'>●</span> Medium confidence climate connection
+            - <span style='color: blue;'>●</span> Low confidence climate connection
+            - <span style='color: #d3d3d3;'>●</span> No known climate connection
+            """, unsafe_allow_html=True)
+        
+        with legend_col2:
+            # Strain data legend
+            if show_strain_data and not wsm_data.empty:
+                st.markdown(get_strain_data_legend(), unsafe_allow_html=True)
+        
+        # If we have JMA data, show a time series plot
+        if has_jma_data and 'jma_data' in st.session_state and show_strain_data:
+            st.subheader("Crustal Strain Time Series")
+            st.markdown("""
+            This chart shows measurements from the Japan Meteorological Agency (JMA) borehole strainmeters.
+            These instruments capture microscopic changes in crustal deformation that can precede volcanic activity.
+            """)
+            
+            # Get JMA station locations
+            station_locations = get_jma_station_locations()
+            
+            # Select a station to show data for
+            stations = [col for col in st.session_state['jma_data'].columns if col != 'timestamp']
+            selected_station = st.selectbox("Select Station", options=stations)
+            
+            # Create the plot
+            if selected_station:
+                fig = create_strain_timeseries_plot(st.session_state['jma_data'], selected_station)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Show station location if available
+                    if selected_station in station_locations:
+                        lat, lon = station_locations[selected_station]
+                        st.markdown(f"**Station Location:** {lat:.4f}, {lon:.4f}")
+                        
+                        # Create a small map with the station location
+                        station_map = folium.Map(location=[lat, lon], zoom_start=8)
+                        folium.Marker(
+                            location=[lat, lon],
+                            tooltip=f"{selected_station} Strainmeter",
+                            icon=folium.Icon(color="purple", icon="broadcast-tower", prefix="fa")
+                        ).add_to(station_map)
+                        
+                        st_folium(station_map, width=300, height=200)
+                else:
+                    st.warning(f"No data available for station {selected_station}")
+            
+            st.markdown("""
+            **Understanding Crustal Strain and Climate Connections:**
+            
+            Crustal strain is affected by multiple factors, including:
+            
+            1. **Tectonic stress** - The primary force driving crustal deformation
+            2. **Glacial isostatic adjustment** - As glaciers melt, the crust rebounds
+            3. **Sea level changes** - Affects coastal areas and can change stress patterns
+            4. **Hydrological loading** - Heavy rainfall can add weight to the crust
+            5. **Thermal expansion/contraction** - Temperature changes affect rock volume
+            
+            By monitoring these tiny changes (measured in parts per million), scientists can better
+            understand how climate factors might influence volcanic activity through crustal stress changes.
+            """)
+                    
+            st.info("""
+            **Data Sources:**
+            - JMA Borehole Strainmeter Data: March 2023
+            - World Stress Map (WSM) Database: 2016 Release
+            """, icon="📊")
     
     with tab3:
         st.header("Soil Erosion and Volcano Stability")
