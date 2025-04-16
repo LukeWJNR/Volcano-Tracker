@@ -14,13 +14,17 @@ import random
 import json
 import math
 
-def create_volcano_map(df: pd.DataFrame, include_monitoring_data: bool = False):
+def create_volcano_map(df: pd.DataFrame, include_monitoring_data: bool = False, 
+                  show_earthquakes: bool = True, show_swarms: bool = True, show_deformation: bool = True):
     """
     Create a folium map with volcano markers based on the provided DataFrame.
     
     Args:
         df (pd.DataFrame): DataFrame containing volcano data
         include_monitoring_data (bool): Whether to include monitoring data layers
+        show_earthquakes (bool): Whether to display recent earthquake data (24h)
+        show_swarms (bool): Whether to display earthquake swarm data
+        show_deformation (bool): Whether to display ground deformation data
         
     Returns:
         folium.Map: Folium map object with volcano markers
@@ -97,7 +101,7 @@ def create_volcano_map(df: pd.DataFrame, include_monitoring_data: bool = False):
         
         # Add simulated volcano monitoring points (normally from real API)
         # In a real implementation, this would fetch data from monitoring APIs
-        add_monitoring_points(m, df)
+        add_monitoring_points(m, df, show_earthquakes, show_swarms, show_deformation)
     
     # Add layer control
     folium.LayerControl().add_to(m)
@@ -167,7 +171,9 @@ def create_popup_html(volcano: pd.Series) -> str:
     
     return html
 
-def add_monitoring_points(m: folium.Map, volcanoes_df: pd.DataFrame):
+def add_monitoring_points(m: folium.Map, volcanoes_df: pd.DataFrame, 
+                    show_earthquakes: bool = True, show_swarms: bool = True, 
+                    show_deformation: bool = True):
     """
     Add simulated monitoring data points to the map.
     
@@ -177,6 +183,9 @@ def add_monitoring_points(m: folium.Map, volcanoes_df: pd.DataFrame):
     Args:
         m (folium.Map): Folium map to add points to
         volcanoes_df (pd.DataFrame): DataFrame of volcanoes for reference
+        show_earthquakes (bool): Whether to display recent earthquake data (24h)
+        show_swarms (bool): Whether to display earthquake swarm data
+        show_deformation (bool): Whether to display ground deformation data
     """
     # Create feature groups for different data types
     so2_group = folium.FeatureGroup(name="SO2 Emissions", show=False)
@@ -371,22 +380,25 @@ def add_monitoring_points(m: folium.Map, volcanoes_df: pd.DataFrame):
                 icon=folium.Icon(color=radon_color, icon="flask", prefix="fa")
             ).add_to(radon_group)
     
-    # Add earthquake data from the last 24 hours
-    add_recent_earthquakes(earthquake_group, volcanoes_df)
+    # Add earthquake data from the last 24 hours (if enabled)
+    if show_earthquakes:
+        add_recent_earthquakes(earthquake_group, volcanoes_df)
+        earthquake_group.add_to(m)
     
-    # Add earthquake swarm locations
-    add_earthquake_swarms(swarm_group, volcanoes_df)
+    # Add earthquake swarm locations (if enabled)
+    if show_swarms:
+        add_earthquake_swarms(swarm_group, volcanoes_df)
+        swarm_group.add_to(m)
     
-    # Add ground deformation data
-    add_ground_deformation(deformation_group, volcanoes_df)
+    # Add ground deformation data (if enabled)
+    if show_deformation:
+        add_ground_deformation(deformation_group, volcanoes_df)
+        deformation_group.add_to(m)
     
-    # Add the feature groups to the map
+    # Add the basic monitoring data feature groups to the map
     so2_group.add_to(m)
     ash_group.add_to(m)
     radon_group.add_to(m)
-    earthquake_group.add_to(m)
-    swarm_group.add_to(m)
-    deformation_group.add_to(m)
     
 def add_recent_earthquakes(feature_group, volcanoes_df):
     """

@@ -196,7 +196,11 @@ with map_col1:
         st.markdown(f"Showing {len(filtered_df)} volcanos")
         
         # Create the map with optional monitoring data layers
-        m = create_volcano_map(filtered_df, include_monitoring_data=include_monitoring_data)
+        m = create_volcano_map(filtered_df, 
+                             include_monitoring_data=include_monitoring_data,
+                             show_earthquakes=show_earthquakes,
+                             show_swarms=show_swarms,
+                             show_deformation=show_deformation)
         
         # Add custom styling for proper iframe embedding
         st.markdown("""
