@@ -217,6 +217,12 @@ def app():
                 # Load World Stress Map data
                 wsm_data = load_wsm_data('attached_assets/wsm2016.xlsx')
                 
+                # Temporarily skip JMA strain data loading until fixed
+                st.warning("JMA strain data integration temporarily disabled for stability. Using only WSM data.")
+                has_jma_data = False
+                
+                # Original code (commented out):
+                """
                 # Try to load JMA strain data (if available)
                 try:
                     jma_data = load_jma_strain_data('attached_assets/202303t4.zip')
@@ -225,6 +231,7 @@ def app():
                 except Exception as e:
                     st.warning(f"JMA strain data couldn't be loaded: {str(e)}. Using only WSM data.")
                     has_jma_data = False
+                """
                     
             except Exception as e:
                 st.error(f"Error loading strain data: {str(e)}")
