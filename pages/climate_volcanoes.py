@@ -41,10 +41,11 @@ def app():
     """)
     
     # Create tabs for different sections
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "🗓️ Timeline", 
         "🌋 Interactive Map", 
         "📉 Soil Erosion",
+        "🧱 Crustal Strain",
         "🧊 Glacial Effects",
         "🛰️ Satellite Data",
         "📚 Research Library"

@@ -113,12 +113,13 @@ def create_volcano_map(df: pd.DataFrame, include_monitoring_data: bool = False,
 
 from utils.risk_assessment import calculate_lava_buildup_index
 
-def create_popup_html(volcano: pd.Series) -> str:
+def create_popup_html(volcano: pd.Series, include_strain_data: bool = True) -> str:
     """
     Create HTML content for volcano popup.
     
     Args:
         volcano (pd.Series): Row from volcano DataFrame
+        include_strain_data (bool): Whether to include strain data information
         
     Returns:
         str: HTML content for popup
@@ -148,6 +149,64 @@ def create_popup_html(volcano: pd.Series) -> str:
         lava_color = '#FFEB3B'  # Yellow for moderate build-up
     else:
         lava_color = '#4CAF50'  # Green for low build-up
+    
+    # Check if strain data is available in session state
+    strain_info = ""
+    if include_strain_data and 'jma_data' in st.session_state:
+        # Get nearest strain station
+        from utils.crustal_strain_utils import get_jma_station_locations
+        
+        # Find closest strain station to this volcano
+        volcano_lat = volcano.get('latitude')
+        volcano_lon = volcano.get('longitude')
+        
+        if volcano_lat is not None and volcano_lon is not None:
+            stations = get_jma_station_locations()
+            closest_station = None
+            min_distance = float('inf')
+            
+            for station, (lat, lon) in stations.items():
+                distance = ((lat - volcano_lat) ** 2 + (lon - volcano_lon) ** 2) ** 0.5
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_station = station
+            
+            # Check if the closest station is close enough (arbitrary threshold)
+            if min_distance < 20 and closest_station:  # Within ~2000km (very rough estimation)
+                # Get the strain values for this station
+                jma_data = st.session_state['jma_data']
+                if closest_station in jma_data.columns:
+                    # Get the last few values to assess trend
+                    recent_values = jma_data[closest_station].tail(24)  # Last 24 hours
+                    
+                    # Calculate change (simple trend indicator)
+                    if len(recent_values) >= 2:
+                        first_valid = recent_values.dropna().iloc[0] if not recent_values.dropna().empty else 0
+                        last_valid = recent_values.dropna().iloc[-1] if not recent_values.dropna().empty else 0
+                        change = last_valid - first_valid
+                        
+                        # Determine trend and color
+                        if abs(change) < 0.01:
+                            trend = "Stable"
+                            trend_color = "#4CAF50"  # Green
+                        elif change > 0:
+                            trend = "Expanding"
+                            trend_color = "#F44336"  # Red - expansion often precedes eruptions
+                        else:
+                            trend = "Contracting"
+                            trend_color = "#2196F3"  # Blue
+                        
+                        # Create strain info section
+                        strain_info = f"""
+                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                            <h4 style="margin: 0 0 5px 0; font-size: 14px;">Crustal Strain Data</h4>
+                            <p style="margin: 0; font-size: 12px;">
+                                <strong>Nearest station:</strong> {closest_station} ({min_distance:.1f}° away)<br>
+                                <strong>Trend (24h):</strong> <span style="color: {trend_color};">{trend}</span><br>
+                                <strong>Change:</strong> {change:.6f} strain units
+                            </p>
+                        </div>
+                        """
     
     # Create HTML content
     html = f"""
@@ -191,8 +250,9 @@ def create_popup_html(volcano: pd.Series) -> str:
                 </td>
             </tr>
         </table>
+        {strain_info}
         <div style="font-size: 12px; color: #666; margin-top: 5px;">
-            <strong>Data Sources:</strong> USGS, Volcano Monitoring Dashboard
+            <strong>Data Sources:</strong> USGS, JMA, Volcano Monitoring Dashboard
         </div>
     </div>
     """
