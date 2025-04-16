@@ -357,13 +357,18 @@ def create_strain_timeseries_plot(jma_data: pd.DataFrame, station: str = None) -
     )
     
     # Calculate rate of change (derivative) to show rapid changes
-    jma_data['strain_change'] = jma_data[station].diff()
+    # First convert None values to NaN so diff() can work properly
+    strain_data = jma_data[station].copy()
+    strain_data = pd.to_numeric(strain_data, errors='coerce')  # Convert to numeric, non-numeric to NaN
+    
+    # Now we can calculate the diff safely
+    strain_change = strain_data.diff()
     
     # Add rate of change trace
     fig.add_trace(
         go.Scatter(
             x=jma_data['timestamp'],
-            y=jma_data['strain_change'],
+            y=strain_change,
             mode='lines',
             name=f"{station} Strain Rate of Change",
             line=dict(color='royalblue', width=1.5, dash='dash'),
