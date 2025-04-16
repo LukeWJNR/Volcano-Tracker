@@ -2,7 +2,9 @@
 Utility functions for volcano risk assessment and predictive heat maps
 
 This module contains logic for calculating volcanic risk levels based on 
-various factors and generating heat map visualizations.
+various factors and generating heat map visualizations. It also includes 
+specialized metrics like the Lava Build-Up Index that quantify specific 
+aspects of volcanic hazards.
 """
 import pandas as pd
 import numpy as np
@@ -239,3 +241,154 @@ def generate_risk_heatmap_data(volcanoes_df: pd.DataFrame) -> List[List[float]]:
         ])
     
     return heatmap_data
+
+def calculate_lava_buildup_index(volcano_data: Dict[str, Any]) -> float:
+    """
+    Calculate the Lava Build-Up Index for a volcano based on various indicators.
+    The index quantifies the potential for lava accumulation in the volcano's magma 
+    chamber and conduits, which can be a precursor to eruptions.
+    
+    Args:
+        volcano_data (Dict[str, Any]): Dictionary containing volcano data
+        
+    Returns:
+        float: Lava Build-Up Index on a scale of 0.0 to 10.0
+    """
+    # Base value - all volcanoes start with some minimal value
+    base_index = 1.0
+    
+    # Initialize multipliers and additional factors
+    alert_level_multiplier = 1.0
+    type_multiplier = 1.0
+    recency_factor = 0.0
+    seismic_factor = 0.0
+    deformation_factor = 0.0
+    gas_emission_factor = 0.0
+    
+    # 1. Volcano Type Factor - different volcano types have different lava build-up patterns
+    volcano_type = str(volcano_data.get('type', '')).lower()
+    
+    # Volcano types with typically high-viscosity lava (more build-up potential)
+    high_buildup_types = ['stratovolcano', 'caldera', 'complex volcano', 'lava dome']
+    # Volcano types with typically medium-viscosity lava
+    medium_buildup_types = ['shield volcano', 'pyroclastic shield', 'volcanic field']
+    # Volcano types with typically low-viscosity lava (less build-up potential)
+    low_buildup_types = ['cinder cone', 'fissure vent', 'lava field']
+    
+    if any(buildup_type in volcano_type for buildup_type in high_buildup_types):
+        type_multiplier = 1.5
+    elif any(buildup_type in volcano_type for buildup_type in medium_buildup_types):
+        type_multiplier = 1.2
+    elif any(buildup_type in volcano_type for buildup_type in low_buildup_types):
+        type_multiplier = 0.8
+    
+    # 2. Alert Level Factor - higher alert levels indicate more active systems
+    alert_level = str(volcano_data.get('alert_level', 'Unknown'))
+    
+    if alert_level == 'Warning':
+        alert_level_multiplier = 2.0
+    elif alert_level == 'Watch':
+        alert_level_multiplier = 1.5
+    elif alert_level == 'Advisory':
+        alert_level_multiplier = 1.2
+    else:  # Normal or Unknown
+        alert_level_multiplier = 1.0
+    
+    # 3. Recency Factor - more recent eruptions indicate systems that have reset
+    last_eruption = volcano_data.get('last_eruption', 'Unknown')
+    years_since = 100  # Default value for unknown
+    
+    if isinstance(last_eruption, (int, float)) and not math.isnan(float(last_eruption)):
+        try:
+            last_year = int(float(last_eruption))
+            current_year = datetime.now().year
+            years_since = current_year - last_year
+        except (ValueError, TypeError):
+            pass
+    elif isinstance(last_eruption, str) and last_eruption.lower() not in ("unknown", "none", "", "nan"):
+        try:
+            if '-' in last_eruption:  # Date range like "2020-2021"
+                last_year = int(last_eruption.split('-')[-1])
+                current_year = datetime.now().year
+                years_since = current_year - last_year
+            else:
+                last_year = int(last_eruption)
+                current_year = datetime.now().year
+                years_since = current_year - last_year
+        except (ValueError, TypeError):
+            pass
+    
+    # Calculate recency factor
+    if years_since <= 2:
+        # Very recent eruption - system may have reset but could be in a eruptive sequence
+        recency_factor = 1.5
+    elif years_since <= 10:
+        # Recent enough that system is likely still active
+        recency_factor = 2.0
+    elif years_since <= 30:
+        # Moderate time for build-up
+        recency_factor = 3.0
+    elif years_since <= 100:
+        # Significant time for build-up
+        recency_factor = 4.0
+    else:
+        # Very long time for build-up, but system may be dormant
+        recency_factor = 3.0
+    
+    # 4. Seismic Activity Factor
+    # We'll use the earthquake swarm data as a proxy for seismic activity
+    has_eq_swarm = volcano_data.get('has_eq_swarm', False)
+    eq_swarm_count = volcano_data.get('eq_swarm_count', 0)
+    
+    if has_eq_swarm and eq_swarm_count > 0:
+        # Scale based on swarm intensity
+        seismic_factor = min(3.0, eq_swarm_count / 10)
+    
+    # 5. Deformation Factor (from InSAR or other measurements)
+    deformation_rate = volcano_data.get('deformation_rate', 0)  # in mm/month
+    
+    if deformation_rate > 0:
+        # Positive deformation (inflation) suggests magma influx
+        deformation_factor = min(2.5, deformation_rate / 10)
+    
+    # 6. Gas Emission Factor (SO2, CO2, etc.)
+    gas_emission = volcano_data.get('so2_emission', 0)  # in tons/day
+    
+    if gas_emission > 0:
+        gas_emission_factor = min(2.0, gas_emission / 500)
+    
+    # Calculate final index
+    lava_buildup_index = (
+        base_index * type_multiplier * alert_level_multiplier +
+        recency_factor + seismic_factor + deformation_factor + gas_emission_factor
+    )
+    
+    # Ensure index is between 0 and 10
+    lava_buildup_index = max(0.0, min(10.0, lava_buildup_index))
+    
+    # Round to one decimal place for display
+    return round(lava_buildup_index, 1)
+
+def calculate_volcano_metrics(volcanoes_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculate additional volcano risk metrics and indicators
+    
+    Args:
+        volcanoes_df (pd.DataFrame): DataFrame containing volcano data
+        
+    Returns:
+        pd.DataFrame: DataFrame with added metrics columns
+    """
+    # Create a copy to avoid modifying the original
+    df = volcanoes_df.copy()
+    
+    # Calculate risk levels if not already present
+    if 'risk_factor' not in df.columns:
+        df = generate_risk_levels(df)
+    
+    # Calculate Lava Build-Up Index for each volcano
+    df['lava_buildup_index'] = df.apply(lambda row: calculate_lava_buildup_index(row.to_dict()), axis=1)
+    
+    # Add more metrics here as needed
+    
+    return df

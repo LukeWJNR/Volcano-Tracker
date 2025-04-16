@@ -400,80 +400,176 @@ def add_monitoring_points(m: folium.Map, volcanoes_df: pd.DataFrame,
     ash_group.add_to(m)
     radon_group.add_to(m)
     
+def fetch_usgs_earthquake_data():
+    """
+    Fetch real earthquake data from USGS API for the last 7 days.
+    
+    Returns:
+        list: List of earthquake features
+    """
+    import requests
+    from datetime import datetime, timedelta
+    
+    try:
+        # Fetch all earthquakes from the past week (magnitude 2.5+)
+        url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson"
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()  # Raise exception for HTTP errors
+        
+        data = response.json()
+        return data.get('features', [])
+    except Exception as e:
+        print(f"Error fetching earthquake data: {str(e)}")
+        return []
+
 def add_recent_earthquakes(feature_group, volcanoes_df):
     """
-    Add earthquake data from the last 24 hours to the provided feature group.
+    Add earthquake data from the USGS API to the provided feature group.
     
     Args:
         feature_group (folium.FeatureGroup): Feature group to add earthquakes to
         volcanoes_df (pd.DataFrame): DataFrame of volcanoes for reference
     """
-    # Select random volcanoes to show earthquake activity
-    earthquake_volcanoes = volcanoes_df.sample(min(15, len(volcanoes_df)))
+    # Try to get real earthquake data from USGS
+    earthquake_data = fetch_usgs_earthquake_data()
     
-    # For each selected volcano, create some simulated earthquake events
-    for _, volcano in earthquake_volcanoes.iterrows():
-        # Skip rows with missing coordinates
-        if pd.isna(volcano['latitude']) or pd.isna(volcano['longitude']):
-            continue
+    if earthquake_data:
+        # We have real earthquake data
+        from datetime import datetime
         
-        # Determine number of earthquakes based on alert level
-        num_earthquakes = 1  # Default for low activity
-        if volcano.get('alert_level') == 'Warning':
-            num_earthquakes = random.randint(5, 12)
-        elif volcano.get('alert_level') == 'Watch':
-            num_earthquakes = random.randint(3, 8)
-        elif volcano.get('alert_level') == 'Advisory':
-            num_earthquakes = random.randint(2, 5)
+        for eq in earthquake_data:
+            try:
+                # Extract earthquake properties
+                coords = eq['geometry']['coordinates']
+                props = eq['properties']
+                
+                # Extract coordinates (format is [longitude, latitude, depth])
+                eq_lon = coords[0]
+                eq_lat = coords[1]
+                depth = coords[2]
+                
+                # Get magnitude and format time
+                magnitude = props.get('mag', 0)
+                
+                # Skip very weak earthquakes
+                if magnitude < 2.5:
+                    continue
+                    
+                # Calculate time ago
+                eq_time = datetime.fromtimestamp(props.get('time', 0) / 1000.0)
+                now = datetime.now()
+                time_diff = now - eq_time
+                hours_ago = time_diff.total_seconds() / 3600
+                
+                # Determine circle size and color based on magnitude
+                radius = magnitude * 3
+                
+                color = 'green'
+                if magnitude >= 5.0:
+                    color = 'red'
+                elif magnitude >= 4.0:
+                    color = 'orange'
+                elif magnitude >= 3.0:
+                    color = 'yellow'
+                
+                # Format place information
+                place = props.get('place', 'Unknown location')
+                
+                # Create popup content
+                popup_content = f"""
+                <div style="font-family: Arial, sans-serif;">
+                    <h4>Earthquake</h4>
+                    <p><strong>Magnitude:</strong> {magnitude}</p>
+                    <p><strong>Depth:</strong> {depth:.1f} km</p>
+                    <p><strong>Time:</strong> {hours_ago:.1f} hours ago</p>
+                    <p><strong>Location:</strong> {place}</p>
+                    <p><a href="{props.get('url', '#')}" target="_blank">USGS Details</a></p>
+                </div>
+                """
+                
+                # Add circle marker for earthquake
+                folium.CircleMarker(
+                    location=[eq_lat, eq_lon],
+                    radius=radius,
+                    color=color,
+                    fill=True,
+                    fill_color=color,
+                    fill_opacity=0.7,
+                    popup=folium.Popup(popup_content, max_width=300),
+                    tooltip=f"M{magnitude} - {hours_ago:.1f}h ago"
+                ).add_to(feature_group)
+            except Exception as e:
+                print(f"Error processing earthquake: {str(e)}")
+                continue
+    else:
+        # Fallback to simulated earthquakes if USGS data is unavailable
+        print("Using simulated earthquake data (USGS API unavailable)")
+        # Select random volcanoes to show earthquake activity
+        earthquake_volcanoes = volcanoes_df.sample(min(15, len(volcanoes_df)))
         
-        # Create earthquake events around the volcano
-        for _ in range(num_earthquakes):
-            # Random location near volcano
-            distance = random.uniform(0.05, 0.5)  # 5-50 km roughly
-            angle = random.uniform(0, 2 * 3.14159)  # Random direction
+        # For each selected volcano, create some simulated earthquake events
+        for _, volcano in earthquake_volcanoes.iterrows():
+            # Skip rows with missing coordinates
+            if pd.isna(volcano['latitude']) or pd.isna(volcano['longitude']):
+                continue
             
-            eq_lat = volcano['latitude'] + distance * np.cos(angle)
-            eq_lon = volcano['longitude'] + distance * np.sin(angle)
+            # Determine number of earthquakes based on alert level
+            num_earthquakes = 1  # Default for low activity
+            if volcano.get('alert_level') == 'Warning':
+                num_earthquakes = random.randint(5, 12)
+            elif volcano.get('alert_level') == 'Watch':
+                num_earthquakes = random.randint(3, 8)
+            elif volcano.get('alert_level') == 'Advisory':
+                num_earthquakes = random.randint(2, 5)
             
-            # Random earthquake attributes
-            magnitude = round(random.uniform(1.5, 5.5), 1)
-            depth = round(random.uniform(1.0, 15.0), 1)
-            hours_ago = round(random.uniform(0, 24), 1)
-            
-            # Determine circle size and color based on magnitude
-            radius = magnitude * 3
-            
-            color = 'green'
-            if magnitude >= 4.0:
-                color = 'red'
-            elif magnitude >= 3.0:
-                color = 'orange'
-            elif magnitude >= 2.0:
-                color = 'yellow'
-            
-            # Create popup content
-            popup_content = f"""
-            <div style="font-family: Arial, sans-serif;">
-                <h4>Earthquake</h4>
-                <p><strong>Magnitude:</strong> {magnitude}</p>
-                <p><strong>Depth:</strong> {depth} km</p>
-                <p><strong>Time:</strong> {hours_ago:.1f} hours ago</p>
-                <p><strong>Near:</strong> {volcano['name']}</p>
-                <p><strong>Distance:</strong> ~{int(distance * 100)} km from volcano</p>
-            </div>
-            """
-            
-            # Add circle marker for earthquake
-            folium.CircleMarker(
-                location=[eq_lat, eq_lon],
-                radius=radius,
-                color=color,
-                fill=True,
-                fill_color=color,
-                fill_opacity=0.7,
-                popup=folium.Popup(popup_content, max_width=200),
-                tooltip=f"M{magnitude} - {hours_ago:.1f}h ago"
-            ).add_to(feature_group)
+            # Create earthquake events around the volcano
+            for _ in range(num_earthquakes):
+                # Random location near volcano
+                distance = random.uniform(0.05, 0.5)  # 5-50 km roughly
+                angle = random.uniform(0, 2 * 3.14159)  # Random direction
+                
+                eq_lat = volcano['latitude'] + distance * np.cos(angle)
+                eq_lon = volcano['longitude'] + distance * np.sin(angle)
+                
+                # Random earthquake attributes
+                magnitude = round(random.uniform(1.5, 5.5), 1)
+                depth = round(random.uniform(1.0, 15.0), 1)
+                hours_ago = round(random.uniform(0, 24), 1)
+                
+                # Determine circle size and color based on magnitude
+                radius = magnitude * 3
+                
+                color = 'green'
+                if magnitude >= 4.0:
+                    color = 'red'
+                elif magnitude >= 3.0:
+                    color = 'orange'
+                elif magnitude >= 2.0:
+                    color = 'yellow'
+                
+                # Create popup content
+                popup_content = f"""
+                <div style="font-family: Arial, sans-serif;">
+                    <h4>Earthquake (Simulated)</h4>
+                    <p><strong>Magnitude:</strong> {magnitude}</p>
+                    <p><strong>Depth:</strong> {depth} km</p>
+                    <p><strong>Time:</strong> {hours_ago:.1f} hours ago</p>
+                    <p><strong>Near:</strong> {volcano['name']}</p>
+                    <p><strong>Distance:</strong> ~{int(distance * 100)} km from volcano</p>
+                </div>
+                """
+                
+                # Add circle marker for earthquake
+                folium.CircleMarker(
+                    location=[eq_lat, eq_lon],
+                    radius=radius,
+                    color=color,
+                    fill=True,
+                    fill_color=color,
+                    fill_opacity=0.7,
+                    popup=folium.Popup(popup_content, max_width=200),
+                    tooltip=f"M{magnitude} - {hours_ago:.1f}h ago"
+                ).add_to(feature_group)
 
 def add_earthquake_swarms(feature_group, volcanoes_df):
     """
