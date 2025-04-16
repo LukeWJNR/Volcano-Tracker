@@ -242,20 +242,22 @@ def generate_risk_heatmap_data(volcanoes_df: pd.DataFrame) -> List[List[float]]:
     
     return heatmap_data
 
-def calculate_lava_buildup_index(volcano_data: Dict[str, Any], earthquake_data: List = None) -> float:
+def calculate_lava_buildup_index(volcano_data: Dict[str, Any], earthquake_data: List = None, strain_data: Dict = None) -> float:
     """
     Calculate the Lava Build-Up Index for a volcano based on various indicators.
     This index quantifies the potential for lava accumulation in the volcano's magma 
     chamber and conduits, which can be a precursor to eruptions.
     
-    The formula is based on three key factors:
+    The formula is based on four key factors:
     1. Thermal anomaly count (indicator of heat from magma)
     2. Deformation rate (indicator of ground movement from magma pressure)
     3. Local earthquake sum (indicator of seismic activity near the volcano)
+    4. Recent strain surge (indicator of crustal stress changes)
     
     Args:
         volcano_data (Dict[str, Any]): Dictionary containing volcano data
         earthquake_data (List, optional): List of earthquake data from USGS. If None, will fetch from API.
+        strain_data (Dict, optional): Dictionary with strain data time series. If None, strain factor is minimal.
         
     Returns:
         float: Lava Build-Up Index on a scale of 0.0 to 10.0
@@ -369,16 +371,50 @@ def calculate_lava_buildup_index(volcano_data: Dict[str, Any], earthquake_data: 
                 # Skip problematic earthquake entries
                 continue
     
-    # Calculate the Lava Build-Up Index using the formula
-    # This mirrors the TypeScript implementation: (thermalAnomalyCount * deformationRate * localQuakeSum) / 10
+    # Calculate the Lava Build-Up Index using the updated formula
+    # New formula: (thermal_anomaly_count * deformation_rate + quake_energy + strain_surge) / scaling_factor
     # We apply a small base value to ensure non-zero results even when data is missing
     base_value = 1
     
-    # Scale the quake sum to avoid excessive values
-    scaled_quake_sum = min(10, local_quake_sum / 5)
+    # Scale the quake sum to avoid excessive values (quake energy near volcano)
+    quake_energy = min(30, local_quake_sum / 2)
     
-    # Formula: (thermal_anomaly_count * deformation_rate * scaled_quake_sum) / 10
-    lava_buildup_raw = (thermal_anomaly_count * deformation_rate * max(1, scaled_quake_sum)) / 10
+    # Calculate the strain surge component (if available)
+    strain_surge = 0
+    
+    if strain_data and isinstance(strain_data, dict):
+        try:
+            # Look for nearby strain measurements 
+            # In a real implementation, we would match the volcano location to nearest strain station
+            strain_stations = list(strain_data.keys())
+            
+            if strain_stations:
+                # For demonstration, use the first available station
+                station = strain_stations[0]
+                strain_values = strain_data[station]
+                
+                # Calculate the rate of change (surge) in strain
+                if len(strain_values) >= 2:
+                    # Calculate the average rate of change over last few measurements
+                    # Higher positive rate = expansion = potential magma movement
+                    recent_changes = []
+                    for i in range(1, min(5, len(strain_values))):
+                        change = strain_values[-i] - strain_values[-i-1]
+                        recent_changes.append(change)
+                    
+                    # If we have changes, calculate the average
+                    if recent_changes:
+                        avg_change = sum(recent_changes) / len(recent_changes)
+                        # Scale the change - positive values (expansion) contribute more
+                        strain_surge = max(0, avg_change * 20)
+                        # Cap the maximum contribution of strain data
+                        strain_surge = min(15, strain_surge)
+        except Exception as e:
+            print(f"Error processing strain data: {e}")
+    
+    # Formula: (thermal_anomaly_count * deformation_rate + quake_energy + strain_surge) / scaling_factor
+    scaling_factor = 10
+    lava_buildup_raw = (thermal_anomaly_count * deformation_rate + quake_energy + strain_surge) / scaling_factor
     
     # Adjust with base value to ensure minimal values
     lava_buildup_index = base_value + lava_buildup_raw
@@ -400,6 +436,7 @@ def calculate_volcano_metrics(volcanoes_df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: DataFrame with added metrics columns
     """
     from utils.map_utils import fetch_usgs_earthquake_data
+    import streamlit as st
     
     # Create a copy to avoid modifying the original
     df = volcanoes_df.copy()
@@ -416,13 +453,31 @@ def calculate_volcano_metrics(volcanoes_df: pd.DataFrame) -> pd.DataFrame:
         print(f"Error fetching earthquake data: {e}")
         earthquake_data = []
     
-    # Calculate Lava Build-Up Index for each volcano with shared earthquake data
+    # Try to get strain data from cache or session state
+    strain_data = None
+    try:
+        # Check if we have JMA strain data in session state
+        if 'jma_data' in st.session_state:
+            from utils.crustal_strain_utils import process_jma_strain_data_for_risk_assessment
+            strain_data = process_jma_strain_data_for_risk_assessment(st.session_state['jma_data'])
+        # If not in session state, try to load it directly
+        else:
+            try:
+                from utils.crustal_strain_utils import load_jma_strain_data, process_jma_strain_data_for_risk_assessment
+                jma_data = load_jma_strain_data('data/crustal_strain/202303t4.txt')
+                strain_data = process_jma_strain_data_for_risk_assessment(jma_data)
+            except Exception as e:
+                print(f"Could not load strain data: {e}")
+    except Exception as e:
+        print(f"Error processing strain data: {e}")
+    
+    # Calculate Lava Build-Up Index for each volcano with shared data
     def calculate_lbi_with_shared_data(row):
         row_dict = row.to_dict()
-        # Create a function that uses the shared earthquake data
-        return calculate_lava_buildup_index(row_dict, earthquake_data)
+        # Create a function that uses the shared earthquake data and strain data
+        return calculate_lava_buildup_index(row_dict, earthquake_data, strain_data)
     
-    # Apply the calculation with shared earthquake data
+    # Apply the calculation with shared data
     df['lava_buildup_index'] = df.apply(calculate_lbi_with_shared_data, axis=1)
     
     # Add more metrics here as needed

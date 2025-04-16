@@ -3,6 +3,9 @@ Crustal Strain Utilities for the Volcano Monitoring Dashboard.
 
 This module provides functions for loading, processing, and visualizing crustal strain data
 from JMA (Japan Meteorological Agency) borehole strainmeters and World Stress Map data.
+
+The strain data is used for both visualization and as an input to the Lava Build-Up Index
+calculation, providing a new dimension of crustal stress monitoring for volcanic risk assessment.
 """
 
 import streamlit as st
@@ -13,6 +16,7 @@ import folium
 from folium.plugins import HeatMap
 import warnings
 from typing import Dict, List, Any, Tuple, Optional
+import plotly.graph_objects as go
 
 @st.cache_data(ttl=3600)  # Cache for 1 hour
 def load_jma_strain_data(filepath: str = 'data/crustal_strain/202303t4.txt') -> pd.DataFrame:
@@ -414,3 +418,108 @@ def get_jma_station_locations() -> Dict[str, Tuple[float, float]]:
         "TENRYU": (34.8735, 137.8156),
         "KAWANE": (35.1265, 138.0219)
     }
+
+def process_jma_strain_data_for_risk_assessment(jma_data: pd.DataFrame) -> Dict[str, List[float]]:
+    """
+    Process JMA strain data into a format suitable for the Lava Build-Up Index calculation.
+    
+    Args:
+        jma_data (pd.DataFrame): JMA strain data from load_jma_strain_data()
+        
+    Returns:
+        Dict[str, List[float]]: Dictionary with station names as keys and lists of strain values as values
+    """
+    # If data is empty, return empty dictionary
+    if jma_data.empty:
+        return {}
+    
+    # Get station columns (all non-timestamp columns)
+    station_columns = [col for col in jma_data.columns if col != 'timestamp']
+    
+    # Extract strain data for each station
+    strain_data = {}
+    for station in station_columns:
+        # Convert to numeric and remove NaN values
+        values = pd.to_numeric(jma_data[station], errors='coerce')
+        # Drop NaN values and convert to list
+        values_list = values.dropna().tolist()
+        # Only include stations with sufficient data
+        if len(values_list) >= 2:  # Need at least 2 points to calculate change
+            strain_data[station] = values_list
+    
+    return strain_data
+
+def create_strain_graph_component(jma_data: pd.DataFrame, station: str = None, height: int = 300) -> Optional[Dict]:
+    """
+    Create a strain graph component for use in the dashboard.
+    This is similar to the TypeScript StrainGraph component.
+    
+    Args:
+        jma_data (pd.DataFrame): JMA strain data
+        station (str, optional): Station to display. If None, use first available.
+        height (int): Height of the graph in pixels
+        
+    Returns:
+        Optional[Dict]: Plotly figure object or None if no data
+    """
+    # If no data, return None
+    if jma_data.empty:
+        return None
+    
+    # If no station specified, use the first available
+    if not station:
+        station_cols = [col for col in jma_data.columns if col != 'timestamp']
+        if not station_cols:
+            return None
+        station = station_cols[0]
+    
+    # Ensure station exists in data
+    if station not in jma_data.columns:
+        return None
+    
+    # Create figure
+    fig = go.Figure()
+    
+    # Add strain data
+    strain_values = jma_data[station]
+    dates = jma_data['timestamp']
+    
+    # Main strain line
+    fig.add_trace(go.Scatter(
+        x=dates,
+        y=strain_values,
+        mode='lines',
+        name=f"{station} Strain",
+        line=dict(color='firebrick', width=2)
+    ))
+    
+    # Calculate and add the rate of change (derivative)
+    strain_data = pd.to_numeric(strain_values, errors='coerce')
+    strain_change = strain_data.diff() * 100  # Scale for visibility
+    
+    fig.add_trace(go.Scatter(
+        x=dates,
+        y=strain_change,
+        mode='lines',
+        name='Rate of Change',
+        line=dict(color='royalblue', width=1.5, dash='dash'),
+        visible='legendonly'  # Hidden by default
+    ))
+    
+    # Update layout
+    fig.update_layout(
+        title=f"Crustal Strain - {station}",
+        xaxis_title="Date",
+        yaxis_title="Strain (1.0E-06)",
+        height=height,
+        margin=dict(l=10, r=10, t=40, b=10),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+    
+    return fig
