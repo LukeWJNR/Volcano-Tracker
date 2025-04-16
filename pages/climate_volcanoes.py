@@ -219,7 +219,7 @@ def app():
                 
                 # Try to load JMA strain data (if available)
                 try:
-                    jma_data = load_jma_strain_data('data/crustal_strain/202303t4.txt')
+                    jma_data = load_jma_strain_data('attached_assets/202303t4.zip')
                     st.session_state['jma_data'] = jma_data
                     has_jma_data = True
                 except Exception as e:

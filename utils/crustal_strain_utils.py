@@ -19,24 +19,43 @@ from typing import Dict, List, Any, Tuple, Optional
 import plotly.graph_objects as go
 
 @st.cache_data(ttl=3600)  # Cache for 1 hour
-def load_jma_strain_data(filepath: str = 'data/crustal_strain/202303t4.txt') -> pd.DataFrame:
+def load_jma_strain_data(filepath: str = 'attached_assets/202303t4.zip') -> pd.DataFrame:
     """
     Load JMA hourly cumulative strain data from the text file format.
-    This function is cached to improve performance.
+    This function is cached to improve performance. The file can be either a .txt
+    file or a .zip file containing the text data.
     
     Args:
-        filepath (str): Path to the JMA strain data text file
+        filepath (str): Path to the JMA strain data (either text file or zip file)
         
     Returns:
         pd.DataFrame: Processed strain data with timestamps and station measurements
     """
+    import zipfile
+    
     # Check if the file exists
     if not os.path.exists(filepath):
         raise FileNotFoundError(f"JMA strain data file not found at {filepath}")
     
-    # Read lines from the text file
-    with open(filepath, 'r') as f:
-        lines = f.readlines()
+    # Handle zip files
+    if filepath.endswith('.zip'):
+        try:
+            with zipfile.ZipFile(filepath, 'r') as zip_ref:
+                # Extract first file in the zip archive
+                file_list = zip_ref.namelist()
+                if not file_list:
+                    raise ValueError(f"No files found in the zip archive at {filepath}")
+                
+                # Use the first file in the archive
+                first_file = file_list[0]
+                with zip_ref.open(first_file) as f:
+                    lines = f.read().decode('utf-8').splitlines()
+        except Exception as e:
+            raise ValueError(f"Error extracting strain data from zip file: {str(e)}")
+    else:
+        # Regular text file handling
+        with open(filepath, 'r') as f:
+            lines = f.readlines()
     
     # Extract header information
     year = None

@@ -464,7 +464,7 @@ def calculate_volcano_metrics(volcanoes_df: pd.DataFrame) -> pd.DataFrame:
         else:
             try:
                 from utils.crustal_strain_utils import load_jma_strain_data, process_jma_strain_data_for_risk_assessment
-                jma_data = load_jma_strain_data('data/crustal_strain/202303t4.txt')
+                jma_data = load_jma_strain_data('attached_assets/202303t4.zip')
                 strain_data = process_jma_strain_data_for_risk_assessment(jma_data)
             except Exception as e:
                 print(f"Could not load strain data: {e}")
