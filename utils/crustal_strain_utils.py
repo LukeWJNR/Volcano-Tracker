@@ -40,22 +40,35 @@ def load_jma_strain_data(filepath: str = 'attached_assets/202303t4.zip') -> pd.D
     # Handle zip files
     if filepath.endswith('.zip'):
         try:
+            print(f"Loading strain data from zip file: {filepath}")
             with zipfile.ZipFile(filepath, 'r') as zip_ref:
                 # Extract first file in the zip archive
                 file_list = zip_ref.namelist()
+                print(f"Files in zip archive: {file_list}")
+                
                 if not file_list:
                     raise ValueError(f"No files found in the zip archive at {filepath}")
                 
                 # Use the first file in the archive
                 first_file = file_list[0]
+                print(f"Using file {first_file} from zip archive")
+                
                 with zip_ref.open(first_file) as f:
-                    lines = f.read().decode('utf-8').splitlines()
+                    content = f.read().decode('utf-8')
+                    print(f"Successfully read {len(content)} bytes from {first_file}")
+                    lines = content.splitlines()
         except Exception as e:
+            print(f"Detailed error loading strain data from zip: {str(e)}")
             raise ValueError(f"Error extracting strain data from zip file: {str(e)}")
     else:
         # Regular text file handling
-        with open(filepath, 'r') as f:
-            lines = f.readlines()
+        try:
+            print(f"Loading strain data from text file: {filepath}")
+            with open(filepath, 'r') as f:
+                lines = f.readlines()
+        except Exception as e:
+            print(f"Detailed error loading strain data from text file: {str(e)}")
+            raise ValueError(f"Error reading strain data text file: {str(e)}")
     
     # Extract header information
     year = None

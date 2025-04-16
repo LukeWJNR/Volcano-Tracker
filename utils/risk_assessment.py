@@ -455,6 +455,10 @@ def calculate_volcano_metrics(volcanoes_df: pd.DataFrame) -> pd.DataFrame:
     
     # Try to get strain data from cache or session state
     strain_data = None
+    # Skip strain data integration for now to avoid potential errors
+    # This is a temporary fix until we can properly debug the strain data loading
+    print("Skipping strain data integration temporarily for stability")
+    """
     try:
         # Check if we have JMA strain data in session state
         if 'jma_data' in st.session_state:
@@ -470,6 +474,7 @@ def calculate_volcano_metrics(volcanoes_df: pd.DataFrame) -> pd.DataFrame:
                 print(f"Could not load strain data: {e}")
     except Exception as e:
         print(f"Error processing strain data: {e}")
+    """
     
     # Calculate Lava Build-Up Index for each volcano with shared data
     def calculate_lbi_with_shared_data(row):

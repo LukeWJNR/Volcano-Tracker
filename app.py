@@ -24,11 +24,17 @@ from streamlit.runtime.state import SessionStateProxy
 from utils.analytics import inject_ga_tracking, track_event
 
 # Inject Google Analytics tracking code
-inject_ga_tracking()
+try:
+    inject_ga_tracking()
+except Exception as e:
+    st.error(f"Error with analytics: {str(e)}")
 
 # Load custom CSS
-with open("assets/custom.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+try:
+    with open("assets/custom.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+except Exception as e:
+    st.error(f"Error loading CSS: {str(e)}")
     
 # Initialize session state variables at the start
 if 'selected_volcano' not in st.session_state:
