@@ -5,6 +5,7 @@ This module provides functions for loading, processing, and visualizing crustal 
 from JMA (Japan Meteorological Agency) borehole strainmeters and World Stress Map data.
 """
 
+import streamlit as st
 import pandas as pd
 import numpy as np
 import os
@@ -13,9 +14,11 @@ from folium.plugins import HeatMap
 import warnings
 from typing import Dict, List, Any, Tuple, Optional
 
+@st.cache_data(ttl=3600)  # Cache for 1 hour
 def load_jma_strain_data(filepath: str = 'data/crustal_strain/202303t4.txt') -> pd.DataFrame:
     """
     Load JMA hourly cumulative strain data from the text file format.
+    This function is cached to improve performance.
     
     Args:
         filepath (str): Path to the JMA strain data text file
@@ -115,9 +118,11 @@ def load_jma_strain_data(filepath: str = 'data/crustal_strain/202303t4.txt') -> 
     
     return df
 
+@st.cache_data(ttl=3600)  # Cache for 1 hour
 def load_wsm_data(filepath: str = 'attached_assets/wsm2016.xlsx') -> pd.DataFrame:
     """
     Load World Stress Map data from Excel file.
+    This function is cached to improve performance.
     
     Args:
         filepath (str): Path to the WSM Excel file

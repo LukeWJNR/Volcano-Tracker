@@ -206,9 +206,9 @@ def app():
         
         with col3:
             strain_data_samples = st.selectbox("Strain Data Sample Size", 
-                                             options=[500, 1000, 2000, 5000, 10000],
-                                             index=1,
-                                             help="Number of strain measurements to display (more = slower map)")
+                                             options=[200, 500, 1000, 2000, 5000],
+                                             index=0,  # Default to 200 points for faster loading
+                                             help="Number of strain measurements to display (fewer = faster map)")
         
         # Load crustal strain data
         with st.spinner("Loading crustal strain data..."):
@@ -297,8 +297,9 @@ def app():
         # Add layer control
         folium.LayerControl().add_to(m)
         
-        # Display map
-        st_folium(m, width=700, height=500)
+        # Display map with spinner to indicate loading
+        with st.spinner("Rendering map... this may take a moment"):
+            st_folium(m, width=700, height=500)
         
         # Create two columns for legends
         legend_col1, legend_col2 = st.columns(2)
@@ -352,7 +353,8 @@ def app():
                             icon=folium.Icon(color="purple", icon="broadcast-tower", prefix="fa")
                         ).add_to(station_map)
                         
-                        st_folium(station_map, width=300, height=200)
+                        with st.spinner("Loading station map..."):
+                            st_folium(station_map, width=300, height=200)
                 else:
                     st.warning(f"No data available for station {selected_station}")
             
@@ -582,8 +584,9 @@ def app():
                 icon=folium.Icon(color=color, icon="mountain", prefix="fa")
             ).add_to(m)
             
-        # Display the map
-        st_folium(m, width=700, height=500)
+        # Display the map with a spinner
+        with st.spinner("Loading glacial volcano map..."):
+            st_folium(m, width=700, height=500)
         
         # Add legend
         st.markdown("""
