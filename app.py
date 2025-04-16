@@ -196,7 +196,6 @@ with map_col1:
         st.markdown(f"Showing {len(filtered_df)} volcanos")
         
         # Create the map with optional monitoring data layers
-        include_monitoring_data = False
         m = create_volcano_map(filtered_df, include_monitoring_data=include_monitoring_data)
         
         # Add custom styling for proper iframe embedding
@@ -328,11 +327,11 @@ with filter_col3:
     # Add additional data layer checkboxes in a row
     col_eq, col_swarm, col_deform = st.columns(3)
     with col_eq:
-        st.checkbox("Show Earthquakes", value=True, help="Display recent earthquakes (last 24h)")
+        show_earthquakes = st.checkbox("Show Earthquakes", value=True, help="Display recent earthquakes (last 24h)")
     with col_swarm:
-        st.checkbox("Show Earthquake Swarms", value=True, help="Display earthquake swarm locations and details")
+        show_swarms = st.checkbox("Show Earthquake Swarms", value=True, help="Display earthquake swarm locations and details")
     with col_deform:
-        st.checkbox("Show Ground Deformation", value=True, help="Display ground uplift and subsidence data")
+        show_deformation = st.checkbox("Show Ground Deformation", value=True, help="Display ground uplift and subsidence data")
 
 st.markdown("</div>", unsafe_allow_html=True)
 
