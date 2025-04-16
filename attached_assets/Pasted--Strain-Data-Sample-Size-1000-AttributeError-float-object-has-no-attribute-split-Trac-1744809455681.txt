@@ -1,0 +1,56 @@
+
+
+
+Strain Data Sample Size
+
+1000
+AttributeError: 'float' object has no attribute 'split'
+Traceback:
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 121, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 639, in code_to_exec
+    _mpa_v1(self._main_script_path)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 159, in _mpa_v1
+    page.run()
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/navigation/page.py", line 297, in run
+    exec(code, module.__dict__)
+File "/home/runner/workspace/pages/climate_volcanoes.py", line 1026, in <module>
+    app()
+File "/home/runner/workspace/pages/climate_volcanoes.py", line 301, in app
+    st_folium(m, width=700, height=500)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit_folium/__init__.py", line 285, in st_folium
+    folium_map.render()
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/folium/folium.py", line 417, in render
+    super().render(**kwargs)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/folium/elements.py", line 33, in render
+    super().render(**kwargs)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/branca/element.py", line 736, in render
+    element.render(**kwargs)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/folium/map.py", line 90, in render
+    super().render(**kwargs)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/branca/element.py", line 736, in render
+    element.render(**kwargs)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/folium/elements.py", line 33, in render
+    super().render(**kwargs)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/folium/map.py", line 90, in render
+    super().render(**kwargs)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/branca/element.py", line 733, in render
+    figure.script.add_child(Element(script(self, kwargs)), name=self.get_name())
+                                    ^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/jinja2/runtime.py", line 770, in __call__
+    return self._invoke(arguments, autoescape)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/jinja2/runtime.py", line 784, in _invoke
+    rv = self._func(*arguments)
+         ^^^^^^^^^^^^^^^^^^^^^^
+File "<template>", line 38, in macro
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/folium/template.py", line 19, in tojavascript
+    out.append(tojavascript(value))
+               ^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/folium/template.py", line 18, in tojavascript
+    out.append(f'  "{camelize(key)}": ')
+                     ^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/folium/utilities.py", line 349, in camelize
+    return "".join(x.capitalize() if i > 0 else x for i, x in enumerate(key.split("_")))
+                                                                        ^^^^^^^^^
