@@ -29,6 +29,22 @@ inject_ga_tracking()
 # Load custom CSS
 with open("assets/custom.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    
+# Initialize session state variables at the start
+if 'selected_volcano' not in st.session_state:
+    st.session_state.selected_volcano = None
+if 'last_update' not in st.session_state:
+    st.session_state.last_update = None
+if 'user_note' not in st.session_state:
+    st.session_state.user_note = ""
+if 'favorites' not in st.session_state:
+    st.session_state.favorites = []
+if 'last_region' not in st.session_state:
+    st.session_state.last_region = "All"
+if 'last_name_filter' not in st.session_state:
+    st.session_state.last_name_filter = ""
+if 'show_history' not in st.session_state:
+    st.session_state.show_history = False
 
 # Function to switch pages in a multi-page app
 def switch_page(page_name: str):
@@ -315,6 +331,14 @@ st.markdown("<div style='background-color: #f8f9fa; padding: 10px; border-radius
 
 # Use columns for the filters and data layers
 filter_col1, filter_col2, filter_col3 = st.columns([1, 1, 2])
+
+# Set default filter values
+selected_region = "All"
+volcano_name_filter = ""
+include_monitoring_data = True
+show_earthquakes = True
+show_swarms = True
+show_deformation = True
 
 with filter_col1:
     st.markdown("<h3 style='margin-top: 0px; font-size: 1.2rem;'>Filters</h3>", unsafe_allow_html=True)
