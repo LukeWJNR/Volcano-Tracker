@@ -166,23 +166,37 @@ def calculate_lava_buildup_index(strain_data, earthquake_data=None, jma_strain_d
     }
     
     # Add additional strain analysis if we have data
-    if not strain_data.empty:
-        # Calculate regional strain metrics
-        for region_name, region_info in regions.items():
-            lat, lon = region_info["lat"], region_info["lon"]
+    if strain_data is not None and not strain_data.empty:
+        try:
+            # Check if required columns exist
+            required_columns = ["latitude", "longitude", "SHmax"]
+            missing_columns = [col for col in required_columns if col not in strain_data.columns]
             
-            # Find strain data points near this region
-            nearby_strain = strain_data[
-                (np.abs(strain_data["latitude"] - lat) < 5) & 
-                (np.abs(strain_data["longitude"] - lon) < 5)
-            ]
-            
-            if not nearby_strain.empty:
-                # Get average strain metrics for region
-                avg_strain = nearby_strain["SHmax"].mean() / 100  # Normalize
-                # Update the base strain with real data
-                regions[region_name]["strain_factor"] = avg_strain
-                regions[region_name]["base_strain"] = regions[region_name]["base_strain"] * (1 + avg_strain)
+            if not missing_columns:
+                # Calculate regional strain metrics
+                for region_name, region_info in regions.items():
+                    try:
+                        lat, lon = region_info["lat"], region_info["lon"]
+                        
+                        # Find strain data points near this region
+                        nearby_strain = strain_data[
+                            (np.abs(strain_data["latitude"] - lat) < 5) & 
+                            (np.abs(strain_data["longitude"] - lon) < 5)
+                        ]
+                        
+                        if not nearby_strain.empty:
+                            # Get average strain metrics for region
+                            avg_strain = nearby_strain["SHmax"].mean() / 100  # Normalize
+                            # Update the base strain with real data
+                            regions[region_name]["strain_factor"] = avg_strain
+                            regions[region_name]["base_strain"] = regions[region_name]["base_strain"] * (1 + avg_strain)
+                    except Exception as e:
+                        # If error processing this region, continue with others
+                        print(f"Error processing strain data for {region_name}: {e}")
+                        continue
+        except Exception as e:
+            # If error in overall strain processing, just continue with baseline values
+            print(f"Error in strain data processing: {e}")
     
     # Add earthquake influence if available
     if earthquake_data is not None and not isinstance(earthquake_data, type(None)):
