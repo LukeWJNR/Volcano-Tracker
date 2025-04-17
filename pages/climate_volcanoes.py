@@ -571,23 +571,42 @@ def app():
         if 'wsm_data' not in locals():
             try:
                 wsm_data = load_wsm_data('attached_assets/wsm2016.xlsx')
-                # Ensure column names are consistent
-                if 'LAT' in wsm_data.columns:
-                    wsm_data = wsm_data.rename(columns={
-                        'LAT': 'latitude',
-                        'LON': 'longitude',
-                        'AZI': 'SHmax'
-                    })
-                # If we still don't have the expected columns, create them
-                if 'latitude' not in wsm_data.columns and 'LAT' in wsm_data.columns:
-                    wsm_data['latitude'] = wsm_data['LAT']
-                if 'longitude' not in wsm_data.columns and 'LON' in wsm_data.columns:
-                    wsm_data['longitude'] = wsm_data['LON']
-                if 'SHmax' not in wsm_data.columns and 'AZI' in wsm_data.columns:
-                    wsm_data['SHmax'] = wsm_data['AZI']
-                if 'SHmag' not in wsm_data.columns:
-                    # Add dummy magnitude if not present
-                    wsm_data['SHmag'] = 1.0
+                # Make a copy of the dataframe to preserve the original
+                wsm_processed = wsm_data.copy()
+                
+                # Check and create necessary columns for strain analysis
+                # Map original columns to expected column names if needed
+                column_mapping = {
+                    'LAT': 'latitude',
+                    'LON': 'longitude',
+                    'AZI': 'SHmax'
+                }
+                
+                # Rename columns if the original columns exist
+                existing_columns = set(wsm_processed.columns) & set(column_mapping.keys())
+                if existing_columns:
+                    rename_dict = {col: column_mapping[col] for col in existing_columns}
+                    wsm_processed.rename(columns=rename_dict, inplace=True)
+                
+                # Ensure required columns exist
+                if 'latitude' not in wsm_processed.columns:
+                    if 'LAT' in wsm_data.columns:
+                        wsm_processed['latitude'] = wsm_data['LAT']
+                
+                if 'longitude' not in wsm_processed.columns:
+                    if 'LON' in wsm_data.columns:
+                        wsm_processed['longitude'] = wsm_data['LON']
+                
+                if 'SHmax' not in wsm_processed.columns:
+                    if 'AZI' in wsm_data.columns:
+                        wsm_processed['SHmax'] = wsm_data['AZI']
+                
+                # Add magnitude if not present
+                if 'SHmag' not in wsm_processed.columns:
+                    wsm_processed['SHmag'] = 1.0
+                    
+                # Use the processed dataframe for strain analysis
+                wsm_data = wsm_processed
             except Exception as e:
                 st.error(f"Error loading strain data: {str(e)}")
                 wsm_data = pd.DataFrame()
