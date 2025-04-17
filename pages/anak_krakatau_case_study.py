@@ -388,11 +388,11 @@ def app():
     # Create a Plotly-based tsunami wave visualization
     fig = go.Figure()
     
-    # Map coordinates (approximate)
-    anak_krakatau = {"lat": -6.102, "lon": 105.423, "name": "Anak Krakatau"}
-    anyer = {"lat": -6.057, "lon": 105.898, "name": "Anyer (Java)"}
-    pandeglang = {"lat": -6.746, "lon": 105.691, "name": "Pandeglang (Java)"}
-    lampung = {"lat": -5.429, "lon": 105.254, "name": "Lampung (Sumatra)"}
+    # Map coordinates (approximate) with wave heights
+    anak_krakatau = {"lat": -6.102, "lon": 105.423, "name": "Anak Krakatau", "wave_height": None}
+    anyer = {"lat": -6.057, "lon": 105.898, "name": "Anyer (Java)", "wave_height": 9.0}
+    pandeglang = {"lat": -6.746, "lon": 105.691, "name": "Pandeglang (Java)", "wave_height": 6.0}
+    lampung = {"lat": -5.429, "lon": 105.254, "name": "Lampung (Sumatra)", "wave_height": 13.0}
     
     # Add coastlines (simplified)
     # Java coast (east side)
@@ -469,43 +469,97 @@ def app():
         yaxis_scaleratio=1,
     )
     
-    # Add annotations for wave arrival times
+    # Add annotations for wave arrival times and heights
     if tsunami_stage >= 28:
         fig.add_annotation(
             x=lampung["lon"],
             y=lampung["lat"],
-            text="Wave arrival: T+28 min",
+            text=f"Wave arrival: T+28 min<br>Height: {lampung['wave_height']} meters",
             showarrow=True,
-            arrowhead=1
+            arrowhead=1,
+            bgcolor="rgba(255, 255, 255, 0.8)"
         )
     
     if tsunami_stage >= 32:
         fig.add_annotation(
             x=anyer["lon"],
             y=anyer["lat"],
-            text="Wave arrival: T+32 min",
+            text=f"Wave arrival: T+32 min<br>Height: {anyer['wave_height']} meters",
             showarrow=True,
-            arrowhead=1
+            arrowhead=1,
+            bgcolor="rgba(255, 255, 255, 0.8)"
         )
     
     if tsunami_stage >= 33:
         fig.add_annotation(
             x=pandeglang["lon"],
             y=pandeglang["lat"],
-            text="Wave arrival: T+33 min",
+            text=f"Wave arrival: T+33 min<br>Height: {pandeglang['wave_height']} meters",
             showarrow=True,
-            arrowhead=1
+            arrowhead=1,
+            bgcolor="rgba(255, 255, 255, 0.8)"
         )
     
     # Display the figure
     st.plotly_chart(fig)
     
-    # Add wave speed information
+    # Add key metrics
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Collapse Volume", "0.2-0.3 km³", 
+                 help="Estimated volume of rock that collapsed from the volcano")
+    
+    with col2:
+        st.metric("Wave Speed", "~200 km/h", 
+                 help="Approximate tsunami wave speed in open water")
+    
+    with col3:
+        st.metric("Max Wave Height", "13 meters", 
+                 help="Maximum recorded tsunami wave height at coastal areas")
+    
+    # Add volume change visualization
+    st.subheader("Volcano Volume Change")
+    
+    # Create a simple bar chart showing before/after volume
+    volume_data = pd.DataFrame({
+        "Time": ["Before Collapse", "After Collapse"],
+        "Volume (km³)": [0.5, 0.2],
+        "Height (m)": [338, 110]
+    })
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        fig_vol = px.bar(
+            volume_data, 
+            x="Time", 
+            y="Volume (km³)",
+            color="Time",
+            color_discrete_sequence=["green", "red"],
+            title="Volcano Volume Change"
+        )
+        fig_vol.update_layout(height=350)
+        st.plotly_chart(fig_vol, use_container_width=True)
+        
+    with col2:
+        fig_height = px.bar(
+            volume_data, 
+            x="Time", 
+            y="Height (m)",
+            color="Time",
+            color_discrete_sequence=["green", "red"],
+            title="Volcano Height Change"
+        )
+        fig_height.update_layout(height=350)
+        st.plotly_chart(fig_height, use_container_width=True)
+        
     st.markdown("""
-    <div style="text-align: center; margin-top: 10px;">
-        <b>Wave speed: ~200 km/h in open water</b>
-    </div>
-    """, unsafe_allow_html=True)
+    The flank collapse resulted in dramatic changes to Anak Krakatau:
+    - **Volume Loss**: Approximately 0.2-0.3 km³ of volcanic material collapsed into the sea
+    - **Height Reduction**: The volcano's height decreased from 338m to about 110m above sea level
+    - **Morphology Change**: Changed from a symmetrical cone to a crescent-shaped remnant
+    """)
     
     # Key statistics and impacts
     st.subheader("Impact of the Eruption and Tsunami")
