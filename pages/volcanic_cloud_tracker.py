@@ -27,6 +27,176 @@ import cfgrib
 
 from utils.api import get_known_volcano_data
 
+def load_grib_volcanic_ash(filepath):
+    """
+    Load volcanic ash data from a GRIB file (Copernicus format)
+    
+    Args:
+        filepath: Path to the GRIB file containing volcanic ash data
+        
+    Returns:
+        xarray.Dataset containing the loaded data
+    """
+    try:
+        # Open the GRIB file using cfgrib and xarray
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds = xr.open_dataset(filepath, engine='cfgrib')
+        return ds
+    except Exception as e:
+        st.error(f"Error loading GRIB file: {str(e)}")
+        return None
+        
+def display_copernicus_ash_data(filepath):
+    """
+    Display volcanic ash data from Copernicus GRIB file
+    
+    Args:
+        filepath: Path to the GRIB file containing volcanic ash data
+    """
+    # Load the data
+    st.subheader("Copernicus Volcanic Ash Data")
+    
+    try:
+        # Attempt to load the GRIB file
+        ds = load_grib_volcanic_ash(filepath)
+        
+        if ds is None:
+            return
+            
+        # Extract key information from the dataset
+        st.write("### Data Information:")
+        
+        # Get information about the variables in the dataset
+        for var_name in ds.data_vars:
+            var = ds[var_name]
+            st.write(f"**Variable:** {var_name}")
+            
+            # Extract attributes if available
+            attrs = var.attrs
+            if attrs:
+                st.write("**Attributes:**")
+                for key, val in attrs.items():
+                    st.write(f"- {key}: {val}")
+            
+            # Get time information if available
+            if 'time' in var.dims:
+                times = var.time.values
+                st.write(f"**Time range:** {times.min()} to {times.max()}")
+                
+            # Get geographical extent
+            if 'latitude' in var.dims and 'longitude' in var.dims:
+                lats = var.latitude.values
+                lons = var.longitude.values
+                st.write(f"**Latitude range:** {lats.min():.2f}° to {lats.max():.2f}°")
+                st.write(f"**Longitude range:** {lons.min():.2f}° to {lons.max():.2f}°")
+                
+            # Get vertical levels if present
+            if 'level' in var.dims:
+                levels = var.level.values
+                st.write(f"**Vertical levels:** {', '.join([str(l) for l in levels])}")
+        
+        # Create a map visualization of the data
+        st.write("### Ash Concentration Map")
+        
+        # Plot the data on a folium map
+        # First we need to check which variables are available
+        selected_var = list(ds.data_vars)[0]  # Default to first variable
+        
+        # Select a time index and level index if relevant
+        time_idx = 0  # Default to first time step
+        level_idx = 0  # Default to first level
+        
+        # Get the data for the first time step and level
+        if 'time' in ds[selected_var].dims and 'level' in ds[selected_var].dims:
+            data = ds[selected_var].isel(time=time_idx, level=level_idx)
+        elif 'time' in ds[selected_var].dims:
+            data = ds[selected_var].isel(time=time_idx)
+        elif 'level' in ds[selected_var].dims:
+            data = ds[selected_var].isel(level=level_idx)
+        else:
+            data = ds[selected_var]
+        
+        # Create map centered at the middle of our data
+        center_lat = (data.latitude.min() + data.latitude.max()) / 2
+        center_lon = (data.longitude.min() + data.longitude.max()) / 2
+        
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=4)
+        
+        # Plot the data as a heatmap
+        heatmap_data = []
+        for i in range(len(data.latitude)):
+            for j in range(len(data.longitude)):
+                lat = float(data.latitude[i].values)
+                lon = float(data.longitude[j].values)
+                val = float(data.values[i, j])
+                
+                # Skip missing values
+                if np.isfinite(val) and val > 0:
+                    # Add to heatmap with intensity based on value
+                    # Scale value appropriately based on the range
+                    intensity = min(1.0, val / data.values.max())
+                    heatmap_data.append([lat, lon, intensity])
+        
+        # Add heatmap to map
+        HeatMap(
+            heatmap_data,
+            min_opacity=0.3,
+            max_val=1.0,
+            radius=15,
+            blur=10,
+            gradient={0.4: 'blue', 0.6: 'lime', 0.8: 'yellow', 1.0: 'red'}
+        ).add_to(m)
+        
+        # Display the map
+        st_folium(m, width=800, height=600)
+        
+        # Show time series if available
+        if 'time' in ds[selected_var].dims:
+            st.write("### Time Series Data")
+            
+            # For time series, we'll extract a single point
+            point_lat = center_lat
+            point_lon = center_lon
+            
+            # Find nearest lat/lon indices
+            lat_idx = abs(ds.latitude - point_lat).argmin()
+            lon_idx = abs(ds.longitude - point_lon).argmin()
+            
+            # Extract time series at this point
+            if 'level' in ds[selected_var].dims:
+                # Get data for all times at the specific lat/lon and first level
+                time_series = ds[selected_var].isel(latitude=lat_idx, longitude=lon_idx, level=0)
+            else:
+                # Get data for all times at the specific lat/lon
+                time_series = ds[selected_var].isel(latitude=lat_idx, longitude=lon_idx)
+            
+            # Create time series plot
+            fig = go.Figure()
+            
+            # Add the time series
+            fig.add_trace(go.Scatter(
+                x=time_series.time.values,
+                y=time_series.values,
+                name=selected_var,
+                line=dict(color='red')
+            ))
+            
+            # Update layout
+            fig.update_layout(
+                title=f"{selected_var} Time Series at {point_lat:.2f}°, {point_lon:.2f}°",
+                xaxis_title="Time",
+                yaxis_title=f"{selected_var} ({ds[selected_var].attrs.get('units', 'unknown')})",
+                height=400
+            )
+            
+            # Display the plot
+            st.plotly_chart(fig, use_container_width=True)
+        
+    except Exception as e:
+        st.error(f"Error processing GRIB file: {str(e)}")
+        st.info("The GRIB format can vary significantly between providers. This viewer is optimized for Copernicus atmospheric data files.")
+
 def app():
     st.title("🌪️ Volcanic Cloud Motion Tracker")
     
@@ -428,21 +598,26 @@ def app():
         
         st.info("You can upload GRIB files containing volcanic ash data from Copernicus or view the provided sample.")
         
-        # Import necessary for tempfile
-        import tempfile
-        
         # File upload option
         uploaded_file = st.file_uploader("Upload Copernicus GRIB file", type=["grib", "grib2"])
         
         # Option to use sample data
         st.write("### Or use provided sample data:")
         
+        # Check that the display_copernicus_ash_data function exists
+        try:
+            func_exists = callable(display_copernicus_ash_data)
+        except NameError:
+            st.error("The GRIB file processing functions are not properly defined. Please refresh the page.")
+            func_exists = False
+        
         # Default path to the sample file
-        sample_file_path = "./attached_assets/8a407714c762f16dac6535c0dc107396.grib"
+        sample_file_path = "attached_assets/8a407714c762f16dac6535c0dc107396.grib"
         use_sample = st.checkbox("Use provided Copernicus ash data sample", value=True)
         
-        # Process the GRIB file
-        if uploaded_file is not None:
+        if not func_exists:
+            st.warning("GRIB file processing functionality is not available. Please wait for the dashboard to finish loading.")
+        elif uploaded_file is not None:
             # Create a temporary file from the uploaded data
             with tempfile.NamedTemporaryFile(suffix='.grib', delete=False) as temp_file:
                 temp_file.write(uploaded_file.getvalue())
@@ -462,20 +637,55 @@ def app():
             except:
                 pass
                 
-        elif use_sample and os.path.exists(sample_file_path):
-            # Use the provided sample file
-            try:
-                with st.spinner("Loading sample Copernicus ash data..."):
-                    display_copernicus_ash_data(sample_file_path)
-            except Exception as e:
-                st.error(f"Error processing sample file: {str(e)}")
-                st.info("""
-                The sample file may be in a different format than expected. 
-                GRIB formats can vary significantly between providers and versions.
-                """)
         elif use_sample:
-            st.warning(f"Sample file not found at: {sample_file_path}")
-            st.info("Please upload your own GRIB file with volcanic ash data.")
+            # Check if sample file exists
+            if os.path.isfile(sample_file_path):
+                try:
+                    with st.spinner("Loading sample Copernicus ash data..."):
+                        st.success(f"Found sample file at: {sample_file_path}")
+                        file_info = os.stat(sample_file_path)
+                        st.info(f"File size: {file_info.st_size/1024/1024:.2f} MB")
+                        display_copernicus_ash_data(sample_file_path)
+                except Exception as e:
+                    st.error(f"Error processing sample file: {str(e)}")
+                    st.info("""
+                    The sample file may be in a different format than expected. 
+                    GRIB formats can vary significantly between providers and versions.
+                    """)
+            else:
+                # Try to find the file in other locations
+                alternative_paths = [
+                    # Try the working directory
+                    "8a407714c762f16dac6535c0dc107396.grib",
+                    # Try with absolute path
+                    "/home/runner/app/attached_assets/8a407714c762f16dac6535c0dc107396.grib",
+                    # Try one directory up
+                    "../attached_assets/8a407714c762f16dac6535c0dc107396.grib"
+                ]
+                
+                found = False
+                for alt_path in alternative_paths:
+                    if os.path.isfile(alt_path):
+                        st.success(f"Found sample file at alternative location: {alt_path}")
+                        try:
+                            with st.spinner("Loading sample Copernicus ash data..."):
+                                display_copernicus_ash_data(alt_path)
+                            found = True
+                            break
+                        except Exception as e:
+                            st.error(f"Error processing sample file: {str(e)}")
+                
+                if not found:
+                    st.warning(f"Sample file not found. Tried paths:")
+                    for path in [sample_file_path] + alternative_paths:
+                        st.code(path)
+                    st.info("Please upload your own GRIB file with volcanic ash data.")
+                    
+                    # Show current working directory for debugging
+                    st.write("### Debug information:")
+                    st.code(f"Current working directory: {os.getcwd()}")
+                    st.code(f"Files in current directory: {os.listdir('.')}")
+                    st.code(f"Files in attached_assets: {os.listdir('attached_assets')}")
         
         # Create event selection
         historical_events = [
@@ -1580,27 +1790,7 @@ def show_eyjafjallajokull_cloud():
     and revised ash concentration thresholds for flight safety.
     """)
 
-def calculate_distance(lat1, lon1, lat2, lon2):
-    """Calculate distance between two points in km using Haversine formula"""
-    # Convert latitude and longitude from degrees to radians
-    lat1_rad = math.radians(lat1)
-    lon1_rad = math.radians(lon1)
-    lat2_rad = math.radians(lat2)
-    lon2_rad = math.radians(lon2)
-    
-    # Haversine formula
-    dlon = lon2_rad - lon1_rad
-    dlat = lat2_rad - lat1_rad
-    a = math.sin(dlat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon/2)**2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-    
-    # Earth radius in kilometers
-    radius = 6371.0
-    
-    # Calculate distance
-    distance = radius * c
-    
-    return distance
+
 
 def calculate_affected_areas(high_points, medium_points, low_points):
     """Calculate affected areas in square kilometers"""
