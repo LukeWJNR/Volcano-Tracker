@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
 import folium
-from folium.plugins import TimestampedGeoJson, HeatMap
+from folium.plugins import TimestampedGeoJson, HeatMap, Fullscreen
 from streamlit_folium import st_folium
 import os
 import io
@@ -536,6 +536,20 @@ def get_wind_direction_name(degrees):
     index = round(degrees / 22.5) % 16
     return directions[index]
 
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """Calculate distance between two points in km using Haversine formula"""
+    # Convert decimal degrees to radians
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    
+    # Haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    r = 6371  # Radius of earth in kilometers
+    
+    return c * r
+
 def simulate_cloud_motion(volcano_data, eruption_height, intensity, ash_content, 
                          wind_speed, wind_direction, stability, precipitation,
                          duration_hours, resolution_km):
@@ -795,7 +809,11 @@ def display_simulation_animation(sim_result, volcano_data):
     
     with stats_cols[2]:
         # Calculate maximum area affected
-        final_radius = sim_result['cloud_positions'][-1]['radius_km']
+        if isinstance(sim_result['cloud_positions'][0], dict) and 'radius_km' in sim_result['cloud_positions'][0]:
+            final_radius = sim_result['cloud_positions'][-1]['radius_km']
+        else:
+            # Just use an estimate when radius_km is not available
+            final_radius = 20.0
         area = math.pi * (final_radius ** 2)
         st.metric("Maximum Area Affected", f"{area:.0f} km²")
 
@@ -824,19 +842,41 @@ def display_simulation_heatmap(sim_result, volcano_data):
     heatmap_data = []
     
     # Add points for each time step, with concentration as weight
-    for position, concentration in zip(sim_result['cloud_positions'], sim_result['concentrations']):
+    for i, (position, concentration) in enumerate(zip(sim_result['cloud_positions'], sim_result['concentrations'])):
+        # Handle different formats of position data
+        if isinstance(position, dict) and 'center_lat' in position and 'center_lon' in position:
+            # Dictionary format with center coordinates
+            center_lat = position['center_lat']
+            center_lon = position['center_lon']
+            if 'radius_km' in position:
+                radius_km = position['radius_km']
+            else:
+                radius_km = 20.0  # Default radius
+        elif isinstance(position, list) and len(position) >= 2:
+            # List format with pairs of coordinates
+            # Just use the first point and a default radius
+            center_lat, center_lon = position[0]
+            radius_km = 20.0
+        else:
+            # Skip this point if we can't determine its position
+            continue
+            
+        # Convert concentration to numeric if needed
+        if isinstance(concentration, (int, float)):
+            conc_value = concentration
+        elif isinstance(concentration, list) and len(concentration) > 0:
+            # If concentration is a list, use average
+            conc_value = sum(concentration) / len(concentration)
+        else:
+            conc_value = 0.5  # Default value
+            
         # Create more points for higher concentrations to make the heatmap more intense in those areas
-        points_count = int(concentration * 10) + 1
-        
-        # Cloud center
-        center_lat = position['center_lat']
-        center_lon = position['center_lon']
+        points_count = int(conc_value * 10) + 1
         
         # Add the center point with higher weight
-        heatmap_data.append([center_lat, center_lon, concentration])
+        heatmap_data.append([center_lat, center_lon, conc_value])
         
         # Add points around the center with varying distances based on radius
-        radius_km = position['radius_km']
         
         # Create a distribution of points with decreasing concentration away from center
         for i in range(points_count):
@@ -911,25 +951,86 @@ def display_simulation_contours(sim_result, volcano_data):
     # Create deposit contours
     # For simplicity, we'll use the cloud positions to create proxy contours
     
-    # Add path line
-    path_coords = [[p['center_lon'], p['center_lat']] for p in sim_result['cloud_positions']]
-    path_coords.insert(0, [volcano_lon, volcano_lat])  # Add volcano as starting point
+    # Create a safe path line that handles different position formats
+    path_coords = []
     
-    folium.PolyLine(
-        locations=[[lat, lon] for lon, lat in path_coords],
-        color='red',
-        weight=3,
-        opacity=0.7,
-        popup="Main Plume Path"
-    ).add_to(m)
+    # Check the format of the position data
+    if sim_result['cloud_positions'] and isinstance(sim_result['cloud_positions'][0], dict) and 'center_lat' in sim_result['cloud_positions'][0]:
+        # Dictionary format
+        path_coords = [[p['center_lon'], p['center_lat']] for p in sim_result['cloud_positions']]
+    elif sim_result['cloud_positions'] and isinstance(sim_result['cloud_positions'][0], list):
+        # List format - use the first point of each list
+        path_coords = [[p[0][1], p[0][0]] for p in sim_result['cloud_positions'] if p] # lon, lat order
+    
+    # Only add path if we have valid coordinates
+    if path_coords:
+        path_coords.insert(0, [volcano_lon, volcano_lat])  # Add volcano as starting point
+        
+        folium.PolyLine(
+            locations=[[lat, lon] for lon, lat in path_coords],
+            color='red',
+            weight=3,
+            opacity=0.7,
+            popup="Main Plume Path"
+        ).add_to(m)
     
     # Create contours for different deposition levels
     # In a full implementation, this would be based on actual deposition modeling
     # Here we'll create simplified contours based on the cloud path and diffusion
     
+    # Check if we have valid cloud positions in the right format
+    if not sim_result['cloud_positions']:
+        # No valid positions, display a message instead
+        st.warning("No valid cloud position data available for contour display.")
+        return
+    
+    # Check position format and extract the data we need for contours
+    position_data = []
+    if isinstance(sim_result['cloud_positions'][0], dict):
+        # Dictionary format
+        if 'center_lat' in sim_result['cloud_positions'][0] and 'center_lon' in sim_result['cloud_positions'][0]:
+            for pos in sim_result['cloud_positions']:
+                radius = pos.get('radius_km', 20.0)  # Use default if not available
+                position_data.append({
+                    'center_lat': pos['center_lat'],
+                    'center_lon': pos['center_lon'],
+                    'radius_km': radius
+                })
+    elif isinstance(sim_result['cloud_positions'][0], list):
+        # List format - create synthetic position data
+        for i, positions in enumerate(sim_result['cloud_positions']):
+            if not positions:
+                continue
+                
+            # Use average position as center
+            lats = [p[0] for p in positions if len(p) >= 2]
+            lons = [p[1] for p in positions if len(p) >= 2]
+            
+            if not lats or not lons:
+                continue
+                
+            center_lat = sum(lats) / len(lats)
+            center_lon = sum(lons) / len(lons)
+            
+            # Estimate radius based on distance from center to furthest point
+            max_distance = 0
+            for lat, lon in zip(lats, lons):
+                dist = calculate_distance(center_lat, center_lon, lat, lon)
+                max_distance = max(max_distance, dist)
+                
+            position_data.append({
+                'center_lat': center_lat,
+                'center_lon': center_lon,
+                'radius_km': max(max_distance, 10.0)  # Use at least 10km radius
+            })
+            
+    if not position_data:
+        st.warning("Could not process cloud position data for contour display.")
+        return
+    
     # High deposition zone (close to volcano and main path)
     high_deposition = []
-    for pos in sim_result['cloud_positions'][:len(sim_result['cloud_positions'])//3]:
+    for pos in position_data[:max(1, len(position_data)//3)]:
         # Points along the start of the path
         center_lat = pos['center_lat']
         center_lon = pos['center_lon']
@@ -944,7 +1045,7 @@ def display_simulation_contours(sim_result, volcano_data):
     
     # Medium deposition zone
     medium_deposition = []
-    for pos in sim_result['cloud_positions'][:len(sim_result['cloud_positions'])//2]:
+    for pos in position_data[:max(1, len(position_data)//2)]:
         # Points along the first half of the path
         center_lat = pos['center_lat']
         center_lon = pos['center_lon']
@@ -959,7 +1060,7 @@ def display_simulation_contours(sim_result, volcano_data):
     
     # Low deposition zone
     low_deposition = []
-    for pos in sim_result['cloud_positions']:
+    for pos in position_data:
         # Points along the entire path
         center_lat = pos['center_lat']
         center_lon = pos['center_lon']
