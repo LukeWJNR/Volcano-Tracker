@@ -556,9 +556,10 @@ def calculate_earthquake_risk_index(strain_data, region_name, earthquake_history
         try:
             # Filter for data in this region
             lat, lon = region_info["lat"], region_info["lon"]
+            # Filter data for this region with proper numpy usage
             regional_strain = strain_data[
-                (np.abs(strain_data["latitude"] - lat) < 5) & 
-                (np.abs(strain_data["longitude"] - lon) < 5)
+                (np.abs(strain_data["latitude"].astype(float) - lat) < 5) & 
+                (np.abs(strain_data["longitude"].astype(float) - lon) < 5)
             ]
             
             if not regional_strain.empty:

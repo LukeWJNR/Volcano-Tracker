@@ -36,7 +36,8 @@ from utils.advanced_strain_utils import (
     compute_eigenvectors,
     compute_max_shortening_azimuth,
     calculate_lava_buildup_index,
-    visualize_strain_field
+    visualize_strain_field,
+    calculate_earthquake_risk_index
 )
 from data.glacial_volcanoes import get_glacial_volcanoes
 
