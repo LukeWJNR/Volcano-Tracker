@@ -1,0 +1,17 @@
+*.jpg
+*.pdf
+*.ps 
+*.png
+*.pyc
+*.grd
+*.nc
+contrib/*
+early_work/*
+.idea/*
+build
+dist
+Strain_Tools/*.egg*
+*.swp
+.DS*
+example/Output
+test/testing_data/output/*
