@@ -556,6 +556,11 @@ sar_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" vie
 if st.sidebar.button(f"{sar_icon} SAR Animations", help="View SAR data and animations from COMET Volcano Portal"):
     switch_page("sar_animations")
 
+# Volcanic Cloud Tracker page link
+cloud_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M22 19h-2"></path><path d="M9 13v2"></path><path d="M13 13v-2"></path><path d="M13 17v-2"></path><path d="M17 13v-2"></path><path d="M17 17v-2"></path></svg>"""
+if st.sidebar.button(f"{cloud_icon} Volcanic Cloud Tracker", help="Track volcanic ash and gas clouds"):
+    switch_page("volcanic_cloud_tracker")
+
 # 2D Eruption Animation (Lightweight)
 eruption_2d_icon = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>"""
 if st.sidebar.button(f"{eruption_2d_icon} 2D Eruption (Lightweight)", help="View lightweight 2D eruption visualization"):
