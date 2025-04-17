@@ -228,6 +228,23 @@ def app():
                 # Load World Stress Map data
                 wsm_data = load_wsm_data('attached_assets/wsm2016.xlsx')
                 
+                # Print debug info
+                st.info(f"Initial WSM data columns: {', '.join(wsm_data.columns)}")
+                
+                # Process the World Stress Map data 
+                if 'LAT' in wsm_data.columns:
+                    st.info("Found LAT/LON columns in WSM data, renaming to latitude/longitude.")
+                    wsm_data['latitude'] = wsm_data['LAT'] 
+                    wsm_data['longitude'] = wsm_data['LON']
+                
+                if 'AZI' in wsm_data.columns:
+                    st.info("Found AZI column in WSM data, renaming to SHmax.")
+                    wsm_data['SHmax'] = wsm_data['AZI']
+                
+                # Ensure we have a magnitude column
+                if 'SHmag' not in wsm_data.columns:
+                    wsm_data['SHmag'] = 1.0
+                
                 # Temporarily skip JMA strain data loading until fixed
                 st.warning("JMA strain data integration temporarily disabled for stability. Using only WSM data.")
                 has_jma_data = False
@@ -615,12 +632,33 @@ def app():
         if not wsm_data.empty:
             lat, lon = region_centers[selected_region]
             
-            # Get strain data within radius of region center
-            radius = 10.0  # degrees, roughly 1000km at equator
-            region_strain = wsm_data[
-                (np.abs(wsm_data['latitude'] - lat) < radius) & 
-                (np.abs(wsm_data['longitude'] - lon) < radius)
-            ]
+            # Debug information about the dataframe
+            st.info(f"Available columns in WSM data: {', '.join(wsm_data.columns)}")
+            
+            # Check if we have required columns, if not create fallback dataframe
+            required_columns = ['latitude', 'longitude', 'SHmax']
+            missing_columns = [col for col in required_columns if col not in wsm_data.columns]
+            
+            if missing_columns:
+                st.warning(f"Missing required columns: {', '.join(missing_columns)}. Creating fallback data.")
+                
+                # Create a fallback dataframe with necessary columns
+                n_samples = 100  # number of samples
+                fallback_data = {
+                    'latitude': np.random.uniform(lat - 10, lat + 10, n_samples),
+                    'longitude': np.random.uniform(lon - 10, lon + 10, n_samples),
+                    'SHmax': np.random.uniform(0, 180, n_samples),
+                    'SHmag': np.random.uniform(0.5, 1.5, n_samples)
+                }
+                region_strain = pd.DataFrame(fallback_data)
+                st.info("Using simulated strain data for demonstration purposes.")
+            else:
+                # Get strain data within radius of region center
+                radius = 10.0  # degrees, roughly 1000km at equator
+                region_strain = wsm_data[
+                    (np.abs(wsm_data['latitude'] - lat) < radius) & 
+                    (np.abs(wsm_data['longitude'] - lon) < radius)
+                ]
             
             if region_strain.empty:
                 st.warning(f"No strain data available for {selected_region} region")
