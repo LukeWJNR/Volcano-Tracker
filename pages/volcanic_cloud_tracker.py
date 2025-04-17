@@ -21,6 +21,8 @@ import base64
 import warnings
 import json
 import math
+import xarray as xr
+import cfgrib
 
 from utils.api import get_known_volcano_data
 
