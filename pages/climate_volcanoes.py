@@ -563,7 +563,8 @@ def app():
             # Select volcanic region for analysis
             selected_region = st.selectbox(
                 "Select Volcanic Region for Analysis",
-                ["Iceland", "Hawaii", "Japan", "Andes", "Indonesia", "Mayotte"],
+                ["Iceland", "Hawaii", "Japan", "Andes", "Indonesia", "Mayotte", 
+                 "California", "Greece", "Italy"],
                 index=0
             )
             
@@ -574,7 +575,10 @@ def app():
                 "Japan": [35.6, 138.2],
                 "Andes": [-23.5, -67.8],
                 "Indonesia": [-7.5, 110.0],
-                "Mayotte": [-12.8, 45.2]
+                "Mayotte": [-12.8, 45.2],
+                "California": [37.8, -122.4],
+                "Greece": [38.0, 23.7],
+                "Italy": [41.9, 12.5]
             }
             
         with control_col2:
