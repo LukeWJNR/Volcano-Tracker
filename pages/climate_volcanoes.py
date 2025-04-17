@@ -28,6 +28,7 @@ from utils.crustal_strain_utils import (
     create_strain_timeseries_plot,
     get_jma_station_locations
 )
+
 # Import advanced strain analysis tools from Strain_2D toolkit
 from utils.advanced_strain_utils import (
     compute_strain_components,
@@ -570,12 +571,20 @@ def app():
         if 'wsm_data' not in locals():
             try:
                 wsm_data = load_wsm_data('attached_assets/wsm2016.xlsx')
-                # Rename columns to match expected format
-                wsm_data = wsm_data.rename(columns={
-                    'LAT': 'latitude',
-                    'LON': 'longitude',
-                    'AZI': 'SHmax'
-                })
+                # Ensure column names are consistent
+                if 'LAT' in wsm_data.columns:
+                    wsm_data = wsm_data.rename(columns={
+                        'LAT': 'latitude',
+                        'LON': 'longitude',
+                        'AZI': 'SHmax'
+                    })
+                # If we still don't have the expected columns, create them
+                if 'latitude' not in wsm_data.columns and 'LAT' in wsm_data.columns:
+                    wsm_data['latitude'] = wsm_data['LAT']
+                if 'longitude' not in wsm_data.columns and 'LON' in wsm_data.columns:
+                    wsm_data['longitude'] = wsm_data['LON']
+                if 'SHmax' not in wsm_data.columns and 'AZI' in wsm_data.columns:
+                    wsm_data['SHmax'] = wsm_data['AZI']
                 if 'SHmag' not in wsm_data.columns:
                     # Add dummy magnitude if not present
                     wsm_data['SHmag'] = 1.0
