@@ -36,7 +36,7 @@ def initialize_payment_tables():
         metadata JSONB
     )
     """)
-    
+
     # Create subscriptions table
     execute_query("""
     CREATE TABLE IF NOT EXISTS subscriptions (
@@ -53,7 +53,7 @@ def initialize_payment_tables():
         metadata JSONB
     )
     """)
-    
+
     # Create feature access table
     execute_query("""
     CREATE TABLE IF NOT EXISTS feature_access (
@@ -71,7 +71,7 @@ def initialize_payment_tables():
 def get_session_id() -> str:
     """
     Get or create a unique session ID for the current user
-    
+
     Returns:
         str: The session ID
     """
@@ -83,16 +83,16 @@ def get_session_id() -> str:
         unique_string = f"{current_time}_{browser_info}"
         session_id = hashlib.md5(unique_string.encode()).hexdigest()
         st.session_state.user_id = session_id
-    
+
     return st.session_state.user_id
 
 def has_active_subscription(user_id: str) -> bool:
     """
     Check if the user has an active subscription or free trial
-    
+
     Args:
         user_id (str): The user ID to check
-        
+
     Returns:
         bool: True if the user has an active subscription, False otherwise
     """
@@ -103,12 +103,12 @@ def has_active_subscription(user_id: str) -> bool:
     AND status = 'active' 
     AND (end_date IS NULL OR end_date > NOW())
     """
-    
+
     result = fetch_one(query, (user_id,))
-    
+
     if result:
         return True
-    
+
     # Check for active trial
     query = """
     SELECT * FROM subscriptions 
@@ -116,38 +116,38 @@ def has_active_subscription(user_id: str) -> bool:
     AND status = 'trial' 
     AND trial_end_date > NOW()
     """
-    
+
     result = fetch_one(query, (user_id,))
-    
+
     return result is not None
 
 def start_free_trial(user_id: str, days: int = 7) -> bool:
     """
     Start a free trial for the user
-    
+
     Args:
         user_id (str): The user ID
         days (int): Number of trial days
-        
+
     Returns:
         bool: True if successful, False otherwise
     """
     # Check if user already has a subscription or trial
     if has_active_subscription(user_id):
         return False
-    
+
     # Check if user has had a trial before
     query = "SELECT * FROM subscriptions WHERE user_id = %s AND status = 'trial'"
     result = fetch_one(query, (user_id,))
-    
+
     if result:
         # Already had a trial
         return False
-    
+
     # Create trial subscription
     start_date = datetime.now()
     trial_end_date = start_date + timedelta(days=days)
-    
+
     query = """
     INSERT INTO subscriptions (
         user_id, subscription_id, plan_type, status, 
@@ -156,10 +156,10 @@ def start_free_trial(user_id: str, days: int = 7) -> bool:
         %s, %s, %s, %s, %s, %s, %s
     )
     """
-    
+
     # Generate a unique subscription ID
     subscription_id = f"trial_{user_id}_{int(time.time())}"
-    
+
     # Insert the trial subscription
     try:
         execute_query(
@@ -174,10 +174,10 @@ def start_free_trial(user_id: str, days: int = 7) -> bool:
                 json.dumps({"source": "free_trial"})
             )
         )
-        
+
         # Grant feature access
         grant_feature_access(user_id, 'eruption_simulator', 'premium', trial_end_date)
-        
+
         return True
     except Exception as e:
         print(f"Error starting free trial: {e}")
@@ -186,13 +186,13 @@ def start_free_trial(user_id: str, days: int = 7) -> bool:
 def grant_feature_access(user_id: str, feature_name: str, access_level: str, expires_at: Optional[datetime] = None) -> bool:
     """
     Grant access to a feature for a user
-    
+
     Args:
         user_id (str): The user ID
         feature_name (str): Name of the feature
         access_level (str): Level of access (e.g., 'basic', 'premium')
         expires_at (datetime, optional): When access expires
-        
+
     Returns:
         bool: True if successful, False otherwise
     """
@@ -207,7 +207,7 @@ def grant_feature_access(user_id: str, feature_name: str, access_level: str, exp
         expires_at = EXCLUDED.expires_at,
         granted_at = CURRENT_TIMESTAMP
     """
-    
+
     try:
         execute_query(query, (user_id, feature_name, access_level, expires_at))
         return True
@@ -218,12 +218,12 @@ def grant_feature_access(user_id: str, feature_name: str, access_level: str, exp
 def has_feature_access(user_id: str, feature_name: str, required_level: str = 'basic') -> bool:
     """
     Check if a user has access to a specific feature at the required level
-    
+
     Args:
         user_id (str): The user ID
         feature_name (str): Name of the feature
         required_level (str): Minimum required access level
-        
+
     Returns:
         bool: True if the user has access, False otherwise
     """
@@ -233,33 +233,33 @@ def has_feature_access(user_id: str, feature_name: str, required_level: str = 'b
         'standard': 1,
         'premium': 2
     }
-    
+
     query = """
     SELECT access_level, expires_at FROM feature_access
     WHERE user_id = %s AND feature_name = %s
     """
-    
+
     result = fetch_one(query, (user_id, feature_name))
-    
+
     if not result:
         return False
-    
+
     access_level, expires_at = result
-    
+
     # Check if access has expired
     if expires_at and expires_at < datetime.now():
         return False
-    
+
     # Check if access level is sufficient
     return access_levels.get(access_level, -1) >= access_levels.get(required_level, 0)
 
 def get_subscription_details(user_id: str) -> Dict[str, Any]:
     """
     Get subscription details for a user
-    
+
     Args:
         user_id (str): The user ID
-        
+
     Returns:
         Dict[str, Any]: Subscription details
     """
@@ -269,9 +269,9 @@ def get_subscription_details(user_id: str) -> Dict[str, Any]:
     ORDER BY created_at DESC
     LIMIT 1
     """
-    
+
     result = fetch_one(query, (user_id,))
-    
+
     if not result:
         return {
             'has_subscription': False,
@@ -280,7 +280,7 @@ def get_subscription_details(user_id: str) -> Dict[str, Any]:
             'is_trial': False,
             'days_remaining': 0
         }
-    
+
     # Convert SQL result to dictionary
     subscription = dict(zip(
         ['id', 'user_id', 'subscription_id', 'plan_type', 'status', 
@@ -288,18 +288,18 @@ def get_subscription_details(user_id: str) -> Dict[str, Any]:
          'created_at', 'metadata'],
         result
     ))
-    
+
     # Calculate days remaining
     days_remaining = 0
     current_date = datetime.now()
-    
+
     if subscription['status'] == 'trial' and subscription['trial_end_date']:
         if subscription['trial_end_date'] > current_date:
             days_remaining = (subscription['trial_end_date'] - current_date).days
     elif subscription['status'] == 'active' and subscription['end_date']:
         if subscription['end_date'] > current_date:
             days_remaining = (subscription['end_date'] - current_date).days
-    
+
     return {
         'has_subscription': subscription['status'] in ['active', 'trial'],
         'status': subscription['status'],
@@ -313,21 +313,21 @@ def get_subscription_details(user_id: str) -> Dict[str, Any]:
 def create_paypal_button_html(item_name: str, amount: float, currency: str = 'USD') -> str:
     """
     Create HTML for a PayPal payment button
-    
+
     Args:
         item_name (str): Name of the item being purchased
         amount (float): Amount to charge
         currency (str): Currency code
-        
+
     Returns:
         str: HTML for the PayPal button
     """
     # In a real application, this would integrate with PayPal's API
     # For demo purposes, we're creating a simple button
-    
+
     # Clean the item name for URL
     clean_item_name = item_name.replace(' ', '%20')
-    
+
     button_html = f"""
     <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
         <input type="hidden" name="cmd" value="_xclick">
@@ -337,7 +337,7 @@ def create_paypal_button_html(item_name: str, amount: float, currency: str = 'US
         <input type="hidden" name="currency_code" value="{currency}">
         <input type="hidden" name="return" value="https://volcano-dashboard.replit.app/payment_success">
         <input type="hidden" name="cancel_return" value="https://volcano-dashboard.replit.app/payment_cancel">
-        
+
         <button type="submit" 
             style="background-color:#0070BA; color:white; padding:10px 15px; 
                    border-radius:5px; border:none; font-weight:bold; cursor:pointer;
@@ -350,7 +350,7 @@ def create_paypal_button_html(item_name: str, amount: float, currency: str = 'US
         </button>
     </form>
     """
-    
+
     return button_html
 
 def display_subscription_options():
@@ -358,44 +358,29 @@ def display_subscription_options():
     Display subscription options to the user
     """
     st.markdown("### Subscription Options")
-    
-    st.markdown("""
-    Unlock the full power of our Eruption Simulator with a premium subscription!
-    """)
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### Premium Monthly")
-        st.markdown("$9.99/month")
-        st.markdown("- Full access to all simulation parameters")
-        st.markdown("- Advanced gas emission models")
-        st.markdown("- Radioactive isotope analysis")
-        st.markdown("- High-resolution visualization")
-        st.markdown("- Export simulation results")
-        
-        st.markdown(create_paypal_button_html("Premium Monthly Subscription", 9.99), unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("#### Premium Annual")
-        st.markdown("$99.99/year (Save 17%)")
-        st.markdown("- Everything in monthly plan")
-        st.markdown("- Priority access to new features")
-        st.markdown("- Downloadable simulation reports")
-        st.markdown("- Email alerts for monitored volcanoes")
-        
-        st.markdown(create_paypal_button_html("Premium Annual Subscription", 99.99), unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
+
+    subscription_plans = get_subscription_plans()
+    for plan in subscription_plans:
+        st.markdown(f"#### {plan['name']}")
+        st.markdown(f"{plan['price']}")
+        for feature in plan['features']:
+            st.markdown(f"- {feature}")
+        if plan['price'] != "Contact us":
+            st.markdown(create_paypal_button_html(plan['name'] + " Subscription", float(plan['price'].replace('$', '').replace('/month', '').replace('/year', '')), currency='USD'), unsafe_allow_html=True)
+        else:
+            st.markdown("Please contact us for pricing and details.")
+        st.markdown("---")
+
+
+
     # Free trial option
     user_id = get_session_id()
     subscription_details = get_subscription_details(user_id)
-    
+
     if not subscription_details['has_subscription']:
         st.markdown("#### Try Premium Free")
         st.markdown("Experience all premium features free for 7 days!")
-        
+
         if st.button("Start 7-Day Free Trial", type="primary"):
             success = start_free_trial(user_id)
             if success:
@@ -408,3 +393,74 @@ def display_subscription_options():
             st.info(f"You are currently on a free trial. {subscription_details['days_remaining']} days remaining.")
         else:
             st.success(f"You have an active {subscription_details['plan_type']} subscription.")
+
+
+def get_subscription_plans() -> List[Dict]:
+    """
+    Get available subscription plans for volcano alerts.
+
+    Returns:
+        List[Dict]: List of subscription plans and features
+    """
+    return [
+        {
+            "name": "Community",
+            "price": "$0/month",
+            "features": [
+                "Email alerts for critical warnings",
+                "Monitor up to 5 volcanoes",
+                "Daily alert summaries",
+                "Basic gas emission alerts",
+                "Basic earthquake notifications",
+                "Access to public risk maps"
+            ]
+        },
+        {
+            "name": "Observer",
+            "price": "$3.99/month",
+            "features": [
+                "Email and SMS alerts",
+                "Monitor up to 15 volcanoes",
+                "Custom alert thresholds",
+                "Hourly updates for monitored volcanoes",
+                "Detailed gas concentration tracking",
+                "Seismic activity monitoring",
+                "InSAR deformation alerts",
+                "48-hour prediction warnings",
+                "Mobile app access"
+            ]
+        },
+        {
+            "name": "Researcher",
+            "price": "$7.99/month",
+            "features": [
+                "All Observer features",
+                "Unlimited volcano monitoring",
+                "Real-time alerts and notifications",
+                "Advanced gas composition analysis",
+                "Strain and deformation modeling",
+                "Historical eruption patterns",
+                "Custom API access",
+                "Downloadable scientific data",
+                "Weekly risk assessment reports",
+                "Priority alert delivery",
+                "Collaboration tools for teams"
+            ]
+        },
+        {
+            "name": "Institution",
+            "price": "Contact us",
+            "features": [
+                "All Researcher features",
+                "Custom deployment options",
+                "Dedicated support channel",
+                "Training and workshops",
+                "Custom integration options",
+                "White-label solutions",
+                "Multi-user management",
+                "Advanced analytics dashboard",
+                "Raw data access",
+                "Custom reporting tools"
+            ]
+        }
+    ]
