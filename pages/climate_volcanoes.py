@@ -238,17 +238,11 @@ def app():
                 wsm_data = pd.DataFrame()
                 has_jma_data = False
         
-        # Create Folium map
-        m = folium.Map(location=[20, 0], zoom_start=2, tiles="cartodbpositron")
+        # Using a simpler table-based approach instead of interactive map to improve stability
+        st.info("Using simplified volcano listing for improved stability. Interactive map temporarily disabled.")
         
-        # Add strain data if requested
-        if show_strain_data and not wsm_data.empty:
-            m = add_strain_data_to_map(m, wsm_data, num_points=strain_data_samples)
-        
-        # Add feature group for volcanoes
-        volcano_group = folium.FeatureGroup(name="Volcanoes", show=True)
-        
-        # Add volcano markers with climate connection info
+        # Filter volcanoes by climate connection if requested
+        display_volcanoes = []
         for _, volcano in volcanoes_df.iterrows():
             # Skip if missing coordinates
             if pd.isna(volcano['latitude']) or pd.isna(volcano['longitude']):
@@ -257,57 +251,67 @@ def app():
             # Determine if this volcano has climate connection info
             has_climate_info = volcano['name'] in climate_connections
             
-            # Create marker
             if has_climate_info and show_climate_connections:
                 connection = climate_connections[volcano['name']]
+                # Add to display list with connection info
+                display_volcanoes.append({
+                    "Name": volcano['name'],
+                    "Country": volcano['country'],
+                    "Climate Connection": connection['connection'],
+                    "Evidence": connection['evidence'],
+                    "Confidence": connection['confidence'],
+                    "Last Eruption": volcano['last_eruption'] if 'last_eruption' in volcano else "Unknown"
+                })
+            elif not show_climate_connections:
+                # Add regular volcano without connection info
+                display_volcanoes.append({
+                    "Name": volcano['name'],
+                    "Country": volcano['country'],
+                    "Region": volcano['region'] if 'region' in volcano else "Unknown",
+                    "Last Eruption": volcano['last_eruption'] if 'last_eruption' in volcano else "Unknown"
+                })
+        
+        # Display volcanoes as a table
+        if display_volcanoes:
+            if show_climate_connections:
+                st.subheader("Volcanoes with Climate Connections")
+                df = pd.DataFrame(display_volcanoes)
+                # Color code confidence
+                def color_confidence(val):
+                    colors = {
+                        "High": "background-color: rgba(0, 128, 0, 0.2)",
+                        "Medium": "background-color: rgba(255, 165, 0, 0.2)",
+                        "Low": "background-color: rgba(0, 0, 255, 0.2)"
+                    }
+                    return colors.get(val, "")
                 
-                # Determine marker color based on confidence level
-                color = {
-                    "High": "green",
-                    "Medium": "orange",
-                    "Low": "blue"
-                }.get(connection["confidence"], "gray")
-                
-                # Create popup content
-                popup_html = f"""
-                <h4>{volcano['name']}</h4>
-                <p><b>Climate Connection:</b> {connection['connection']}</p>
-                <p><b>Evidence:</b> {connection['evidence']}</p>
-                <p><b>Confidence:</b> {connection['confidence']}</p>
-                <p><b>Country:</b> {volcano['country']}</p>
-                <p><b>Last Eruption:</b> {volcano['last_eruption']}</p>
-                """
-                
-                # Create popup and add to marker
-                popup = folium.Popup(popup_html, max_width=300)
-                
-                # Add marker with different icon for climate-connected volcanoes
-                folium.Marker(
-                    location=[volcano['latitude'], volcano['longitude']],
-                    popup=popup,
-                    tooltip=f"{volcano['name']} - Climate Connection",
-                    icon=folium.Icon(color=color, icon="info-sign")
-                ).add_to(volcano_group)
+                # Apply styling
+                styled_df = df.style.applymap(color_confidence, subset=['Confidence'])
+                st.dataframe(styled_df, use_container_width=True)
             else:
-                # Regular volcano marker (smaller)
-                folium.CircleMarker(
-                    location=[volcano['latitude'], volcano['longitude']],
-                    radius=3,
-                    color="#d3d3d3",
-                    fill=True,
-                    fill_color="#d3d3d3",
-                    tooltip=volcano['name']
-                ).add_to(volcano_group)
-        
-        # Add volcano layer to map
-        volcano_group.add_to(m)
-        
-        # Add layer control
-        folium.LayerControl().add_to(m)
-        
-        # Display map with spinner to indicate loading
-        with st.spinner("Rendering map... this may take a moment"):
-            st_folium(m, width=700, height=500)
+                st.subheader("All Volcanoes")
+                df = pd.DataFrame(display_volcanoes)
+                st.dataframe(df, use_container_width=True)
+        else:
+            st.warning("No volcanoes match the current filters.")
+            
+        # Display the strain data information
+        if show_strain_data and not wsm_data.empty:
+            st.subheader("Crustal Strain Data Overview")
+            st.markdown(f"""
+            **World Stress Map data loaded:** {len(wsm_data)} measurements
+            
+            The World Stress Map (WSM) provides data on crustal stress orientation and magnitude
+            across the globe. This data helps scientists understand how the Earth's crust is
+            deforming due to tectonic forces, which can influence volcanic activity.
+            """)
+            
+            # Show a sample of the data
+            st.markdown("### Sample of Strain Data Points")
+            st.dataframe(wsm_data.head(10), use_container_width=True)
+            
+            # Add the legend
+            st.markdown(get_strain_data_legend(), unsafe_allow_html=True)
         
         # Create two columns for legends
         legend_col1, legend_col2 = st.columns(2)
@@ -554,47 +558,60 @@ def app():
         4. **Hydrothermal System Changes:** Meltwater can penetrate deeper into newly exposed crust, reaching magma systems.
         """)
         
-        # Add volcano & glacier map
-        st.header("Interactive Volcano-Glacier Map")
+        # Add volcano & glacier listing (table-based for stability)
+        st.header("Glacial Volcanoes")
         
         # Get the glacial volcanoes data
         glacial_volcanoes = get_glacial_volcanoes()
         
-        # Create Folium map centered on Iceland (since many glacial volcanoes are there)
-        m = folium.Map(location=[55, -10], zoom_start=2, tiles="cartodbpositron")
+        # Create a DataFrame for display
+        glacial_df = pd.DataFrame(glacial_volcanoes)
         
-        # Add volcano markers
-        for volcano in glacial_volcanoes:
-            # Determine marker color based on risk level
-            color = {
-                "High": "red",
-                "Medium": "orange",
-                "Low": "blue"
-            }.get(volcano.get("risk_level", "Medium"), "gray")
+        # Clean up column names and add any missing columns
+        if 'risk_level' not in glacial_df.columns:
+            glacial_df['risk_level'] = 'Medium'
             
-            # Create popup content
-            popup_html = f"""
-            <h4>{volcano['name']}</h4>
-            <p><b>Country:</b> {volcano['country']}</p>
-            <p><b>Elevation:</b> {volcano['elevation']}m</p>
-            <p><b>Risk Level:</b> {volcano.get('risk_level', 'Medium')}</p>
-            <p><em>{volcano['notes']}</em></p>
-            """
+        # Select and rename columns for display
+        display_cols = {
+            'name': 'Volcano',
+            'country': 'Country', 
+            'elevation': 'Elevation (m)',
+            'risk_level': 'Risk Level',
+            'notes': 'Notes'
+        }
+        
+        # Filter only columns that exist
+        available_cols = [col for col in display_cols.keys() if col in glacial_df.columns]
+        glacial_df_display = glacial_df[available_cols].copy()
+        
+        # Rename columns
+        glacial_df_display.rename(columns={k: display_cols[k] for k in available_cols}, inplace=True)
+        
+        # Style the dataframe based on risk level
+        def color_risk_level(val):
+            colors = {
+                "High": "background-color: rgba(255, 0, 0, 0.2)",
+                "Medium": "background-color: rgba(255, 165, 0, 0.2)",
+                "Low": "background-color: rgba(0, 0, 255, 0.2)"
+            }
+            return colors.get(val, "")
+        
+        # Display styled dataframe
+        st.info("Using simplified volcano table for improved stability. Interactive map temporarily disabled.")
+        
+        if 'Risk Level' in glacial_df_display.columns:
+            styled_df = glacial_df_display.style.applymap(color_risk_level, subset=['Risk Level'])
+            st.dataframe(styled_df, use_container_width=True)
+        else:
+            st.dataframe(glacial_df_display, use_container_width=True)
             
-            # Create popup and add to marker
-            popup = folium.Popup(popup_html, max_width=300)
-            
-            # Add marker with icon
-            folium.Marker(
-                location=[volcano['lat'], volcano['lng']],
-                popup=popup,
-                tooltip=f"{volcano['name']} - {volcano['country']}",
-                icon=folium.Icon(color=color, icon="mountain", prefix="fa")
-            ).add_to(m)
-            
-        # Display the map with a spinner
-        with st.spinner("Loading glacial volcano map..."):
-            st_folium(m, width=700, height=500)
+        # Add legend for risk levels
+        st.markdown("""
+        **Risk Level Legend:**
+        - <span style='background-color: rgba(255, 0, 0, 0.2); padding: 2px 5px;'>High</span>: Significant glacial retreat with documented volcanic activity
+        - <span style='background-color: rgba(255, 165, 0, 0.2); padding: 2px 5px;'>Medium</span>: Moderate glacial retreat or early signs of volcanic unrest
+        - <span style='background-color: rgba(0, 0, 255, 0.2); padding: 2px 5px;'>Low</span>: Minor glacial influence but monitored for changes
+        """, unsafe_allow_html=True)
         
         # Add legend
         st.markdown("""
