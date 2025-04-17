@@ -28,6 +28,15 @@ from utils.crustal_strain_utils import (
     create_strain_timeseries_plot,
     get_jma_station_locations
 )
+# Import advanced strain analysis tools from Strain_2D toolkit
+from utils.advanced_strain_utils import (
+    compute_strain_components,
+    compute_derived_quantities,
+    compute_eigenvectors,
+    compute_max_shortening_azimuth,
+    calculate_lava_buildup_index,
+    visualize_strain_field
+)
 from data.glacial_volcanoes import get_glacial_volcanoes
 
 def app():
