@@ -506,3 +506,146 @@ def add_strain_data_to_map(m, strain_data, num_points=200):
     strain_group.add_to(m)
     
     return m
+
+
+def calculate_earthquake_risk_index(strain_data, region_name, earthquake_history=None):
+    """
+    Calculate an earthquake risk index based on crustal strain patterns.
+    
+    This function evaluates the risk of significant earthquakes in a region based on the
+    pattern and magnitude of crustal strain, optionally incorporating earthquake history.
+    
+    Args:
+        strain_data (pd.DataFrame): Dataframe containing strain measurements
+        region_name (str): Name of the region to analyze
+        earthquake_history (pd.DataFrame, optional): Historical earthquake data
+        
+    Returns:
+        dict: Dictionary containing risk metrics and explanation
+    """
+    # Define region centers and baseline characteristics
+    region_centers = {
+        "Iceland": {"lat": 64.9, "lon": -19.0, "base_risk": 0.7, "tectonic_setting": "Divergent/Hotspot"},
+        "Hawaii": {"lat": 19.4, "lon": -155.3, "base_risk": 0.5, "tectonic_setting": "Hotspot"},
+        "Japan": {"lat": 35.6, "lon": 138.2, "base_risk": 0.9, "tectonic_setting": "Convergent"},
+        "Andes": {"lat": -23.5, "lon": -67.8, "base_risk": 0.7, "tectonic_setting": "Convergent"},
+        "Indonesia": {"lat": -7.5, "lon": 110.0, "base_risk": 0.85, "tectonic_setting": "Convergent"},
+        "Mayotte": {"lat": -12.8, "lon": 45.2, "base_risk": 0.6, "tectonic_setting": "Hotspot"}
+    }
+    
+    if region_name not in region_centers:
+        return {
+            "risk_score": 5.0,
+            "risk_level": "Moderate",
+            "explanation": "Unknown region. Using default moderate risk level."
+        }
+    
+    # Get region information
+    region_info = region_centers[region_name]
+    base_risk = region_info["base_risk"]
+    tectonic_setting = region_info["tectonic_setting"]
+    
+    # Initialize risk factors
+    strain_complexity_factor = 1.0
+    strain_magnitude_factor = 1.0
+    tectonic_factor = 1.0
+    climate_factor = 1.0
+    
+    # Calculate strain complexity if data is available
+    if strain_data is not None and not strain_data.empty and 'SHmax' in strain_data.columns:
+        try:
+            # Filter for data in this region
+            lat, lon = region_info["lat"], region_info["lon"]
+            regional_strain = strain_data[
+                (np.abs(strain_data["latitude"] - lat) < 5) & 
+                (np.abs(strain_data["longitude"] - lon) < 5)
+            ]
+            
+            if not regional_strain.empty:
+                # Calculate strain complexity metrics
+                azimuth_std = regional_strain['SHmax'].std()
+                strain_directions = len(regional_strain['SHmax'].unique())
+                
+                # High std deviation suggests strain complexity
+                # More complex strain field (higher std) = higher earthquake risk
+                strain_complexity_factor = min(1.5, 0.8 + (azimuth_std / 90))
+                
+                # More strain measurement points = better data quality
+                confidence_factor = min(1.2, 0.9 + (len(regional_strain) / 100))
+                
+                # Adjust strain magnitude based on the region's characteristics
+                if 'SHmag' in regional_strain.columns:
+                    avg_magnitude = regional_strain['SHmag'].mean()
+                    strain_magnitude_factor = min(1.5, 0.7 + avg_magnitude / 2)
+        except Exception as e:
+            # Default to neutral factors if analysis fails
+            print(f"Error in strain analysis for earthquake risk: {e}")
+    
+    # Apply tectonic setting factors
+    if tectonic_setting == "Convergent":
+        tectonic_factor = 1.3  # Higher risk at convergent boundaries
+    elif tectonic_setting == "Divergent/Hotspot":
+        tectonic_factor = 1.1  # Moderate risk at divergent boundaries
+    elif tectonic_setting == "Hotspot":
+        tectonic_factor = 0.9  # Lower risk at pure hotspots
+    
+    # Apply climate change factors (simplified)
+    # Regions with significant ice loss or sea level changes
+    if region_name in ["Iceland", "Andes"]:
+        climate_factor = 1.15  # Glacial retreat increases earthquake risk
+    elif region_name in ["Japan", "Indonesia"]:
+        climate_factor = 1.05  # Sea level change affecting coastal areas
+    
+    # Calculate final risk score (0-10 scale)
+    risk_base = base_risk * strain_complexity_factor * strain_magnitude_factor * tectonic_factor * climate_factor
+    risk_score = min(10.0, risk_base * 10)
+    
+    # Determine risk level
+    if risk_score < 3:
+        risk_level = "Low"
+        color = "green"
+    elif risk_score < 5:
+        risk_level = "Moderate"
+        color = "blue"
+    elif risk_score < 7:
+        risk_level = "High"
+        color = "orange"
+    else:
+        risk_level = "Critical"
+        color = "red"
+    
+    # Generate explanation text
+    factors = []
+    if strain_complexity_factor > 1.1:
+        factors.append("complex strain patterns")
+    if strain_magnitude_factor > 1.1:
+        factors.append("high strain magnitude")
+    if tectonic_factor > 1.1:
+        factors.append(f"{tectonic_setting} tectonic setting")
+    if climate_factor > 1.05:
+        factors.append("climate change effects")
+    
+    if factors:
+        factor_text = ", ".join(factors[:-1])
+        if len(factors) > 1:
+            factor_text += f" and {factors[-1]}"
+        else:
+            factor_text = factors[0]
+        explanation = f"The {risk_level.lower()} earthquake risk in {region_name} is due to {factor_text}."
+    else:
+        explanation = f"The {risk_level.lower()} earthquake risk in {region_name} is based on baseline regional characteristics."
+    
+    # Return comprehensive risk assessment
+    return {
+        "risk_score": round(risk_score, 1),
+        "risk_level": risk_level,
+        "color": color,
+        "factors": {
+            "base_risk": base_risk,
+            "strain_complexity": round(strain_complexity_factor, 2),
+            "strain_magnitude": round(strain_magnitude_factor, 2),
+            "tectonic_setting": round(tectonic_factor, 2),
+            "climate_impact": round(climate_factor, 2)
+        },
+        "explanation": explanation
+    }

@@ -580,7 +580,7 @@ def app():
             # Analysis type selection
             analysis_type = st.radio(
                 "Analysis Type",
-                ["Strain Tensor Components", "Eigenvectors", "Lava Build-Up Index"],
+                ["Strain Tensor Components", "Eigenvectors", "Lava Build-Up Index", "Earthquake Risk"],
                 index=0
             )
         
@@ -936,6 +936,117 @@ def app():
                     in volcanically active regions.
                     """)
                     
+                elif analysis_type == "Earthquake Risk":
+                    st.subheader("Earthquake Risk Analysis")
+                    
+                    # Calculate Earthquake Risk Index using the advanced strain analysis
+                    risk_result = calculate_earthquake_risk_index(wsm_data, selected_region)
+                    
+                    # Display risk score with appropriate color
+                    risk_score = risk_result["risk_score"]
+                    risk_level = risk_result["risk_level"]
+                    risk_color = risk_result["color"]
+                    
+                    # Create metrics display
+                    st.markdown(f"### Earthquake Risk Assessment for {selected_region}")
+                    
+                    # Large risk score display
+                    st.markdown(
+                        f"""
+                        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                            <div style="background-color: {risk_color}; color: white; padding: 15px; 
+                                 border-radius: 50%; width: 60px; height: 60px; display: flex; 
+                                 align-items: center; justify-content: center; font-size: 24px; 
+                                 font-weight: bold; margin-right: 20px;">
+                                {risk_score}
+                            </div>
+                            <div>
+                                <h3 style="margin: 0;">{risk_level} Risk</h3>
+                                <p style="margin: 0;">{risk_result["explanation"]}</p>
+                            </div>
+                        </div>
+                        """, 
+                        unsafe_allow_html=True
+                    )
+                    
+                    # Show contributing factors
+                    st.subheader("Contributing Factors")
+                    
+                    # Create columns for factors
+                    factor_cols = st.columns(5)
+                    factors = risk_result["factors"]
+                    
+                    # Display factor values with appropriate coloring
+                    with factor_cols[0]:
+                        base_color = "blue" if factors["base_risk"] < 0.6 else "orange" if factors["base_risk"] < 0.8 else "red"
+                        st.markdown(f"""
+                        <div style="text-align: center; padding: 10px; border-radius: 5px; border: 1px solid {base_color};">
+                            <div style="font-weight: bold; color: {base_color};">{factors["base_risk"]:.2f}</div>
+                            <div style="font-size: 0.8em;">Base Risk</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                    with factor_cols[1]:
+                        val = factors["strain_complexity"]
+                        color = "green" if val < 1.1 else "orange" if val < 1.3 else "red"
+                        st.markdown(f"""
+                        <div style="text-align: center; padding: 10px; border-radius: 5px; border: 1px solid {color};">
+                            <div style="font-weight: bold; color: {color};">{val:.2f}</div>
+                            <div style="font-size: 0.8em;">Strain Complexity</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                    with factor_cols[2]:
+                        val = factors["strain_magnitude"]
+                        color = "green" if val < 1.1 else "orange" if val < 1.3 else "red"
+                        st.markdown(f"""
+                        <div style="text-align: center; padding: 10px; border-radius: 5px; border: 1px solid {color};">
+                            <div style="font-weight: bold; color: {color};">{val:.2f}</div>
+                            <div style="font-size: 0.8em;">Strain Magnitude</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                    with factor_cols[3]:
+                        val = factors["tectonic_setting"]
+                        color = "green" if val < 1.1 else "orange" if val < 1.3 else "red"
+                        st.markdown(f"""
+                        <div style="text-align: center; padding: 10px; border-radius: 5px; border: 1px solid {color};">
+                            <div style="font-weight: bold; color: {color};">{val:.2f}</div>
+                            <div style="font-size: 0.8em;">Tectonic Setting</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                    with factor_cols[4]:
+                        val = factors["climate_impact"]
+                        color = "green" if val < 1.05 else "orange" if val < 1.1 else "red"
+                        st.markdown(f"""
+                        <div style="text-align: center; padding: 10px; border-radius: 5px; border: 1px solid {color};">
+                            <div style="font-weight: bold; color: {color};">{val:.2f}</div>
+                            <div style="font-size: 0.8em;">Climate Impact</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    # Add explanation about earthquake risk and climate factors
+                    st.markdown("""
+                    ### Climate and Earthquake Risk Connection
+                    
+                    Recent research suggests that climate change can influence earthquake activity through several mechanisms:
+                    
+                    1. **Glacial unloading**: As glaciers melt, the reduced weight on the crust can lead to 
+                       isostatic rebound and increased fault movement
+                    
+                    2. **Changing water tables**: Altered precipitation patterns affect groundwater levels,
+                       which can change pore pressure along fault lines
+                    
+                    3. **Sea level rise**: Changing ocean levels alter the stress on coastal and offshore faults
+                    
+                    4. **Extreme weather events**: Increased rainfall from storms can trigger shallow earthquakes
+                       through increased pore pressure
+                    
+                    The risk assessment above incorporates these climate factors based on the regional situation
+                    and crustal strain patterns.
+                    """)
+                
                 else:  # Lava Build-Up Index
                     st.subheader("Lava Build-Up Index (LBI) Analysis")
                     
