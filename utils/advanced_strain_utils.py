@@ -530,7 +530,10 @@ def calculate_earthquake_risk_index(strain_data, region_name, earthquake_history
         "Japan": {"lat": 35.6, "lon": 138.2, "base_risk": 0.9, "tectonic_setting": "Convergent"},
         "Andes": {"lat": -23.5, "lon": -67.8, "base_risk": 0.7, "tectonic_setting": "Convergent"},
         "Indonesia": {"lat": -7.5, "lon": 110.0, "base_risk": 0.85, "tectonic_setting": "Convergent"},
-        "Mayotte": {"lat": -12.8, "lon": 45.2, "base_risk": 0.6, "tectonic_setting": "Hotspot"}
+        "Mayotte": {"lat": -12.8, "lon": 45.2, "base_risk": 0.6, "tectonic_setting": "Hotspot"},
+        "California": {"lat": 37.8, "lon": -122.4, "base_risk": 0.8, "tectonic_setting": "Transform"},
+        "Greece": {"lat": 38.0, "lon": 23.7, "base_risk": 0.75, "tectonic_setting": "Convergent"},
+        "Italy": {"lat": 41.9, "lon": 12.5, "base_risk": 0.7, "tectonic_setting": "Convergent"}
     }
     
     if region_name not in region_centers:
@@ -587,6 +590,8 @@ def calculate_earthquake_risk_index(strain_data, region_name, earthquake_history
         tectonic_factor = 1.3  # Higher risk at convergent boundaries
     elif tectonic_setting == "Divergent/Hotspot":
         tectonic_factor = 1.1  # Moderate risk at divergent boundaries
+    elif tectonic_setting == "Transform":
+        tectonic_factor = 1.4  # Highest risk at transform fault systems like San Andreas
     elif tectonic_setting == "Hotspot":
         tectonic_factor = 0.9  # Lower risk at pure hotspots
     
@@ -594,8 +599,10 @@ def calculate_earthquake_risk_index(strain_data, region_name, earthquake_history
     # Regions with significant ice loss or sea level changes
     if region_name in ["Iceland", "Andes"]:
         climate_factor = 1.15  # Glacial retreat increases earthquake risk
-    elif region_name in ["Japan", "Indonesia"]:
+    elif region_name in ["Japan", "Indonesia", "California"]:
         climate_factor = 1.05  # Sea level change affecting coastal areas
+    elif region_name in ["Italy", "Greece"]:
+        climate_factor = 1.08  # Mediterranean sea level change and drought patterns
     
     # Calculate final risk score (0-10 scale)
     risk_base = base_risk * strain_complexity_factor * strain_magnitude_factor * tectonic_factor * climate_factor
