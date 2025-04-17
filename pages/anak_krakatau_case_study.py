@@ -385,71 +385,125 @@ def app():
     tsunami_stage = st.slider("Tsunami Propagation Time (minutes after collapse)", 0, 60, 0,
                             help="Move the slider to see how the tsunami propagated over time")
     
-    # Simple map of Sunda Strait with tsunami propagation circles
-    tsunami_circle_size = tsunami_stage * 11
+    # Create a Plotly-based tsunami wave visualization
+    fig = go.Figure()
     
-    st.markdown(f"""
-    <style>
-    .tsunami-map {{
-        position: relative;
-        width: 700px;
-        height: 500px;
-        background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Sunda_Strait_map.png/800px-Sunda_Strait_map.png');
-        background-size: cover;
-        margin: 0 auto;
-    }}
-    .tsunami-circle {{
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        border-radius: 50%;
-        border: 2px solid rgba(0, 100, 255, 0.7);
-        background: rgba(0, 100, 255, 0.3);
-    }}
-    .tsunami-marker {{
-        position: absolute;
-        width: 10px;
-        height: 10px;
-        background: red;
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-    }}
-    .tsunami-label {{
-        position: absolute;
-        color: white;
-        background: rgba(0,0,0,0.7);
-        padding: 2px 5px;
-        border-radius: 3px;
-        font-size: 12px;
-        transform: translate(-50%, -100%);
-        white-space: nowrap;
-    }}
-    </style>
+    # Map coordinates (approximate)
+    anak_krakatau = {"lat": -6.102, "lon": 105.423, "name": "Anak Krakatau"}
+    anyer = {"lat": -6.057, "lon": 105.898, "name": "Anyer (Java)"}
+    pandeglang = {"lat": -6.746, "lon": 105.691, "name": "Pandeglang (Java)"}
+    lampung = {"lat": -5.429, "lon": 105.254, "name": "Lampung (Sumatra)"}
     
-    <div class="tsunami-map">
-        <!-- Anak Krakatau position -->
-        <div class="tsunami-marker" style="top: 50%; left: 50%;"></div>
-        <div class="tsunami-label" style="top: 50%; left: 50%;">Anak Krakatau</div>
-        
-        <!-- Java locations -->
-        <div class="tsunami-marker" style="top: 65%; left: 60%;"></div>
-        <div class="tsunami-label" style="top: 65%; left: 60%;">Anyer (Java)</div>
-        
-        <div class="tsunami-marker" style="top: 73%; left: 47%;"></div>
-        <div class="tsunami-label" style="top: 73%; left: 47%;">Pandeglang (Java)</div>
-        
-        <!-- Sumatra locations -->
-        <div class="tsunami-marker" style="top: 35%; left: 40%;"></div>
-        <div class="tsunami-label" style="top: 35%; left: 40%;">Lampung (Sumatra)</div>
-        
-        <!-- Tsunami wave circles based on current time -->
-        <div class="tsunami-circle" style="width: {tsunami_circle_size}px; height: {tsunami_circle_size}px;"></div>
-    </div>
+    # Add coastlines (simplified)
+    # Java coast (east side)
+    java_x = [105.7, 105.9, 106.0, 106.1, 106.0, 105.9, 105.8]
+    java_y = [-5.9, -6.0, -6.1, -6.3, -6.5, -6.7, -6.9]
     
+    # Sumatra coast (west side)
+    sumatra_x = [105.4, 105.3, 105.2, 105.1, 105.0, 104.9, 104.8]
+    sumatra_y = [-5.3, -5.4, -5.5, -5.6, -5.7, -5.8, -5.9]
+    
+    # Add coastlines to the map
+    fig.add_trace(go.Scatter(
+        x=java_x,
+        y=java_y,
+        mode="lines",
+        line=dict(color="green", width=3),
+        name="Java Coast"
+    ))
+    
+    fig.add_trace(go.Scatter(
+        x=sumatra_x,
+        y=sumatra_y,
+        mode="lines",
+        line=dict(color="green", width=3),
+        name="Sumatra Coast"
+    ))
+    
+    # Add the locations as markers
+    locations = [anak_krakatau, anyer, pandeglang, lampung]
+    for loc in locations:
+        fig.add_trace(go.Scatter(
+            x=[loc["lon"]],
+            y=[loc["lat"]],
+            mode="markers+text",
+            marker=dict(size=10, color="red"),
+            text=[loc["name"]],
+            textposition="top center",
+            name=loc["name"]
+        ))
+    
+    # Calculate the tsunami wave radius (in degrees, approximate)
+    # Tsunami travels at roughly 500-800 km/h in deep water
+    # Converting minutes to a realistic radius
+    # Approximately 0.05 degrees per 5 minutes
+    tsunami_radius = 0.01 * tsunami_stage
+    
+    # Create a circle for the tsunami wave
+    if tsunami_stage > 0:
+        theta = np.linspace(0, 2*np.pi, 100)
+        x = anak_krakatau["lon"] + tsunami_radius * np.cos(theta)
+        y = anak_krakatau["lat"] + tsunami_radius * np.sin(theta)
+        
+        fig.add_trace(go.Scatter(
+            x=x,
+            y=y,
+            mode="lines",
+            line=dict(color="blue", width=2),
+            fill="toself",
+            fillcolor="rgba(0, 100, 255, 0.3)",
+            name=f"Tsunami Wave at T+{tsunami_stage} min"
+        ))
+    
+    # Update layout
+    fig.update_layout(
+        title=f"Tsunami Propagation at T+{tsunami_stage} minutes",
+        xaxis_title="Longitude",
+        yaxis_title="Latitude",
+        showlegend=True,
+        width=700,
+        height=500,
+        xaxis=dict(range=[104.7, 106.2]),
+        yaxis=dict(range=[-7.0, -5.2]),
+        yaxis_scaleanchor="x",
+        yaxis_scaleratio=1,
+    )
+    
+    # Add annotations for wave arrival times
+    if tsunami_stage >= 28:
+        fig.add_annotation(
+            x=lampung["lon"],
+            y=lampung["lat"],
+            text="Wave arrival: T+28 min",
+            showarrow=True,
+            arrowhead=1
+        )
+    
+    if tsunami_stage >= 32:
+        fig.add_annotation(
+            x=anyer["lon"],
+            y=anyer["lat"],
+            text="Wave arrival: T+32 min",
+            showarrow=True,
+            arrowhead=1
+        )
+    
+    if tsunami_stage >= 33:
+        fig.add_annotation(
+            x=pandeglang["lon"],
+            y=pandeglang["lat"],
+            text="Wave arrival: T+33 min",
+            showarrow=True,
+            arrowhead=1
+        )
+    
+    # Display the figure
+    st.plotly_chart(fig)
+    
+    # Add wave speed information
+    st.markdown("""
     <div style="text-align: center; margin-top: 10px;">
-        <b>Tsunami propagation at T+{tsunami_stage} minutes</b><br>
-        Wave speed: ~200 km/h in open water
+        <b>Wave speed: ~200 km/h in open water</b>
     </div>
     """, unsafe_allow_html=True)
     
