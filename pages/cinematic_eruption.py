@@ -370,7 +370,7 @@ def app():
         
         ### Monitoring Implications
         Different volcano types require different monitoring approaches. {volcano_type.replace('_', ' ').title()} 
-        volcanoes typically show {VOLCANO_TYPES[volcano_type]['deformation_pattern']} before eruption,
+        volcanoes typically show distinctive deformation patterns before eruption,
         which can be detected through InSAR and GPS measurements.
         """)
         
