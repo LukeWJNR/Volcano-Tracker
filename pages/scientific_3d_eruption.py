@@ -339,7 +339,7 @@ def app():
     const container = document.getElementById("volcano-container");
     if (!container) {
         console.error("Volcano container element not found. Cannot initialize 3D visualization.");
-        return; // Exit early if container doesn't exist
+        return; 
     }
     
     const clock = new THREE.Clock();
