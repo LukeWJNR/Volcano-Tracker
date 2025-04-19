@@ -333,13 +333,13 @@ def app():
     // Set up the scene, camera, and renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
-    const renderer = new THREE.WebGLRenderer({{ antialias: true, alpha: true }});
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     
     // Make sure container exists before proceeding
     const container = document.getElementById("volcano-container");
     if (!container) {
         console.error("Volcano container element not found. Cannot initialize 3D visualization.");
-        return; 
+        return;
     }
     
     const clock = new THREE.Clock();

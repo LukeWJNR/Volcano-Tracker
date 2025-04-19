@@ -113,8 +113,11 @@ def app():
                     )
                 
                 # Generate deformation plot
-                # Adding max_steps parameter (default to 50 for typical animation steps)
-                deformation_data = generate_deformation_plot(selected_volcano, alert_level, 50)
+                # Extract volcano_type as string for the function
+                volcano_type_str = determine_volcano_type(selected_volcano)
+                # Convert alert level to numeric steps (Normal=10, Advisory=25, Watch=40, Warning=50)
+                alert_time_steps = {"Normal": 10, "Advisory": 25, "Watch": 40, "Warning": 50}.get(alert_level, 25)
+                deformation_data = generate_deformation_plot(volcano_type_str, alert_time_steps, 50)
                 
                 # Technical information
                 with st.expander("Technical Details", expanded=False):
@@ -543,10 +546,12 @@ def app():
                 st.subheader("Simulated Deformation Pattern")
                 
                 # Generate deformation plot
-                volcano_type = determine_volcano_type(selected_volcano)
+                volcano_type_str = determine_volcano_type(selected_volcano)
                 alert_level = selected_volcano.get('alert_level', 'Normal')
+                # Convert alert level to numeric steps (Normal=10, Advisory=25, Watch=40, Warning=50)
+                alert_time_steps = {"Normal": 10, "Advisory": 25, "Watch": 40, "Warning": 50}.get(alert_level, 25)
                 # Adding max_steps parameter (default to 50 for typical animation steps)
-                deformation_data = generate_deformation_plot(selected_volcano, alert_level, 50)
+                deformation_data = generate_deformation_plot(volcano_type_str, alert_time_steps, 50)
                 
                 # Display 2D InSAR-like visualization
                 st.plotly_chart(deformation_data['2d_figure'], use_container_width=True, key="deform_2d_plot")
