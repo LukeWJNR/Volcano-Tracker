@@ -933,8 +933,8 @@ def app():
                 with col3:
                     st.metric(
                         "Strain Magnitude",
-                        f"{impact['strain_magnitude']:.2f} μstrain",
-                        delta=f"{impact['strain_magnitude']:.2f}",
+                        f"{impact['strain_magnitude']:.4f} μstrain",
+                        delta=f"{impact['strain_magnitude']:.4f}",
                         delta_color="normal"
                     )
                 
@@ -946,24 +946,24 @@ def app():
                 with col1:
                     st.metric(
                         "Magma Pressure Change",
-                        f"{impact['pressure_change']:.1f}",
-                        delta=f"{impact['pressure_change']:.1f}",
+                        f"{impact['pressure_change']:.3f}",
+                        delta=f"{impact['pressure_change']:.3f}",
                         delta_color="normal"
                     )
                 
                 with col2:
                     st.metric(
                         "Edifice Stability Impact",
-                        f"{impact['stability_impact']:.1f}",
-                        delta=f"{impact['stability_impact']:.1f}",
+                        f"{impact['stability_impact']:.3f}",
+                        delta=f"{impact['stability_impact']:.3f}",
                         delta_color="normal"
                     )
                 
                 with col3:
                     st.metric(
                         "Magma Pathway Dilation",
-                        f"{impact['pathway_dilation']:.1f}",
-                        delta=f"{impact['pathway_dilation']:.1f}",
+                        f"{impact['pathway_dilation']:.3f}",
+                        delta=f"{impact['pathway_dilation']:.3f}",
                         delta_color="normal"
                     )
                 
@@ -977,15 +977,16 @@ def app():
                     "High": "red"
                 }[impact['risk_level']]
                 
-                # Create risk gauge
+                # Create risk gauge with more precise numbering
                 fig = go.Figure(go.Indicator(
                     mode = "gauge+number+delta",
                     value = impact['risk_index'],
+                    number = {'valueformat': '.3f'},  # Increase precision to 3 decimal places
                     domain = {'x': [0, 1], 'y': [0, 1]},
                     title = {'text': "Risk Index", 'font': {'size': 24}},
-                    delta = {'reference': 5, 'increasing': {'color': "red"}},
+                    delta = {'reference': 5, 'increasing': {'color': "red"}, 'valueformat': '.3f'},
                     gauge = {
-                        'axis': {'range': [0, 15], 'tickwidth': 1, 'tickcolor': "darkblue"},
+                        'axis': {'range': [0, 15], 'tickwidth': 1, 'tickcolor': "darkblue", 'dtick': 1.0},
                         'bar': {'color': risk_color},
                         'bgcolor': "white",
                         'borderwidth': 2,
