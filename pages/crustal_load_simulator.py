@@ -42,7 +42,9 @@ from utils.crustal_models_utils import (
     display_crustal_model_info,
     display_crustal_datasets,
     apply_crustal_properties_to_simulation,
-    display_crustal_model_on_map
+    display_crustal_model_on_map,
+    load_crustal_dataset_image,
+    CRUSTAL_PROPERTIES
 )
 
 def app():
