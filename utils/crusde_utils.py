@@ -388,14 +388,20 @@ def plot_displacement_map(simulation_results, time_index=-1, plot_type="vertical
     
     # Add a heatmap layer
     from folium.plugins import HeatMap
+    
+    # Create pointlist with values as third element in each point
+    weighted_points = []
+    for i in range(len(points)):
+        # Each point in format [lat, lon, value]
+        weighted_points.append([points[i][0], points[i][1], values[i]])
+    
     HeatMap(
-        points,
+        weighted_points,
         min_opacity=0.2,
         radius=15, 
         blur=10, 
         gradient={0.0: 'blue', 0.5: 'white', 1.0: 'red'} if plot_type == "vertical" else None,
-        max_val=np.max(np.abs(data)),
-        data=values
+        max_val=np.max(np.abs(data))
     ).add_to(m)
     
     # Add vectors for horizontal displacement if needed
