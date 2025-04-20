@@ -354,7 +354,7 @@ def app():
         st.header("Simulation Results Analysis")
         
         # Check if we have simulation results
-        if st.session_state['crusde_simulation_results'] is None:
+        if 'crusde_simulation_results' not in st.session_state or st.session_state['crusde_simulation_results'] is None:
             st.info("Run a simulation in the Setup tab to see results here.")
         else:
             results = st.session_state['crusde_simulation_results']
@@ -688,7 +688,7 @@ def app():
         st.header("Volcanic Impact Assessment")
         
         # Check if we have simulation results and selected volcano
-        if st.session_state['crusde_simulation_results'] is None:
+        if 'crusde_simulation_results' not in st.session_state or st.session_state['crusde_simulation_results'] is None:
             st.info("Run a simulation in the Setup tab to see volcanic impact assessment.")
         else:
             results = st.session_state['crusde_simulation_results']
@@ -697,7 +697,7 @@ def app():
             col1, col2 = st.columns(2)
             
             with col1:
-                if st.session_state['selected_volcano'] is not None:
+                if 'selected_volcano' in st.session_state and st.session_state['selected_volcano'] is not None:
                     # Use selected volcano
                     volcano_name = st.session_state['selected_volcano']["name"]
                     volcano_lat = st.session_state['selected_volcano']["latitude"]
