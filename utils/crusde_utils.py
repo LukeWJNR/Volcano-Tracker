@@ -347,6 +347,10 @@ def plot_displacement_map(simulation_results, time_index=-1, plot_type="vertical
     lats = simulation_results["lats"]
     lons = simulation_results["lons"]
     
+    # Default values for title and cmap
+    title = "Displacement"
+    cmap = "viridis"
+    
     if plot_type == "vertical":
         data = simulation_results["vertical_displacement"][time_index]
         title = "Vertical Displacement (m)"
@@ -367,6 +371,11 @@ def plot_displacement_map(simulation_results, time_index=-1, plot_type="vertical
         title = "Strain Magnitude (microstrain)"
         data = data * 1e6  # Convert to microstrain
         cmap = "magma"
+    else:
+        # Default to vertical displacement if type not recognized
+        data = simulation_results["vertical_displacement"][time_index]
+        title = f"Vertical Displacement (m) - Unknown type: {plot_type}"
+        cmap = "RdBu_r"
     
     # Create a regular grid of points
     points = []
@@ -487,6 +496,11 @@ def create_time_slider_map(simulation_results, plot_type="vertical"):
         
         for i in range(0, len(lats), stride):
             for j in range(0, len(lons), stride):
+                # Default values
+                value = 0
+                radius = 10
+                color = "#888888"  # Default gray
+
                 # Get the data value based on plot type
                 if plot_type == "vertical":
                     value = simulation_results["vertical_displacement"][t, i, j]
@@ -510,6 +524,14 @@ def create_time_slider_map(simulation_results, plot_type="vertical"):
                     value = np.sqrt(0.5 * (exx**2 + eyy**2 + 2 * exy**2))
                     radius = value * 1e8  # Scale for visibility
                     color = "#ff00ff"  # Magenta for strain
+                else:
+                    # Default to vertical displacement if type not recognized
+                    value = simulation_results["vertical_displacement"][t, i, j]
+                    radius = abs(value) * 10000  # Scale for visibility
+                    if value > 0:
+                        color = "#ff0000"  # Red for uplift
+                    else:
+                        color = "#0000ff"  # Blue for subsidence
                 
                 # Skip very small values
                 if radius < 20:
@@ -555,7 +577,17 @@ def create_time_slider_map(simulation_results, plot_type="vertical"):
         time_slider_drag_update=True
     ).add_to(m)
     
-    # Add title and legend
+    # Default values
+    title = "Displacement"
+    legend_html = """
+    <div style="position: fixed; bottom: 50px; right: 50px; z-index: 1000; background-color: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.3);">
+        <p><strong>Displacement</strong></p>
+        <p><span style="color: gray;">●</span> Displacement magnitude</p>
+        <p>Circle size proportional to magnitude</p>
+    </div>
+    """
+    
+    # Add title and legend based on plot type
     if plot_type == "vertical":
         title = "Vertical Displacement (m)"
         legend_html = """
@@ -619,6 +651,11 @@ def create_plotly_time_series(simulation_results, lat, lon, plot_type="vertical"
     # Extract time series
     times = simulation_results["times"]
     
+    # Default values
+    data = None
+    title = f"Displacement at ({lat:.4f}, {lon:.4f})"
+    y_label = "Value"
+    
     if plot_type == "vertical":
         data = simulation_results["vertical_displacement"][:, lat_idx, lon_idx]
         title = f"Vertical Displacement at ({lat:.4f}, {lon:.4f})"
@@ -636,6 +673,11 @@ def create_plotly_time_series(simulation_results, lat, lon, plot_type="vertical"
         data = np.sqrt(0.5 * (exx**2 + eyy**2 + 2 * exy**2)) * 1e6  # Convert to microstrain
         title = f"Strain Magnitude at ({lat:.4f}, {lon:.4f})"
         y_label = "Strain (μstrain)"
+    else:
+        # Default to vertical displacement if type not recognized
+        data = simulation_results["vertical_displacement"][:, lat_idx, lon_idx]
+        title = f"Vertical Displacement at ({lat:.4f}, {lon:.4f}) - Unknown type: {plot_type}"
+        y_label = "Displacement (m)"
     
     # Create figure
     fig = go.Figure()
@@ -694,6 +736,11 @@ def plot_cross_section(simulation_results, start_lat, start_lon, end_lat, end_lo
     # Interpolate data values along the cross-section
     values = np.zeros(num_points)
     
+    # Default values
+    data = None
+    title = "Displacement Cross-Section"
+    y_label = "Value"
+    
     if plot_type == "vertical":
         data = simulation_results["vertical_displacement"][time_index]
         title = "Vertical Displacement Cross-Section"
@@ -711,6 +758,11 @@ def plot_cross_section(simulation_results, start_lat, start_lon, end_lat, end_lo
         data = np.sqrt(0.5 * (exx**2 + eyy**2 + 2 * exy**2)) * 1e6  # Convert to microstrain
         title = "Strain Magnitude Cross-Section"
         y_label = "Strain (μstrain)"
+    else:
+        # Default to vertical displacement if type not recognized
+        data = simulation_results["vertical_displacement"][time_index]
+        title = f"Vertical Displacement Cross-Section - Unknown type: {plot_type}"
+        y_label = "Displacement (m)"
     
     # Create a 2D interpolation of the data
     from scipy.interpolate import griddata
@@ -763,6 +815,12 @@ def plot_3d_surface(simulation_results, time_index=-1, plot_type="vertical", exa
     # Create meshgrid
     lon_grid, lat_grid = np.meshgrid(lons, lats)
     
+    # Default values
+    z_values = None
+    title = "Displacement Surface"
+    z_label = "Value"
+    colorscale = "Viridis"
+    
     # Extract z values based on plot type
     if plot_type == "vertical":
         z_values = simulation_results["vertical_displacement"][time_index]
@@ -784,6 +842,12 @@ def plot_3d_surface(simulation_results, time_index=-1, plot_type="vertical", exa
         title = "Strain Magnitude Surface"
         z_label = "Strain (μstrain)"
         colorscale = "Magma"
+    else:
+        # Default to vertical displacement if type not recognized
+        z_values = simulation_results["vertical_displacement"][time_index]
+        title = f"Vertical Displacement Surface - Unknown type: {plot_type}"
+        z_label = "Displacement (m)"
+        colorscale = "RdBu_r"
     
     # Apply vertical exaggeration
     z_values = z_values * exaggeration
