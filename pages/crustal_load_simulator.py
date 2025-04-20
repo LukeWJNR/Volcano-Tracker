@@ -81,7 +81,8 @@ def app():
             "Select Load Change Scenario",
             [
                 "Glacial Unloading", 
-                "Sea Level Rise", 
+                "Sea Level Rise",
+                "Global Sea Level Impact", 
                 "Lava Flow Loading",
                 "Reservoir/Lake Level Change"
             ],
@@ -233,6 +234,32 @@ def app():
             region_height = max(coastline_width * 4, 100)  # km
             resolution = max(1.0, coastline_width / 20)  # km
             
+        elif simulation_type == "Global Sea Level Impact":
+            with col1:
+                sea_level_rise = st.slider("Global Sea Level Rise (m)", 0.1, 15.0, 3.0)
+                ocean_coverage = st.slider("Ocean Coverage (%)", 50, 90, 71)
+                rise_duration = st.slider("Rise Period (years)", 10, 500, 100)
+            
+            with col2:
+                elastic_thickness = st.slider("Elastic Thickness (km)", 10, 100, 30)
+                regional_factor = st.slider("Regional Load Factor", 0.5, 1.5, 1.0, 
+                                          help="Adjusts how strongly the global sea level rise affects this specific region")
+                time_steps = st.slider("Time Steps", 5, 50, 20)
+                
+            load_params = {
+                "global_slr_m": sea_level_rise,
+                "ocean_coverage": ocean_coverage / 100.0,
+                "initial_height_m": 0,
+                "final_height_m": sea_level_rise * regional_factor,
+                "density_kg_m3": 1025,  # Seawater density
+                "regional_factor": regional_factor
+            }
+            
+            # Map settings - create a large view area to show global impact
+            region_width = 500  # km
+            region_height = 500  # km
+            resolution = 10  # km
+            
         elif simulation_type == "Lava Flow Loading":
             with col1:
                 flow_radius = st.slider("Lava Flow Radius (km)", 0.5, 20.0, 5.0)
@@ -329,6 +356,8 @@ def app():
             if simulation_type == "Glacial Unloading":
                 duration_years = melt_duration
             elif simulation_type == "Sea Level Rise":
+                duration_years = rise_duration
+            elif simulation_type == "Global Sea Level Impact":
                 duration_years = rise_duration
             elif simulation_type == "Lava Flow Loading":
                 duration_years = max(1, flow_duration / 365.0 * 5)  # 5x eruption duration
@@ -932,7 +961,7 @@ def app():
                         'bordercolor': "gray",
                         'steps': [
                             {'range': [0, 5], 'color': 'lightgreen'},
-                            {'range': [5, 10], 'color': 'lightorange'},
+                            {'range': [5, 10], 'color': 'orange'},
                             {'range': [10, 15], 'color': 'lightcoral'}
                         ],
                         'threshold': {
@@ -995,11 +1024,11 @@ def app():
                     glacial retreat like Alaska and the Andes.
                     """)
                 
-                elif simulation_type == "Sea Level Rise":
+                elif simulation_type in ["Sea Level Rise", "Global Sea Level Impact"]:
                     st.markdown("""
-                    **Sea Level Rise and Coastal Volcanoes**
+                    **Sea Level Rise and Volcanic Activity**
                     
-                    Rising sea levels can influence coastal and island volcanoes through several mechanisms:
+                    Rising sea levels can influence volcanoes through several mechanisms:
                     
                     1. **Hydrostatic Loading**: Increased water height adds pressure on the seafloor,
                     potentially affecting submarine magma systems and flank stability.
@@ -1010,8 +1039,15 @@ def app():
                     3. **Flank Stability**: Water saturation and wave erosion can destabilize volcanic flanks,
                     potentially leading to sector collapses and tsunamis.
                     
+                    4. **Global Isostatic Effects**: When simulating global sea level rise, the addition of 
+                    water mass across the world's oceans creates a distributed load on the entire lithosphere.
+                    This can cause displacement patterns even at inland locations due to the elastic response
+                    of the lithosphere to global-scale loading.
+                    
                     Examples include concerns about the stability of island volcanoes such as Anak Krakatau,
                     Kilauea, and Stromboli, where sea level changes could contribute to major flank collapses.
+                    Research also suggests global sea level changes may correlate with changes in volcanic 
+                    eruption frequency at the planetary scale.
                     """)
                 
                 elif simulation_type == "Lava Flow Loading":
