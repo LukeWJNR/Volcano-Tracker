@@ -25,7 +25,8 @@ VOLCANO_TYPES = {
         "magma_temperature": 1200,  # in °C
         "magma_composition": "Basaltic",
         "magma_chamber_depth": 3.5,  # in km
-        "secondary_chambers": True
+        "secondary_chambers": True,
+        "deformation_pattern": "Broad, radial inflation during magma accumulation"
     },
     "stratovolcano": {
         "description": "Steep-sided, symmetrical cone with alternating layers of lava and pyroclastics",
@@ -41,7 +42,8 @@ VOLCANO_TYPES = {
         "magma_temperature": 950,  # in °C
         "magma_composition": "Andesitic to Dacitic",
         "magma_chamber_depth": 5.0,  # in km
-        "secondary_chambers": True
+        "secondary_chambers": True,
+        "deformation_pattern": "Asymmetric patterns due to complex structure and flank instability"
     },
     "caldera": {
         "description": "Large, basin-shaped depression formed by collapse",
@@ -57,7 +59,8 @@ VOLCANO_TYPES = {
         "magma_temperature": 850,  # in °C
         "magma_composition": "Rhyolitic",
         "magma_chamber_depth": 8.0,  # in km
-        "secondary_chambers": True
+        "secondary_chambers": True,
+        "deformation_pattern": "Ring-like patterns with complex subsidence/uplift interactions"
     },
     "cinder_cone": {
         "description": "Small, steep-sided cone built from ejected lava fragments",
@@ -73,7 +76,8 @@ VOLCANO_TYPES = {
         "magma_temperature": 1050,  # in °C
         "magma_composition": "Basaltic to Andesitic",
         "magma_chamber_depth": 2.0,  # in km
-        "secondary_chambers": False
+        "secondary_chambers": False,
+        "deformation_pattern": "Localized, minor ground movement with minimal pre-eruption signals"
     },
     "lava_dome": {
         "description": "Rounded, steep-sided mass formed by viscous lava",
@@ -89,7 +93,8 @@ VOLCANO_TYPES = {
         "magma_temperature": 800,  # in °C
         "magma_composition": "Dacitic to Rhyolitic",
         "magma_chamber_depth": 4.0,  # in km
-        "secondary_chambers": False
+        "secondary_chambers": False,
+        "deformation_pattern": "Very localized, high-gradient deformation with potential flank instability"
     }
 }
 
