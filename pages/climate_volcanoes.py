@@ -29,6 +29,15 @@ from utils.crustal_strain_utils import (
     get_jma_station_locations
 )
 
+from utils.geojson_strain_utils import (
+    convert_to_geojson,
+    generate_interpolated_strain_grid,
+    add_geojson_strain_to_map,
+    save_geojson_to_file,
+    load_geojson_from_file,
+    get_geojson_strain_legend
+)
+
 # Import advanced strain analysis tools from Strain_2D toolkit
 from utils.advanced_strain_utils import (
     compute_strain_components,
@@ -567,6 +576,274 @@ def app():
         """)
     
     with tab4:
+        st.header("🧱 High-Resolution Crustal Strain Analysis")
+        st.markdown("""
+        This tab provides advanced crustal strain analysis using GeoJSON-based mapping technology 
+        to visualize the relationship between strain patterns, volcanic activity, and climate factors.
+        
+        High-resolution (10m) strain mapping helps scientists understand how:
+        - Climate change affects crustal stress patterns
+        - Sea level rise alters coastal volcano stability
+        - Crustal deformation relates to eruption probability
+        """)
+        
+        # Add selection for map type and region
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            map_type = st.radio(
+                "Map Type",
+                ["Standard Strain Map", "High-Resolution GeoJSON", "Interpolated Strain Field"],
+                index=1  # Default to GeoJSON
+            )
+        
+        with col2:
+            selected_region = st.selectbox(
+                "Select Region",
+                ["Iceland", "Hawaii", "Japan", "Andes", "Indonesia", "Mayotte", 
+                 "California", "Greece", "Italy"],
+                index=0
+            )
+        
+        with col3:
+            resolution = st.select_slider(
+                "Map Resolution (meters)",
+                options=[10, 50, 100, 500, 1000, 5000, 10000],
+                value=10
+            )
+        
+        # Define region center coordinates
+        region_centers = {
+            "Iceland": [64.9, -19.0],
+            "Hawaii": [19.4, -155.3],
+            "Japan": [35.6, 138.2],
+            "Andes": [-23.5, -67.8],
+            "Indonesia": [-7.5, 110.0],
+            "Mayotte": [-12.8, 45.2],
+            "California": [37.8, -122.4],
+            "Greece": [38.0, 23.7],
+            "Italy": [41.9, 12.5]
+        }
+        
+        # Get center coordinates for the selected region
+        center_lat, center_lon = region_centers[selected_region]
+        
+        # Create a Folium map
+        crustal_map = folium.Map(
+            location=[center_lat, center_lon],
+            zoom_start=7,
+            tiles="cartodbpositron"
+        )
+        
+        # Add a few volcanoes to the map
+        volcanoes_df = get_known_volcano_data()
+        
+        # Filter volcanoes by region (simple proximity check)
+        radius = 5.0  # degrees
+        region_volcanoes = volcanoes_df[
+            (np.abs(volcanoes_df['latitude'] - center_lat) < radius) & 
+            (np.abs(volcanoes_df['longitude'] - center_lon) < radius)
+        ]
+        
+        # Add volcano markers
+        for _, volcano in region_volcanoes.iterrows():
+            # Skip if missing coordinates
+            if pd.isna(volcano['latitude']) or pd.isna(volcano['longitude']):
+                continue
+                
+            # Determine if this volcano has climate connection info
+            has_climate_info = volcano['name'] in climate_connections
+            
+            # Set marker color
+            if has_climate_info:
+                confidence = climate_connections[volcano['name']]['confidence']
+                if confidence == "High":
+                    color = "green"
+                elif confidence == "Medium":
+                    color = "orange"
+                else:
+                    color = "blue"
+            else:
+                color = "gray"
+                
+            # Create popup content
+            popup_content = f"""
+            <div style="width: 200px;">
+                <h4>{volcano['name']}</h4>
+                <p><b>Country:</b> {volcano['country']}</p>
+                <p><b>Type:</b> {volcano.get('type', 'Unknown')}</p>
+                <p><b>Last Eruption:</b> {volcano.get('last_eruption', 'Unknown')}</p>
+            """
+            
+            # Add climate connection info if available
+            if has_climate_info:
+                connection = climate_connections[volcano['name']]
+                popup_content += f"""
+                <hr>
+                <p><b>Climate Connection:</b> {connection['connection']}</p>
+                <p><b>Evidence:</b> {connection['evidence']}</p>
+                <p><b>Confidence:</b> {connection['confidence']}</p>
+                """
+                
+            popup_content += "</div>"
+            
+            # Add marker
+            folium.Marker(
+                location=[volcano['latitude'], volcano['longitude']],
+                popup=folium.Popup(popup_content, max_width=300),
+                tooltip=volcano['name'],
+                icon=folium.Icon(color=color, icon="fire", prefix="fa")
+            ).add_to(crustal_map)
+        
+        # Load and process strain data based on map type
+        if map_type == "Standard Strain Map":
+            # Load World Stress Map data
+            try:
+                wsm_data = load_wsm_data('attached_assets/wsm2016.xlsx')
+                
+                # Process columns if needed
+                if 'LAT' in wsm_data.columns and 'latitude' not in wsm_data.columns:
+                    wsm_data['latitude'] = wsm_data['LAT']
+                    wsm_data['longitude'] = wsm_data['LON']
+                
+                if 'AZI' in wsm_data.columns and 'SHmax' not in wsm_data.columns:
+                    wsm_data['SHmax'] = wsm_data['AZI']
+                
+                # Filter for the selected region
+                region_strain = wsm_data[
+                    (np.abs(wsm_data['latitude'] - center_lat) < radius) & 
+                    (np.abs(wsm_data['longitude'] - center_lon) < radius)
+                ]
+                
+                # Add strain data to map
+                crustal_map = add_strain_data_to_map(crustal_map, region_strain)
+                
+                st.success(f"Added {len(region_strain)} strain measurements to the map")
+            except Exception as e:
+                st.error(f"Error loading standard strain data: {str(e)}")
+                
+        elif map_type == "High-Resolution GeoJSON":
+            # Try to load existing GeoJSON file
+            geojson_filename = f"data/geojson/strain_{selected_region.lower().replace(' ', '_')}_{resolution}m.geojson"
+            
+            try:
+                if os.path.exists(geojson_filename):
+                    # Load existing file
+                    st.info(f"Loading existing high-resolution strain data for {selected_region}")
+                    geojson_data = load_geojson_from_file(geojson_filename)
+                else:
+                    # Use sample file for demonstration
+                    st.info(f"Using sample high-resolution strain data for demonstration")
+                    geojson_data = load_geojson_from_file("data/geojson/sample_strain_10m.geojson")
+                    
+                    # Filter to only show features for this region
+                    filtered_features = [
+                        f for f in geojson_data.get('features', [])
+                        if f.get('properties', {}).get('region') == selected_region
+                    ]
+                    
+                    geojson_data = {
+                        "type": "FeatureCollection",
+                        "features": filtered_features
+                    }
+                
+                # Add GeoJSON strain data to map
+                crustal_map = add_geojson_strain_to_map(crustal_map, geojson_data, cluster=(len(geojson_data.get('features', [])) > 50))
+                
+                st.success(f"Added {len(geojson_data.get('features', []))} high-resolution strain vectors to the map")
+            except Exception as e:
+                st.error(f"Error loading GeoJSON strain data: {str(e)}")
+                
+        elif map_type == "Interpolated Strain Field":
+            try:
+                # Load World Stress Map data
+                wsm_data = load_wsm_data('attached_assets/wsm2016.xlsx')
+                
+                # Process columns if needed
+                if 'LAT' in wsm_data.columns and 'latitude' not in wsm_data.columns:
+                    wsm_data['latitude'] = wsm_data['LAT']
+                    wsm_data['longitude'] = wsm_data['LON']
+                
+                if 'AZI' in wsm_data.columns and 'SHmax' not in wsm_data.columns:
+                    wsm_data['SHmax'] = wsm_data['AZI']
+                
+                # Filter for the selected region
+                region_strain = wsm_data[
+                    (np.abs(wsm_data['latitude'] - center_lat) < radius) & 
+                    (np.abs(wsm_data['longitude'] - center_lon) < radius)
+                ]
+                
+                # Define region bounds with a buffer
+                lat_min = center_lat - 2
+                lat_max = center_lat + 2
+                lon_min = center_lon - 2
+                lon_max = center_lon + 2
+                
+                # Generate interpolated grid
+                st.info(f"Generating interpolated strain field with {resolution}m resolution...")
+                interpolated_strain = generate_interpolated_strain_grid(
+                    region_strain, 
+                    lat_min, 
+                    lat_max, 
+                    lon_min, 
+                    lon_max,
+                    resolution=resolution
+                )
+                
+                # Convert to GeoJSON
+                geojson_data = convert_to_geojson(interpolated_strain, resolution=resolution)
+                
+                # Add to map
+                crustal_map = add_geojson_strain_to_map(crustal_map, geojson_data, cluster=True)
+                
+                st.success(f"Added {len(geojson_data.get('features', []))} interpolated strain vectors to the map")
+            except Exception as e:
+                st.error(f"Error generating interpolated strain field: {str(e)}")
+        
+        # Add fullscreen control
+        folium.plugins.Fullscreen().add_to(crustal_map)
+        
+        # Add layer control
+        folium.LayerControl().add_to(crustal_map)
+        
+        # Display the map
+        st_folium(crustal_map, width=800, height=500)
+        
+        # Display legend
+        if map_type == "Standard Strain Map":
+            st.markdown(get_strain_data_legend(), unsafe_allow_html=True)
+        else:
+            st.markdown(get_geojson_strain_legend(), unsafe_allow_html=True)
+        
+        # Add visualization explanation
+        st.markdown("""
+        ### Understanding Crustal Strain and Climate Impacts
+        
+        This visualization shows how crustal strain patterns (indicated by colored lines)
+        interact with volcanic systems. The orientation of each line represents the
+        direction of maximum horizontal stress (SHmax), which can influence:
+        
+        1. **Magma Chamber Pressure**: Changes in crustal stress can compress or decompress
+           magma chambers, potentially triggering eruptions.
+           
+        2. **Dike Propagation**: Strain orientation affects how magma moves through the crust.
+           
+        3. **Flank Stability**: In coastal volcanoes, sea level rise combined with
+           certain strain patterns can increase the risk of catastrophic flank collapse.
+           
+        4. **Eruption Style**: Strain patterns may influence whether eruptions are explosive
+           or effusive by affecting crustal permeability and gas escape pathways.
+           
+        Climate change can modify these strain patterns through:
+        - **Glacial unloading** causing isostatic rebound
+        - **Sea level changes** altering stresses on coastal volcanoes
+        - **Extreme precipitation** affecting groundwater pressure
+        
+        The high-resolution GeoJSON-based strain mapping allows scientists to examine these
+        relationships at a much more detailed level than previously possible.
+        """)
+    
+    with tab6:
         st.header("🧊 Melting Glaciers & Sea Level Rise Impacts")
         
         st.markdown("""
