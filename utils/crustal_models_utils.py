@@ -201,12 +201,20 @@ def load_crustal_dataset_image(dataset_name):
     if dataset_name in CRUSTAL_DATASETS:
         filename = CRUSTAL_DATASETS[dataset_name]
         try:
-            path = f"attached_assets/{filename}"
-            if os.path.exists(path):
-                return Image.open(path)
-            else:
-                st.warning(f"Dataset image {filename} not found at {path}")
-                return None
+            # Try multiple possible locations
+            possible_paths = [
+                f"data/crustal_models/{filename}",  # Preferred location
+                f"attached_assets/{filename}",      # Original location
+                f"{filename}"                       # Direct filename
+            ]
+            
+            for path in possible_paths:
+                if os.path.exists(path):
+                    return Image.open(path)
+            
+            # If we get here, none of the paths worked
+            st.warning(f"Dataset image {filename} not found in any of the expected locations")
+            return None
         except Exception as e:
             st.error(f"Error loading dataset image: {e}")
             return None
