@@ -2,6 +2,7 @@ modules = ["python-3.11"]
 
 [nix]
 channel = "stable-24_05"
+packages = ["cairo", "ffmpeg-full", "freetype", "ghostscript", "glibcLocales", "gobject-introspection", "gtk3", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "libsndfile", "mupdf", "openjpeg", "pkg-config", "qhull", "swig", "tcl", "tk", "xcbuild"]
 
 [deployment]
 deploymentTarget = "cloud"
