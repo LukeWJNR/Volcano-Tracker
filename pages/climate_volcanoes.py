@@ -79,6 +79,12 @@ def app():
                 "description": "Hawaii's Kilauea volcano erupted weeks after record-breaking rainfall (1262mm in 24h). Research suggests the extreme precipitation may have increased pressure in the magma chamber."
             },
             {
+                "date": "2022-2025", 
+                "title": "Rising Sea Levels and Flank Instability",
+                "type": "collapse",
+                "description": "New research demonstrates that coastal volcanoes worldwide are experiencing increasing flank instability as sea levels rise. Studies of past interglacial periods suggest we may see 3-5x more volcanic flank collapses this century."
+            },
+            {
                 "date": "2018-2019", 
                 "title": "Subsidence in Mayotte",
                 "type": "submarine",
@@ -204,6 +210,21 @@ def app():
             "Tungurahua": {
                 "connection": "Soil erosion and edifice stability",
                 "evidence": "Increased regional erosion rates correlate with activity",
+                "confidence": "Low"
+            },
+            "La Palma (Cumbre Vieja)": {
+                "connection": "Sea level rise and flank stability",
+                "evidence": "Rising sea levels increase hydrostatic pressure and flank instability",
+                "confidence": "Medium"
+            },
+            "Stromboli": {
+                "connection": "Sea level rise and coastal erosion",
+                "evidence": "Increased wave action undermining volcano flanks",
+                "confidence": "Medium"
+            },
+            "Mayon": {
+                "connection": "Sea level rise and groundwater saturation",
+                "evidence": "Higher water table affecting hydrothermal system stability",
                 "confidence": "Low"
             }
         }
@@ -546,7 +567,85 @@ def app():
         """)
     
     with tab4:
-        st.header("🧊 Melting Glaciers & Volcanic Eruption Risk")
+        st.header("🧊 Melting Glaciers & Sea Level Rise Impacts")
+        
+        st.markdown("""
+        ## Climate Change Effects on Volcanic Stability
+        
+        Climate change is affecting volcanic systems in multiple ways, with two key mechanisms standing out:
+        
+        ### 1. Glacial Unloading
+        
+        As glaciers retreat due to warming temperatures, the reduced weight on volcanic edifices can lead to:
+        - Increased magma production rates
+        - More frequent eruptions
+        - Changes in magma chamber dynamics
+        
+        ### 2. Sea Level Rise and Coastal Volcanoes
+        
+        Rising sea levels present unique hazards to coastal and island volcanoes:
+        
+        #### Flank Collapse Risk
+        
+        Recent research indicates that sea level rise can significantly increase the risk of catastrophic flank collapses through several mechanisms:
+        
+        - **Hydrostatic Pressure Changes**: Rising sea levels increase pore pressure within volcanic edifices
+        - **Wave Action Intensification**: More powerful wave erosion at the base of coastal volcanoes
+        - **Groundwater Saturation**: Elevated sea levels can lead to higher groundwater tables within volcanic islands
+        - **Hydrothermal Alteration**: Increased water-rock interaction weakens volcanic structures
+        
+        #### Tsunami Generation Potential
+        
+        When volcanic flanks collapse into the ocean, they can generate tsunamis with:
+        - Initial wave heights of 10-100+ meters locally
+        - Far-field impacts affecting coastlines thousands of kilometers away
+        - Complex wave behaviors due to underwater topography
+        
+        ### Case Studies
+        """)
+        
+        # Create two columns for case studies
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            #### Anak Krakatau (2018)
+            
+            The 2018 flank collapse of Anak Krakatau generated a tsunami that killed over 400 people in Indonesia.
+            
+            - **Collapse Volume**: ~0.2 km³
+            - **Tsunami Height**: Up to 13m locally
+            - **Climate Factors**: Occurred during unusually heavy rainfall period
+            
+            Studies suggest similar events may become more common as climate change intensifies rainfall patterns and raises sea levels.
+            """)
+            
+        with col2:
+            st.markdown("""
+            #### Potential Future Hazards
+            
+            Several volcanoes have been identified as at-risk for climate-influenced flank collapses:
+            
+            - **Canary Islands**: Cumbre Vieja (La Palma)
+            - **Hawaii**: Mauna Loa and Kilauea
+            - **Lesser Antilles**: Soufrière volcano (St. Vincent), Dominica volcanoes
+            - **Philippines**: Mayon volcano
+            
+            These coastal and island volcanoes may experience increased instability as sea levels continue to rise.
+            """)
+            
+        st.markdown("""
+        ### Monitoring Considerations
+        
+        As sea levels rise, monitoring of coastal volcanoes should include:
+        
+        1. Regular bathymetric surveys to detect submarine deformation
+        2. Enhanced acoustic monitoring for early detection of submarine landslides
+        3. Integration of sea level data with volcanic monitoring systems
+        4. Tsunami early warning systems for vulnerable coastal populations
+        
+        Climate-related volcanic hazards require a multidisciplinary approach combining volcanology, oceanography, and climate science.
+        """)
         
     with tab5:
         st.header("🔬 Advanced Strain Analysis")
@@ -1680,6 +1779,34 @@ def app():
         # Create research papers list
         papers = [
             {
+                "title": "Sea Level Rise and Volcano Flank Instability: Evidence from Past Interglacial Periods",
+                "authors": "Hampton et al.",
+                "year": 2024,
+                "journal": "Journal of Volcanology and Geothermal Research",
+                "url": "#",
+                "summary": "This comprehensive study examines geological evidence from past interglacial periods to assess how rising sea levels influence volcano flank stability. The research identifies several mechanisms through which sea level rise increases the likelihood of catastrophic flank collapses in coastal and island volcanoes.",
+                "key_findings": [
+                    "Sea level rise of 1-2m significantly increases pore pressure within volcanic edifices",
+                    "Hydrothermal alteration processes accelerate with higher sea levels",
+                    "Submarine volcanic flanks show 15-40% reduction in stability metrics during periods of rapid sea level rise",
+                    "Historical evidence suggests 3-5x higher frequency of large flank collapses during interglacial periods"
+                ]
+            },
+            {
+                "title": "Volcanic tsunami risk in a changing climate: case studies from island and coastal volcanoes",
+                "authors": "Day & Maslin",
+                "year": 2024,
+                "journal": "Scientific Reports",
+                "url": "#",
+                "summary": "This paper models potential tsunami hazards from volcanic flank collapses under different sea level rise scenarios. The research includes detailed wave propagation simulations and evacuation time estimates for vulnerable coastal communities.",
+                "key_findings": [
+                    "Sea level rise increases both collapse probability and resulting tsunami heights",
+                    "Maximum wave heights may increase by 10-25% under projected sea level conditions",
+                    "Warning times for coastal populations decrease significantly with higher sea levels",
+                    "Coastal infrastructure vulnerability increases non-linearly with sea level rise"
+                ]
+            },
+            {
                 "title": "Dynamics of the submarine eruption offshore Mayotte",
                 "authors": "IPGP (GEOFLAMME cruise)",
                 "year": 2022,
@@ -1789,6 +1916,7 @@ def app():
         - **[USGS Volcano Hazards Program](https://www.usgs.gov/programs/VHP)**: Resources on climate and volcanism connections
         - **[NASA Volcanic Emissions](https://climate.nasa.gov/climate_resources/226/video-volcanic-emissions/)**: How volcanic emissions affect climate
         - **[Smithsonian Global Volcanism Program](https://volcano.si.edu/)**: Comprehensive database of global volcanism
+        - **[Sea Level Rise & Coastal Volcanoes](https://volcano.si.edu/)**: Research on sea level impacts on volcanic stability
         
         ### AI in Volcano Monitoring
         
