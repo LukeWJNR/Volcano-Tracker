@@ -336,7 +336,7 @@ def plot_displacement_map(simulation_results, time_index=-1, plot_type="vertical
     center_lon = simulation_results["parameters"]["center_lon"]
     
     # Create a Folium map centered on simulation area
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=8, tiles="Stamen Terrain")
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=8, tiles="OpenStreetMap")
     
     # Add a fullscreen control
     folium.plugins.Fullscreen().add_to(m)
@@ -461,7 +461,7 @@ def create_time_slider_map(simulation_results, plot_type="vertical"):
     center_lon = simulation_results["parameters"]["center_lon"]
     
     # Create a basemap
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=8, tiles="Stamen Terrain")
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=8, tiles="OpenStreetMap")
     
     # Add a fullscreen control
     folium.plugins.Fullscreen().add_to(m)
