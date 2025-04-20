@@ -579,15 +579,25 @@ def app():
             col1, col2 = st.columns(2)
             
             with col1:
+                # Ensure we have a valid time_index for all visualization types
+                if 'time_index' not in locals() or visualization_type == "Time Animation" or visualization_type == "Time Series":
+                    # Default to the last time step if time_index isn't defined
+                    time_index = results['parameters']['timesteps'] - 1
+                
                 # Maximum displacement
                 if plot_type == "Vertical Displacement":
                     max_disp = np.max(np.abs(results["vertical_displacement"][time_index]))
                     max_up = np.max(results["vertical_displacement"][time_index])
                     max_down = np.min(results["vertical_displacement"][time_index])
                     
-                    st.metric("Maximum Vertical Displacement", f"{max_disp:.4f} m")
-                    st.metric("Maximum Uplift", f"{max_up:.4f} m")
-                    st.metric("Maximum Subsidence", f"{max_down:.4f} m")
+                    # Convert to mm for more precise display
+                    max_disp_mm = max_disp * 1000
+                    max_up_mm = max_up * 1000
+                    max_down_mm = max_down * 1000
+                    
+                    st.metric("Maximum Vertical Displacement", f"{max_disp_mm:.2f} mm")
+                    st.metric("Maximum Uplift", f"{max_up_mm:.2f} mm")
+                    st.metric("Maximum Subsidence", f"{max_down_mm:.2f} mm")
                     
                 elif plot_type == "Horizontal Displacement":
                     he = results["horizontal_displacement_e"][time_index]
@@ -595,7 +605,10 @@ def app():
                     h_disp = np.sqrt(he**2 + hn**2)
                     max_h_disp = np.max(h_disp)
                     
-                    st.metric("Maximum Horizontal Displacement", f"{max_h_disp:.4f} m")
+                    # Convert to mm for more precise display
+                    max_h_disp_mm = max_h_disp * 1000
+                    
+                    st.metric("Maximum Horizontal Displacement", f"{max_h_disp_mm:.2f} mm")
                     
                 elif plot_type == "Strain Magnitude":
                     exx = results["strain_xx"][time_index]
@@ -604,19 +617,20 @@ def app():
                     strain = np.sqrt(0.5 * (exx**2 + eyy**2 + 2 * exy**2)) * 1e6  # Convert to microstrain
                     max_strain = np.max(strain)
                     
-                    st.metric("Maximum Strain", f"{max_strain:.2f} μstrain")
+                    st.metric("Maximum Strain", f"{max_strain:.4f} μstrain")
             
             with col2:
                 # Affected area metrics
                 if plot_type == "Vertical Displacement":
                     # Calculate areas with significant displacement
-                    significant_threshold = 0.01  # 1 cm
+                    significant_threshold_mm = 5.0  # 5 mm (more precise)
+                    significant_threshold = significant_threshold_mm / 1000  # convert to m for comparison
                     area_affected = np.sum(np.abs(results["vertical_displacement"][time_index]) > significant_threshold)
                     total_area = results["vertical_displacement"][time_index].size
                     
                     percent_affected = (area_affected / total_area) * 100
                     
-                    st.metric("Area with >1cm Displacement", f"{percent_affected:.1f}%")
+                    st.metric(f"Area with >{significant_threshold_mm:.1f}mm Displacement", f"{percent_affected:.1f}%")
                     
                     # Calculate volume change
                     cell_area_km2 = results['parameters']['resolution_km'] ** 2
@@ -630,13 +644,15 @@ def app():
                     hn = results["horizontal_displacement_n"][time_index]
                     h_disp = np.sqrt(he**2 + hn**2)
                     
-                    significant_threshold = 0.01  # 1 cm
+                    # Use more precise millimeter threshold
+                    significant_threshold_mm = 5.0  # 5 mm (more precise)
+                    significant_threshold = significant_threshold_mm / 1000  # convert to m for comparison
                     area_affected = np.sum(h_disp > significant_threshold)
                     total_area = h_disp.size
                     
                     percent_affected = (area_affected / total_area) * 100
                     
-                    st.metric("Area with >1cm Displacement", f"{percent_affected:.1f}%")
+                    st.metric(f"Area with >{significant_threshold_mm:.1f}mm Displacement", f"{percent_affected:.1f}%")
                 
                 elif plot_type == "Strain Magnitude":
                     # Calculate areas with significant strain
@@ -645,13 +661,14 @@ def app():
                     exy = results["strain_xy"][time_index]
                     strain = np.sqrt(0.5 * (exx**2 + eyy**2 + 2 * exy**2)) * 1e6  # Convert to microstrain
                     
-                    significant_threshold = 1.0  # 1 microstrain
+                    # Use more precise strain threshold
+                    significant_threshold = 0.5  # 0.5 microstrain (more precise)
                     area_affected = np.sum(strain > significant_threshold)
                     total_area = strain.size
                     
                     percent_affected = (area_affected / total_area) * 100
                     
-                    st.metric("Area with >1μ Strain", f"{percent_affected:.1f}%")
+                    st.metric(f"Area with >{significant_threshold:.1f}μ Strain", f"{percent_affected:.1f}%")
             
             # Time evolution analysis
             st.subheader("Time Evolution Analysis")
@@ -675,10 +692,15 @@ def app():
                     marker=dict(size=8)
                 ))
                 
+                # Convert to mm for more precise display
+                center_timeseries_mm = center_timeseries * 1000
+                
+                fig.update_traces(y=center_timeseries_mm)
+                
                 fig.update_layout(
                     title="Vertical Displacement Over Time (Center Point)",
                     xaxis_title="Time (years)",
-                    yaxis_title="Displacement (m)",
+                    yaxis_title="Displacement (mm)",
                     template="plotly_white",
                     height=400
                 )
@@ -706,10 +728,15 @@ def app():
                     marker=dict(size=8)
                 ))
                 
+                # Convert to mm for more precise display
+                center_h_magnitude_mm = center_h_magnitude * 1000
+                
+                fig.update_traces(y=center_h_magnitude_mm)
+                
                 fig.update_layout(
                     title="Horizontal Displacement Over Time (Center Point)",
                     xaxis_title="Time (years)",
-                    yaxis_title="Displacement (m)",
+                    yaxis_title="Displacement (mm)",
                     template="plotly_white",
                     height=400
                 )
@@ -884,18 +911,22 @@ def app():
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:
+                    # Convert to mm for more precise display
+                    vert_disp_mm = impact['vertical_displacement'] * 1000
                     st.metric(
                         "Vertical Displacement",
-                        f"{impact['vertical_displacement']:.3f} m",
-                        delta=f"{impact['vertical_displacement']:.3f}",
+                        f"{vert_disp_mm:.2f} mm",
+                        delta=f"{vert_disp_mm:.2f}",
                         delta_color="inverse"
                     )
                 
                 with col2:
+                    # Convert to mm for more precise display
+                    horiz_disp_mm = impact['horizontal_displacement'] * 1000
                     st.metric(
                         "Horizontal Displacement",
-                        f"{impact['horizontal_displacement']:.3f} m",
-                        delta=f"{impact['horizontal_displacement']:.3f}",
+                        f"{horiz_disp_mm:.2f} mm",
+                        delta=f"{horiz_disp_mm:.2f}",
                         delta_color="normal"
                     )
                 
