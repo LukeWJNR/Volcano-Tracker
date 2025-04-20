@@ -24,6 +24,7 @@ import folium
 import plotly.graph_objects as go
 import plotly.express as px
 from streamlit_folium import st_folium
+from PIL import Image
 
 from utils.api import get_known_volcano_data
 from utils.crusde_utils import (
@@ -35,6 +36,13 @@ from utils.crusde_utils import (
     plot_cross_section,
     plot_3d_surface,
     calculate_volcanic_risk_impact
+)
+from utils.crustal_models_utils import (
+    get_crustal_properties,
+    display_crustal_model_info,
+    display_crustal_datasets,
+    apply_crustal_properties_to_simulation,
+    display_crustal_model_on_map
 )
 
 def app():
@@ -154,6 +162,10 @@ def app():
                 
                 st.write(f"Type: {volcano_type}")
                 st.write(f"Country: {volcano_country}")
+                
+                # Display link to crustal model info
+                with st.expander("📊 View Crustal Model Information", expanded=False):
+                    display_crustal_model_info(selected_region)
         
         # Create a small map to show location
         location_map = folium.Map(location=[center_lat, center_lon], zoom_start=8)
@@ -274,6 +286,16 @@ def app():
         
         col1, col2 = st.columns(2)
         
+        # Get crustal properties for the selected region
+        crustal_props = get_crustal_properties(selected_region)
+        
+        # Use realistic elastic thickness from crustal model
+        if 'elastic_thickness' in locals():
+            # Elastic thickness was already set from UI sliders
+            if st.checkbox("Use realistic crustal properties for this region", value=True):
+                elastic_thickness = crustal_props["elastic_thickness"]
+                st.info(f"Using realistic elastic thickness of {elastic_thickness} km for {selected_region} from crustal model.")
+        
         with col1:
             earth_model = st.selectbox(
                 "Crustal Response Model",
@@ -290,6 +312,10 @@ def app():
             }
             
             earth_model_code = model_map[earth_model]
+            
+            # Display dataset information
+            if st.checkbox("View crustal datasets for this region", value=False):
+                display_crustal_datasets(selected_region)
         
         with col2:
             # If exponential decay is selected, add decay time parameter
@@ -334,8 +360,16 @@ def app():
                         "lon_center": center_lon,
                         "region_width_km": region_width,
                         "region_height_km": region_height,
-                        "resolution_km": resolution
+                        "resolution_km": resolution,
+                        "elastic_thickness": elastic_thickness,
+                        "young_modulus": crustal_props["young_modulus"] * 1e9,  # Convert GPa to Pa
+                        "poisson_ratio": crustal_props["poisson_ratio"],
+                        "mantle_density": crustal_props["mantle_density"],
+                        "crustal_density": crustal_props["crustal_density"]
                     }
+                    
+                    # Apply region-specific crustal properties
+                    simulation_params = apply_crustal_properties_to_simulation(simulation_params, selected_region)
                     
                     # Run simulation directly
                     results = simulate_crustal_response(simulation_params)
@@ -690,8 +724,76 @@ def app():
         # Check if we have simulation results and selected volcano
         if 'crusde_simulation_results' not in st.session_state or st.session_state['crusde_simulation_results'] is None:
             st.info("Run a simulation in the Setup tab to see volcanic impact assessment.")
+            
+            # Still show crustal model datasets even without a simulation
+            st.subheader("Scientific Crustal Models & Data")
+            st.write("""
+            Below are scientific datasets showing crustal and mantle properties that impact volcanic systems.
+            These datasets inform our simulation of how changes in surface loads affect volcanic activity.
+            """)
+            
+            # Create tabs for different datasets
+            dataset_tabs = st.tabs([
+                "Global Crustal Models", 
+                "Regional Velocity Models",
+                "Alaska Shear Velocity",
+                "California CVM-H"
+            ])
+            
+            with dataset_tabs[0]:
+                st.write("#### Litho1.0 Global Crustal Model")
+                st.write("""
+                The Litho1.0 model provides global estimates of crustal and lithospheric properties, 
+                including thickness and seismic velocities. This informs how different regions
+                respond to changes in surface loading conditions.
+                """)
+                image = load_crustal_dataset_image("Litho1.0")
+                if image is not None:
+                    st.image(image, use_column_width=True)
+                    st.caption("Source: Litho1.0 Global Crustal Model showing a) compressional-wave velocity, b) crustal thickness, c) upper mantle compressional-wave velocity, and d) lithospheric thickness.")
+            
+            with dataset_tabs[1]:
+                st.write("#### US Upper Mantle Shear Velocity Model")
+                st.write("""
+                Shear wave velocity models reveal the mechanical properties of the upper mantle at different depths.
+                Regions with low velocity (red) typically represent weaker, hotter material that responds more
+                readily to changes in surface loads.
+                """)
+                image = load_crustal_dataset_image("US-Upper-Mantle-Vs")
+                if image is not None:
+                    st.image(image, use_column_width=True)
+                    st.caption("Source: US Upper Mantle Shear Velocity Model (Xie, Chu, and Yang, 2018) showing velocities at depths of 100, 150, 200, and 270 km.")
+            
+            with dataset_tabs[2]:
+                st.write("#### Alaska Shear Velocity Structure (Berg 2020)")
+                st.write("""
+                This dataset shows shear velocity structures beneath Alaska at multiple depths.
+                The variation in velocity corresponds to different rock types, temperatures, and 
+                degrees of partial melting, all of which affect how the crust responds to glacial unloading.
+                """)
+                image = load_crustal_dataset_image("Berg_2020")
+                if image is not None:
+                    st.image(image, use_column_width=True)
+                    st.caption("Source: Berg et al. (2020) - Shear velocity (km/s) result from MCMC joint inversion at depths of 1 km, 25 km, 45 km, and 100 km.")
+            
+            with dataset_tabs[3]:
+                st.write("#### California CVM-H Crustal Velocity Model")
+                st.write("""
+                The CVM-H (Community Velocity Model - Harvard) provides detailed 3D structure of 
+                Southern California's crust and upper mantle. This model informs how the region 
+                responds to changes in loading from reservoirs, sea level, and other factors.
+                """)
+                image = load_crustal_dataset_image("CVM-H")
+                if image is not None:
+                    st.image(image, use_column_width=True)
+                    st.caption("Source: CVM-H Crustal Model showing P-wave velocities through different cross-sections of Southern California.")
         else:
             results = st.session_state['crusde_simulation_results']
+            
+            # Display crustal model information for the simulation region
+            with st.expander("View Crustal Model Properties Used in Simulation", expanded=True):
+                display_crustal_model_info(selected_region)
+                display_crustal_datasets(selected_region)
             
             # Volcanic assessment controls
             col1, col2 = st.columns(2)
