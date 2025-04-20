@@ -315,6 +315,8 @@ def simulate_crustal_response(simulation_params):
     }
     
     # Cache results
+    if 'crusde_simulations' not in st.session_state:
+        st.session_state['crusde_simulations'] = {}
     st.session_state['crusde_simulations'][name] = results
     
     return results
