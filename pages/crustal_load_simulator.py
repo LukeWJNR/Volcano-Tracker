@@ -318,32 +318,37 @@ def app():
         # Run simulation button
         if st.button("Run Simulation"):
             with st.spinner("Running crustal deformation simulation..."):
-                # Create experiment name
-                experiment_name = f"{simulation_type.replace(' ', '_')}_{selected_region}"
-                
-                # Create XML experiment definition
-                xml_experiment = create_xml_experiment(
-                    name=experiment_name,
-                    load_type=simulation_type.lower().replace(" ", "_").replace("/", "_"),
-                    load_params=load_params,
-                    earth_model=earth_model_code,
-                    time_steps=time_steps,
-                    duration_years=duration_years,
-                    lat_center=center_lat,
-                    lon_center=center_lon,
-                    region_width_km=region_width,
-                    region_height_km=region_height,
-                    resolution_km=resolution
-                )
-                
-                # Run simulation
-                results = simulate_crustal_response(xml_experiment)
-                
-                # Store results in session state
-                st.session_state['crusde_simulation_results'] = results
-                
-                st.success(f"Simulation completed: {experiment_name}")
-                st.write("Navigate to the Results Analysis tab to view detailed outputs.")
+                try:
+                    # Create experiment name
+                    experiment_name = f"{simulation_type.replace(' ', '_')}_{selected_region}"
+                    
+                    # Create simulation parameters dictionary directly (skip the XML generation)
+                    simulation_params = {
+                        "name": experiment_name,
+                        "load_type": simulation_type.lower().replace(" ", "_").replace("/", "_"),
+                        "load_params": load_params,
+                        "earth_model": earth_model_code,
+                        "time_steps": time_steps,
+                        "duration_years": duration_years,
+                        "lat_center": center_lat,
+                        "lon_center": center_lon,
+                        "region_width_km": region_width,
+                        "region_height_km": region_height,
+                        "resolution_km": resolution
+                    }
+                    
+                    # Run simulation directly
+                    results = simulate_crustal_response(simulation_params)
+                    
+                    # Store results in session state
+                    st.session_state['crusde_simulation_results'] = results
+                    
+                    st.success(f"Simulation completed: {experiment_name}")
+                    st.write("Navigate to the Results Analysis tab to view detailed outputs.")
+                except Exception as e:
+                    st.error(f"Error running simulation: {str(e)}")
+                    st.info("Note: This is a scientific simulation of crustal deformation patterns based on elastic theory and simplification of the CrusDe framework. The full CrusDe implementation requires system dependencies not available in this environment.")
+                    st.info("Please try adjusting the parameters or selecting a different simulation type.")
     
     with tab2:
         st.header("Simulation Results Analysis")

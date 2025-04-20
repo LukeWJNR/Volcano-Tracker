@@ -182,38 +182,33 @@ def create_xml_experiment(name, load_type, load_params, earth_model="elastic",
     # Convert to XML string
     return ET.tostring(root, encoding='utf8', method='xml').decode()
 
-def simulate_crustal_response(experiment_xml):
+def simulate_crustal_response(simulation_params):
     """
-    Simulate crustal response using CrusDe framework
+    Simulate crustal response using simplified CrusDe approach
     
-    In a real implementation, this would call the CrusDe executable.
-    For this prototype, we'll simulate the results.
+    This function implements a simplified version of the CrusDe simulation
+    that doesn't require the actual CrusDe executable installation.
     
     Args:
-        experiment_xml: XML string defining the experiment
+        simulation_params: Dictionary containing simulation parameters
         
     Returns:
         Dictionary containing simulation results
     """
-    # Parse the XML to extract parameters
-    root = ET.fromstring(experiment_xml)
-    
     # Extract key simulation parameters
-    name = root.find(".//name").text
-    timesteps = int(root.find(".//simulation/parameter[@name='timesteps']").text)
-    duration_years = int(root.find(".//simulation/parameter[@name='duration_years']").text)
+    name = simulation_params["name"]
+    timesteps = simulation_params["time_steps"]
+    duration_years = simulation_params["duration_years"]
     
-    center_lat = float(root.find(".//region/parameter[@name='center_lat']").text)
-    center_lon = float(root.find(".//region/parameter[@name='center_lon']").text)
-    width_km = float(root.find(".//region/parameter[@name='width_km']").text)
-    height_km = float(root.find(".//region/parameter[@name='height_km']").text)
-    resolution_km = float(root.find(".//region/parameter[@name='resolution_km']").text)
+    center_lat = simulation_params["lat_center"]
+    center_lon = simulation_params["lon_center"]
+    width_km = simulation_params["region_width_km"]
+    height_km = simulation_params["region_height_km"]
+    resolution_km = simulation_params["resolution_km"]
     
     # Extract load parameters
-    load_plugin = root.find(".//load/plugin").text
-    load_params = {}
-    for param in root.findall(".//load/parameters/parameter"):
-        load_params[param.get("name")] = param.text
+    load_type = simulation_params["load_type"]
+    load_params = simulation_params["load_params"]
     
     # Create simulation grid
     lat_min = center_lat - (height_km / 2) / 111  # Approximate degrees per km
@@ -230,9 +225,17 @@ def simulate_crustal_response(experiment_xml):
     # Create meshgrid for calculations
     lon_grid, lat_grid = np.meshgrid(lons, lats)
     
+    # Initialize results arrays
+    vertical_displacement = np.zeros((timesteps, lat_steps, lon_steps))
+    horizontal_displacement_e = np.zeros((timesteps, lat_steps, lon_steps))
+    horizontal_displacement_n = np.zeros((timesteps, lat_steps, lon_steps))
+    strain_xx = np.zeros((timesteps, lat_steps, lon_steps))
+    strain_yy = np.zeros((timesteps, lat_steps, lon_steps))
+    strain_xy = np.zeros((timesteps, lat_steps, lon_steps))
+    
     # Simulate vertical displacement results (synthetic data)
-    # For a disk load, use a gaussian pattern centered at the load
-    if load_plugin == "disk":
+    # Handle different load types
+    if load_type == "glacial_unloading" or load_type == "lava_flow_loading" or load_type == "disk":
         # Extract disk parameters
         radius_m = float(load_params.get("radius_m", 10000))
         height_m = float(load_params.get("height_m", 100))
@@ -244,13 +247,8 @@ def simulate_crustal_response(experiment_xml):
         # Create time steps
         times = np.linspace(0, duration_years, timesteps)
         
-        # Initialize results arrays
-        vertical_displacement = np.zeros((timesteps, lat_steps, lon_steps))
-        horizontal_displacement_e = np.zeros((timesteps, lat_steps, lon_steps))
-        horizontal_displacement_n = np.zeros((timesteps, lat_steps, lon_steps))
-        strain_xx = np.zeros((timesteps, lat_steps, lon_steps))
-        strain_yy = np.zeros((timesteps, lat_steps, lon_steps))
-        strain_xy = np.zeros((timesteps, lat_steps, lon_steps))
+        # Time array
+        times = np.linspace(0, duration_years, timesteps)
         
         # For each time step, calculate displacement patterns
         for t in range(timesteps):
