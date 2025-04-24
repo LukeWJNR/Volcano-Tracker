@@ -14,11 +14,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Explicitly set the path to the utils directory
-utils_path = "/workspaces/Volcano-Tracker/utils"
+utils_path = "/workspaces/Volcano-Tracker/"
 
-# Ensure utils is visible to this script
-current_dir = os.path.dirname(os.path.abspath(__file__))  # /pages
-utils_path = os.path.abspath(os.path.join(current_dir, '..', 'utils'))
+# Add ../utils to sys.path
+current_file = os.path.abspath(__file__)
+project_root = os.path.dirname(os.path.dirname(current_file))
+utils_path = os.path.join(project_root, "utils")
+
 if utils_path not in sys.path:
     sys.path.insert(0, utils_path)
 
@@ -52,6 +54,7 @@ def app():
 
     # Get selected volcano data
     selected_volcano = filtered_df[filtered_df["name"] == selected_volcano_name].iloc[0].to_dict()
+    volcano_type = volcano_type if 'volcano_type' in locals() else 'stratovolcano'
     volcano_type = determine_volcano_type(selected_volcano)
 
     # Display volcano information
