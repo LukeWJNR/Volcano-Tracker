@@ -5,6 +5,7 @@ This page aims to provide a visualization of a volcanic eruption, showing
 the complete process from magma buildup through seismic activity to eruption,
 lava flows, and ash cloud formation.
 """
+# In pages/cinematic_eruption.py
 import sys
 import os
 import plotly.graph_objects as go
@@ -13,18 +14,21 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Explicitly set the path to the utils directory
-utils_path = "/workspaces/Volcano-Tracker/utils"
+# Determine the folder of the current script
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Add ../utils to sys.path
-current_file = os.path.abspath(__file__)
-project_root = os.path.dirname(os.path.dirname(current_file))
-utils_path = os.path.join(project_root, "utils")
+# Build the path to the utils directory (one level up from pages)
+utils_path = os.path.abspath(os.path.join(current_dir, '..', 'utils'))
 
+# Ensure the utils directory is correctly added to sys.path
 if utils_path not in sys.path:
     sys.path.insert(0, utils_path)
 
+# Ensure the utils directory is correctly added to sys.path
+if utils_path not in sys.path:
+    sys.path.append(utils_path)
 
+# Import modules from the utils folder
 from api import get_volcano_data
 from animation_utils import determine_volcano_type, VOLCANO_TYPES, ALERT_LEVELS
 from cinematic_animation import generate_cinematic_eruption
@@ -32,18 +36,19 @@ from volcano_types import Volcano
 from animation_utils import animate_eruptive_sequence
 from magma_chamber_viz import draw_magma_chamber
 
-
 def app():
-    # Load volcano data
     volcanoes_df = get_volcano_data()
-
-    # Sidebar for region and volcano selection
     st.sidebar.title("Volcano Selection")
     regions = ["All"] + sorted(volcanoes_df["region"].unique().tolist())
     selected_region = st.sidebar.selectbox("Select Region:", regions)
+    st.write("Selected region:", selected_region)
+    st.dataframe(volcanoes_df)
+    
+if __name__ == "__main__":
+    app()
 
     # Filter volcanoes by region
-    if selected_region != "All":
+    if  selected_region != "All":
         filtered_df = volcanoes_df[volcanoes_df["region"] == selected_region]
     else:
         filtered_df = volcanoes_df
