@@ -7,6 +7,19 @@ volcano data throughout the application.
 from typing import Dict, List, Optional, Any, TypedDict
 from dataclasses import dataclass
 
+@dataclass
+class Volcano:
+    id: str
+    name: str
+    location: tuple  # (lat, lon)
+    elevation: float
+    chamber_depth_km: float = 5.0
+    chamber_radius_km: float = 2.0
+    chamber_pressure_mpa: float = 10.0
+    deformation_rate_mm_per_day: float = 0.0
+    vps_type: str = "simple spherical"  # e.g. dyke-fed, complex branching
+
+
 
 class VolcanoDict(TypedDict, total=False):
     """TypedDict representation of a Volcano"""
