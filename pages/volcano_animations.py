@@ -118,6 +118,7 @@ def app():
                 # Convert alert level to numeric steps (Normal=10, Advisory=25, Watch=40, Warning=50)
                 alert_time_steps = {"Normal": 10, "Advisory": 25, "Watch": 40, "Warning": 50}.get(alert_level, 25)
                 deformation_data = generate_deformation_plot(volcano_type_str, alert_time_steps, 50)
+                print(deformation_data)  # Debugging step to inspect the outputdeformation_data = generate_deformation_plot(volcano_type_str, alert_time_steps, 50)
                 
                 # Technical information
                 with st.expander("Technical Details", expanded=False):
@@ -133,11 +134,16 @@ def app():
                     **Description:** {VOLCANO_TYPES[volcano_type]['description']}
                     """)
         
-        with col2:
-            if 'deformation_data' in locals():
-                # Display 2D InSAR-like visualization
-                st.markdown("### InSAR-like Interferogram")
+             if '2d_figure' in deformation_data:
+                 st.markdown("### InSAR-like Interferogram")
+                 st.plotly_chart(deformation_data['2d_figure'], use_container_width=True)
+             try:
                 st.plotly_chart(deformation_data['2d_figure'], use_container_width=True)
+            except KeyError as e:
+                st.error(f"KeyError: {str(e)} - The deformation data might be incomplete.")
+             else:
+                 st.error("The deformation plot could not be generated. Please check your input parameters.")
+                 st.plotly_chart(deformation_data['2d_figure'], use_container_width=True)
         
         # Add 3D visualization in full width below
         if 'deformation_data' in locals():
