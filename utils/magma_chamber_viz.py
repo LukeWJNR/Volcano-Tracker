@@ -17,6 +17,25 @@ import random
 from utils.animation_utils import VOLCANO_TYPES, ALERT_LEVELS, determine_volcano_type
 from utils.cinematic_animation import ensure_valid_color
 
+def show_magma_chamber(volcano):
+    x, y, z = np.mgrid[-1:1:40j, -1:1:40j, -1:1:40j]
+    chamber = (x**2 + y**2 + z**2) < 1
+
+    fig = go.Figure(data=go.Isosurface(
+        x=x.flatten(),
+        y=y.flatten(),
+        z=z.flatten(),
+        value=chamber.flatten().astype(int),
+        isomin=0.5,
+        isomax=1,
+        surface_count=1,
+        caps=dict(x_show=False, y_show=False, z_show=False),
+        colorscale='Reds'
+    ))
+
+    fig.update_layout(title=f"Magma Chamber - {volcano.name}")
+    fig.show()
+
 def generate_3d_magma_chamber(volcano_type: str, alert_level: str) -> go.Figure:
     """
     Generate a 3D model of a volcano's magma chamber and plumbing system
