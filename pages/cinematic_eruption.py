@@ -5,7 +5,7 @@ This page provides a movie-like visualization of a volcanic eruption, showing
 the complete process from magma buildup through seismic activity to eruption,
 lava flows, and ash cloud formation.
 """
-
+import plotly.graph_objects as go
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -53,7 +53,36 @@ def app():
     # Get selected volcano data
     selected_volcano = filtered_df[filtered_df["name"] == selected_volcano_name].iloc[0].to_dict()
     volcano_type = determine_volcano_type(selected_volcano)
+    # Before main animation
     
+    if st.checkbox("Show magma chamber buildup"):
+    chamber_fig = draw_magma_chamber(selected_volcano)
+    st.plotly_chart(chamber_fig, use_container_width=True)
+
+def draw_magma_chamber(volcano, chamber_radius_km=2.0, chamber_depth_km=5.0):
+    x, y, z = np.mgrid[-1:1:40j, -1:1:40j, -1:1:40j]
+    chamber = (x**2 + y**2 + z**2) < 1
+
+    fig = go.Figure(data=go.Isosurface(
+        x=x.flatten(),
+        y=y.flatten(),
+        z=z.flatten() - chamber_depth_km,
+        value=chamber.flatten().astype(int),
+        isomin=0.5,
+        isomax=1,
+        surface_count=1,
+        colorscale='OrRd',
+        opacity=0.4
+    ))
+
+    fig.update_layout(title="Subsurface Magma Chamber", scene=dict(
+        zaxis=dict(title='Depth (km)', autorange='reversed'),
+        xaxis=dict(title='X (km)'),
+        yaxis=dict(title='Y (km)')
+    ))
+
+    return fig
+
     # Animation settings
     st.sidebar.title("Animation Settings")
     
