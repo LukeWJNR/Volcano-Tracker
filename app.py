@@ -127,8 +127,8 @@ st.markdown("""
 <style>
     /* Make the app more compact for iframe embedding */
     .block-container {
-        padding-top: 1rem;
-        padding-bottom: 1rem;
+        padding-block-start: 1rem;
+        padding-block-end: 1rem;
     }
     
     /* Adjust header sizes for compact display */

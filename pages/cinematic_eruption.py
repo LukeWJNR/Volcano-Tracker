@@ -1,19 +1,80 @@
 """
 Cinematic Volcano Eruption Animation for the Volcano Monitoring Dashboard.
 
-This page provides a movie-like visualization of a volcanic eruption, showing
+This page aims to provide a visualization of a volcanic eruption, showing
 the complete process from magma buildup through seismic activity to eruption,
 lava flows, and ash cloud formation.
 """
-import plotly.graph_objects as go
-import streamlit as st
-import pandas as pd
-import numpy as np
+import sys
+import os
+
+# Determine the absolute directory of the current script.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Build the absolute path to the utils directory.
+# Assuming your structure is:
+# Volcano-Tracker/
+#   ├── pages/
+#   │    └── cinematic_eruption.py   <-- this file
+#   └── utils/
+#        └── api.py   <-- module to import
+utils_path = os.path.abspath(os.path.join(current_dir, '..', 'utils'))
+
+# Add the utils directory to sys.path if it hasn't been added yet.
+if utils_path not in sys.path:
+    sys.path.insert(0, utils_path)
+
+# Now you can import modules from the utils folder.
+from api import get_volcano_data  # This imports get_volcano_data() from utils/api.py
+
+# The rest of your program logic follows...
+
 
 from utils.api import get_volcano_data
 from utils.animation_utils import determine_volcano_type, VOLCANO_TYPES, ALERT_LEVELS
 from utils.cinematic_animation import generate_cinematic_eruption
+import plotly.graph_objects as go
+import streamlit as st
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from volcano_types import Volcano
+from animation_utils import animate_eruptive_sequence
+from magma_chamber_viz import draw_magma_chamber
 
+def app():
+    selected_region = "Pacific Ring of Fire"  # Example value
+    selected_volcano = "Mount St. Helens"  # Example value
+    volcano_type = determine_volcano_type(selected_volcano)
+
+    with st.expander("Related Volcanic Processes", expanded=False):
+        st.markdown(f"""
+        ## {volcano_type.replace('_', ' ').title()} Volcano Processes
+
+        ### Magma Characteristics
+        - **Viscosity:** {VOLCANO_TYPES[volcano_type]['magma_viscosity']}
+        - **Temperature:** {VOLCANO_TYPES[volcano_type].get('temperature', '700-1200°C')}
+        - **Gas Content:** {VOLCANO_TYPES[volcano_type].get('gas_content', 'Variable')}
+
+        ### Similar Volcanoes
+        {', '.join(VOLCANO_TYPES[volcano_type]['examples'])}
+
+        ### Eruption Style
+        {VOLCANO_TYPES[volcano_type]['eruption_style']}
+
+        ### Monitoring Implications
+        Different volcano types require different monitoring approaches. {volcano_type.replace('_', ' ').title()} 
+        volcanoes typically show distinctive deformation patterns before eruption,
+        which can be detected through InSAR and GPS measurements.
+        """)
+
+        st.markdown("""
+        ### References
+        1. USGS Volcano Hazards Program
+        2. Global Volcanism Program, Smithsonian Institution
+        3. Sigurdsson, H. (2015). The Encyclopedia of Volcanoes. Academic Press.
+        4. Parfitt, E. A., & Wilson, L. (2008). Fundamentals of Physical Volcanology.
+        """)
 def app():
     st.title("Cinematic Eruption Animation")
     
@@ -30,34 +91,36 @@ def app():
     # Load volcano data
     volcanoes_df = get_volcano_data()
     
-    # Sidebar for volcano selection and settings
+   # Sidebar for volcano selection and settings
     st.sidebar.title("Volcano Selection")
-    
-    # Region filter
+
+# Region filter
     regions = ["All"] + sorted(volcanoes_df["region"].unique().tolist())
     selected_region = st.sidebar.selectbox("Select Region:", regions)
+
+# Filter by region if not "All"
+if selected_region != "All":
+    filtered_df = volcanoes_df[volcanoes_df["region"] == selected_region]
+else:
+    filtered_df = volcanoes_df
+
+# Ensure this section is executed before using selected_volcano_name
+volcano_names = sorted(filtered_df["name"].unique().tolist())
+selected_volcano_name = st.sidebar.selectbox(
+    "Select Volcano:", 
+    volcano_names
+)
+
+# Get selected volcano data
+selected_volcano = filtered_df[filtered_df["name"] == selected_volcano_name].iloc[0].to_dict()
+     # Before main animation
     
-    # Filter by region if not "All"
-    if selected_region != "All":
-        filtered_df = volcanoes_df[volcanoes_df["region"] == selected_region]
-    else:
-        filtered_df = volcanoes_df
+if st.checkbox("Show magma chamber buildup"):
+        chamber_fig = draw_magma_chamber(selected_volcano)
+        st.plotly_chart(chamber_fig, use_container_width=True)
     
-    # Volcano name filter - show all volcanoes in selected region
-    volcano_names = sorted(filtered_df["name"].unique().tolist())
-    selected_volcano_name = st.sidebar.selectbox(
-        "Select Volcano:", 
-        volcano_names
-    )
-    
-    # Get selected volcano data
-    selected_volcano = filtered_df[filtered_df["name"] == selected_volcano_name].iloc[0].to_dict()
-    volcano_type = determine_volcano_type(selected_volcano)
-    # Before main animation
-    
-    if st.checkbox("Show magma chamber buildup"):
-    chamber_fig = draw_magma_chamber(selected_volcano)
-    st.plotly_chart(chamber_fig, use_container_width=True)
+if st.checkbox("Show surface deformation map"):
+        show_deformation_sim(selected_volcano)
 
 def draw_magma_chamber(volcano, chamber_radius_km=2.0, chamber_depth_km=5.0):
     x, y, z = np.mgrid[-1:1:40j, -1:1:40j, -1:1:40j]
@@ -82,6 +145,41 @@ def draw_magma_chamber(volcano, chamber_radius_km=2.0, chamber_depth_km=5.0):
     ))
 
     return fig
+
+# Add the required imports
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Define the deformation simulation function
+def show_deformation_sim(volcano):
+    x = np.linspace(-5, 5, 100)
+    y = np.linspace(-5, 5, 100)
+    X, Y = np.meshgrid(x, y)
+
+    # Toy deformation function: a 2D Gaussian bulge
+    Z = np.exp(-((X)**2 + (Y)**2) / 2) * volcano["chamber_pressure_mpa"]
+
+    fig, ax = plt.subplots()
+    contour = ax.contourf(X, Y, Z, cmap='hot')
+    ax.set_title(f"Surface Uplift (Simulated)\n{volcano['name']}")
+    ax.set_xlabel("km")
+    ax.set_ylabel("km")
+    st.pyplot(fig)
+
+# Integrate the deformation simulation into the app
+def app():
+    st.title("Cinematic Eruption Animation")
+    
+    # ...existing code...
+    
+    # Add a checkbox to show deformation simulation
+    if st.checkbox("Show surface deformation simulation"):
+        if "chamber_pressure_mpa" in selected_volcano:
+            show_deformation_sim(selected_volcano)
+        else:
+            st.warning("Chamber pressure data is not available for this volcano.")
+    
+    # ...existing code...
 
     # Animation settings
     st.sidebar.title("Animation Settings")
@@ -382,20 +480,20 @@ def draw_magma_chamber(volcano, chamber_radius_km=2.0, chamber_depth_km=5.0):
     # Educational content on volcanic processes
     with st.expander("Related Volcanic Processes", expanded=False):
         st.markdown(f"""
-        ## {volcano_type.replace('_', ' ').title()} Volcano Processes
+        ## {determine_volcano_type(selected_volcano).replace('_', ' ').title()} Volcano Processes
         
-        {VOLCANO_TYPES[volcano_type]['description']}
+        {VOLCANO_TYPES[determine_volcano_type(selected_volcano)]['description']}
         
         ### Magma Characteristics
-        - **Viscosity:** {VOLCANO_TYPES[volcano_type]['magma_viscosity']}
-        - **Temperature:** {VOLCANO_TYPES[volcano_type].get('temperature', '700-1200°C')}
-        - **Gas Content:** {VOLCANO_TYPES[volcano_type].get('gas_content', 'Variable')}
+        - **Viscosity:** {VOLCANO_TYPES[determine_volcano_type(selected_volcano)]['magma_viscosity']}
+        - **Temperature:** {VOLCANO_TYPES[determine_volcano_type(selected_volcano)].get('temperature', '700-1200°C')}
+        - **Gas Content:** {VOLCANO_TYPES[determine_volcano_type(selected_volcano)].get('gas_content', 'Variable')}
         
         ### Similar Volcanoes
-        {', '.join(VOLCANO_TYPES[volcano_type]['examples'])}
+        {', '.join(VOLCANO_TYPES[determine_volcano_type(selected_volcano)]['examples'])}
         
         ### Eruption Style
-        {VOLCANO_TYPES[volcano_type]['eruption_style']}
+        {VOLCANO_TYPES[determine_volcano_type(selected_volcano)]['eruption_style']}
         
         ### Monitoring Implications
         Different volcano types require different monitoring approaches. {volcano_type.replace('_', ' ').title()} 
