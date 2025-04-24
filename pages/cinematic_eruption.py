@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Explicitly set the path to the utils directory
-utils_path = "/workspaces/Volcano-Tracker/"
+utils_path = "/workspaces/Volcano-Tracker/utils"
 
 # Add ../utils to sys.path
 current_file = os.path.abspath(__file__)
