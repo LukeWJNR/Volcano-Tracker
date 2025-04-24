@@ -134,16 +134,16 @@ def app():
                     **Description:** {VOLCANO_TYPES[volcano_type]['description']}
                     """)
         
-             if '2d_figure' in deformation_data:
-                 st.markdown("### InSAR-like Interferogram")
-                 st.plotly_chart(deformation_data['2d_figure'], use_container_width=True)
-             try:
+            if '2d_figure' in deformation_data:
+                st.markdown("### InSAR-like Interferogram")
                 st.plotly_chart(deformation_data['2d_figure'], use_container_width=True)
-            except KeyError as e:
-                st.error(f"KeyError: {str(e)} - The deformation data might be incomplete.")
-             else:
-                 st.error("The deformation plot could not be generated. Please check your input parameters.")
-                 st.plotly_chart(deformation_data['2d_figure'], use_container_width=True)
+                try:
+                    st.plotly_chart(deformation_data['2d_figure'], use_container_width=True)
+                except KeyError as e:
+                    st.error(f"KeyError: {str(e)} - The deformation data might be incomplete.")
+                else:
+                    st.error("The deformation plot could not be generated. Please check your input parameters.")
+                    st.plotly_chart(deformation_data['2d_figure'], use_container_width=True)
         
         # Add 3D visualization in full width below
         if 'deformation_data' in locals():
