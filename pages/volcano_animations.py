@@ -146,9 +146,11 @@ def app():
                     st.plotly_chart(deformation_data['2d_figure'], use_container_width=True)
         
         # Add 3D visualization in full width below
-        if 'deformation_data' in locals():
+        if 'deformation_data' in locals() and '3d_figure' in deformation_data:
             st.markdown("### 3D Surface Deformation")
             st.plotly_chart(deformation_data['3d_figure'], use_container_width=True)
+        else:
+            st.warning("3D deformation data is not available for the selected volcano.")
             
             st.markdown("""
             **How to interpret:**
@@ -204,7 +206,7 @@ def app():
             max_value=90,
             value=30,
             step=1,
-            key="chamber_time_slider"
+            key="chamber_time_slider_main"
         )
         
         # Information about selected volcano type
@@ -231,9 +233,9 @@ def app():
             
             {alert_info['description']}
             
-            **Expected Deformation Rate:** {alert_info['deformation_rate']}
+            **Expected Deformation Rate:** {alert_info.get('deformation_rate', 'Not Available')}
             
-            **Activity Level:** {alert_info['activity']}
+            **Activity Level:** {alert_info.get('activity', 'Not Available')}
             """)
         
         # Time Series Animation Tab
@@ -241,15 +243,25 @@ def app():
             st.subheader("Magma Chamber Time Series")
             
             # Generate and display magma chamber animation
-            magma_animation = generate_magma_chamber_animation(
-                selected_volcano_type, 
-                alert_level,
-                time_period_days=time_period
-            )
-            
-            st.plotly_chart(magma_animation['figure'], use_container_width=True, key="magma_time_series")
-            
-            st.markdown("""
+time_period = st.sidebar.slider(
+    "Simulation period (days):",
+    min_value=7,
+    max_value=90,
+    value=30,
+    step=1,
+    key="chamber_time_slider"
+)
+
+# Generate magma chamber animation
+magma_animation = generate_magma_chamber_animation(
+    selected_volcano_type, 
+    alert_level,
+    simulation_days=time_period
+)
+
+st.plotly_chart(magma_animation['figure'], use_container_width=True, key="magma_time_series")
+
+st.markdown("""
             **How to interpret:**
             - **Magma Volume:** Shows magma accumulation in the chamber
             - **Surface Displacement:** Ground movement detected at the surface
@@ -259,7 +271,7 @@ def app():
             """)
         
         # 3D Magma Chamber Model Tab
-        with subtab2:
+with subtab2:
             st.subheader("3D Magma Chamber Model")
             
             st.markdown("""
@@ -292,7 +304,7 @@ def app():
                 """)
         
         # Animated Magma Flow Tab
-        with subtab3:
+with subtab3:
             st.subheader("Animated Magma Flow")
             
             st.markdown("""
@@ -377,7 +389,7 @@ def app():
                 focusing on the most distinctive and educationally relevant behaviors.
                 """)
     
-    with tab3:
+with tab3:
         st.header("Eruption Sequence Animation")
         
         st.markdown("""
@@ -457,7 +469,7 @@ def app():
                 *The patterns are based on scientific studies of historical eruptions*
                 """)
     
-    with tab4:
+with tab4:
         st.header("Real InSAR Data Comparison")
         
         st.markdown("""
@@ -571,7 +583,7 @@ def app():
                     display_comet_sar_animation(comet_volcano['id'], selected_dataset['id'])
     
     # Educational information about InSAR and volcano monitoring
-    with st.expander("About InSAR and Volcano Monitoring", expanded=False):
+with st.expander("About InSAR and Volcano Monitoring", expanded=False):
         st.markdown("""
         ### Interferometric Synthetic Aperture Radar (InSAR)
         
