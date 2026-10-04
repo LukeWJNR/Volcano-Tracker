@@ -666,10 +666,15 @@ with col2:
         """, unsafe_allow_html=True)
         
         # Type stat
-        volcano_type = volcano.get('type', 'Unknown')
+        volcano_type = volcano.get('type')
+        volcano_type_display = 'Unknown'
+        if volcano_type is not None:
+            volcano_type_text = str(volcano_type).strip()
+            if volcano_type_text:
+                volcano_type_display = volcano_type_text.split()[0]
         st.markdown(f"""
         <div class="stat-card">
-            <div class="stat-value">{volcano_type.split()[0]}</div>
+            <div class="stat-value">{volcano_type_display}</div>
             <div class="stat-label">Type</div>
         </div>
         """, unsafe_allow_html=True)

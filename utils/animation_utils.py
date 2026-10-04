@@ -134,6 +134,13 @@ ALERT_LEVELS = {
     }
 }
 
+def _normalize_text(value: Any) -> str:
+    """Safely coerce optional values to a lowercase string for matching."""
+    if value is None:
+        return ""
+    return str(value).strip().lower()
+
+
 def determine_volcano_type(volcano_data: Dict[str, Any]) -> str:
     """
     Determine the volcano type based on its characteristics.
@@ -144,7 +151,7 @@ def determine_volcano_type(volcano_data: Dict[str, Any]) -> str:
     Returns:
         str: Volcano type (shield, stratovolcano, caldera, cinder_cone, lava_dome)
     """
-    volcano_type = volcano_data.get('type', '').lower()
+    volcano_type = _normalize_text(volcano_data.get('type', ''))
     
     # Check for specific keywords in the type field
     if 'shield' in volcano_type:
@@ -187,13 +194,17 @@ def get_eruption_probability(volcano_data: Dict[str, Any]) -> float:
     
     # Adjust based on time since last eruption
     last_eruption = volcano_data.get('last_eruption')
-    if last_eruption:
+    if last_eruption not in (None, '', 'Unknown', 'unknown'):
         try:
             # Convert to year if it's a date string
-            if isinstance(last_eruption, str) and '-' in last_eruption:
-                year = int(last_eruption.split('-')[0])
+            if isinstance(last_eruption, str):
+                normalized = last_eruption.strip()
+                if '-' in normalized:
+                    year = int(normalized.split('-')[0])
+                else:
+                    year = int(float(normalized))
             else:
-                year = int(last_eruption)
+                year = int(float(last_eruption))
                 
             years_since = 2025 - year  # Current year minus last eruption year
             

@@ -188,7 +188,7 @@ def simulate_gas_emissions(
     baseline = base_values.copy()
     max_values = base_max_values.copy()
     
-    volcano_type = volcano_type.lower()
+    volcano_type = str(volcano_type or '').lower()
     
     # Modify gas signatures based on volcano type
     if 'shield' in volcano_type:

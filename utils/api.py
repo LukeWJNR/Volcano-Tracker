@@ -77,14 +77,21 @@ def get_volcano_by_name(volcano_name: str) -> Optional[Dict[str, Any]]:
     Returns:
         Optional[Dict[str, Any]]: Dictionary containing volcano data, or None if not found
     """
+    if volcano_name is None:
+        return None
+
+    normalized_name = str(volcano_name).strip()
+    if not normalized_name:
+        return None
+
     df = get_volcano_data()
     
     # Find the volcano by name (case-insensitive)
-    matches = df[df['name'].str.lower() == volcano_name.lower()]
+    matches = df[df['name'].astype(str).str.lower() == normalized_name.lower()]
     
     if len(matches) == 0:
         # Try partial match
-        matches = df[df['name'].str.lower().str.contains(volcano_name.lower())]
+        matches = df[df['name'].astype(str).str.lower().str.contains(normalized_name.lower())]
     
     if len(matches) > 0:
         # Return the first match as a dictionary

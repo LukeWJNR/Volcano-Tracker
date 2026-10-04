@@ -197,8 +197,8 @@ def get_volcano_type_profile(volcano_data: Dict[str, Any]) -> Dict[str, Any]:
         Dict[str, Any]: Audio profile parameters
     """
     # First check if this is a known specific volcano
-    volcano_id = volcano_data.get('id', '').lower()
-    volcano_name = volcano_data.get('name', '').lower()
+    volcano_id = str(volcano_data.get('id') or '').lower()
+    volcano_name = str(volcano_data.get('name') or '').lower()
     
     # Check for special volcano profiles by ID or name
     for special_id in SPECIAL_VOLCANO_PROFILES:
@@ -206,7 +206,7 @@ def get_volcano_type_profile(volcano_data: Dict[str, Any]) -> Dict[str, Any]:
             return SPECIAL_VOLCANO_PROFILES[special_id]
     
     # If no specific match, use the general volcano type
-    volcano_type = volcano_data.get('type', '').lower()
+    volcano_type = str(volcano_data.get('type') or '').lower()
     
     if not volcano_type:
         return VOLCANO_TYPE_PROFILES['default']
